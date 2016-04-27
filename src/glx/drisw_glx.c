@@ -886,7 +886,7 @@ driswCreateScreen(int screen, struct glx_display *priv)
    visuals = driConvertConfigs(psc->core, psc->base.visuals, driver_configs);
 
    if (!configs || !visuals) {
-       ErrorMessageF("No matching fbConfigs or visuals found\n");
+       InfoMessageF("No matching fbConfigs or visuals found\n");
        goto handle_error;
    }
 
@@ -923,7 +923,7 @@ driswCreateScreen(int screen, struct glx_display *priv)
    glx_screen_cleanup(&psc->base);
    free(psc);
 
-   CriticalErrorMessageF("failed to load driver: %s\n", SWRAST_DRIVER_NAME);
+   InfoMessageF("failed to load driver: %s\n", SWRAST_DRIVER_NAME);
 
    return NULL;
 }
