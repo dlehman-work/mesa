@@ -186,7 +186,7 @@ softpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_MAX_TEXTURE_BUFFER_SIZE:
       return 65536;
    case PIPE_CAP_TEXTURE_BUFFER_OFFSET_ALIGNMENT:
-      return 0;
+      return util_format_get_blocksize(PIPE_FORMAT_R64G64B64A64_FLOAT);
    case PIPE_CAP_TGSI_TEXCOORD:
    case PIPE_CAP_PREFER_BLIT_BASED_TEXTURE_TRANSFER:
       return 0;
