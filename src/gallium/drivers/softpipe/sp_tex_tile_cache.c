@@ -276,6 +276,14 @@ sp_find_cached_tile_tex(struct softpipe_tex_tile_cache *tc,
                                 TEX_TILE_SIZE,
                                 tc->format,
                                 (int *) tile->data.colori);
+      } else if (tc->texture->target == PIPE_BUFFER &&
+                 tc->texture->format == PIPE_FORMAT_R8_UNORM) {
+         /* User set texture buffer with glTexBuffer */
+         pipe_get_tile_rgba_format(tc->tex_trans, tc->tex_trans_map,
+                                   addr.bits.x * TEX_TILE_SIZE, 0,
+                                   sizeof(tile->data.color) / sizeof(float), 1,
+                                   tc->format,
+                                   (float *) tile->data.color);
       } else {
          pipe_get_tile_rgba_format(tc->tex_trans, tc->tex_trans_map,
                                    addr.bits.x * TEX_TILE_SIZE,
