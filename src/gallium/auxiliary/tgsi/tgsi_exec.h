@@ -32,6 +32,7 @@
 #include "pipe/p_compiler.h"
 #include "pipe/p_state.h"
 #include "pipe/p_shader_tokens.h"
+#include "util/u_cpu_detect.h"
 
 #if defined __cplusplus
 extern "C" {
@@ -537,8 +538,13 @@ tgsi_exec_get_shader_param(enum pipe_shader_cap param)
    case PIPE_SHADER_CAP_TGSI_LDEXP_SUPPORTED:
    case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
       return 1;
-   case PIPE_SHADER_CAP_TGSI_DROUND_SUPPORTED:
    case PIPE_SHADER_CAP_TGSI_FMA_SUPPORTED:
+#if __FP_FAST_FMA && __FP_FAST_FMAF
+      return util_cpu_caps.has_fma;
+#else
+      return 0;
+#endif
+   case PIPE_SHADER_CAP_TGSI_DROUND_SUPPORTED:
    case PIPE_SHADER_CAP_LOWER_IF_THRESHOLD:
    case PIPE_SHADER_CAP_TGSI_SKIP_MERGE_REGISTERS:
    case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:

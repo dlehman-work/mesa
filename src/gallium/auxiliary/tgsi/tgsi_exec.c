@@ -337,6 +337,18 @@ micro_drsq(union tgsi_double_channel *dst,
    dst->d[3] = 1.0 / sqrt(src->d[3]);
 }
 
+#if __FP_FAST_FMA
+static void
+micro_dfma(union tgsi_double_channel *dst,
+           const union tgsi_double_channel *src)
+{
+   dst->d[0] = fma(src[0].d[0], src[1].d[0], src[2].d[0]);
+   dst->d[1] = fma(src[0].d[1], src[1].d[1], src[2].d[1]);
+   dst->d[2] = fma(src[0].d[2], src[1].d[2], src[2].d[2]);
+   dst->d[3] = fma(src[0].d[3], src[1].d[3], src[2].d[3]);
+}
+#endif
+
 static void
 micro_dmad(union tgsi_double_channel *dst,
            const union tgsi_double_channel *src)
@@ -501,6 +513,20 @@ micro_lrp(union tgsi_exec_channel *dst,
    dst->f[2] = src0->f[2] * (src1->f[2] - src2->f[2]) + src2->f[2];
    dst->f[3] = src0->f[3] * (src1->f[3] - src2->f[3]) + src2->f[3];
 }
+
+#if __FP_FAST_FMAF
+static void
+micro_fma(union tgsi_exec_channel *dst,
+          const union tgsi_exec_channel *src0,
+          const union tgsi_exec_channel *src1,
+          const union tgsi_exec_channel *src2)
+{
+   dst->f[0] = fmaf(src0->f[0], src1->f[0], src2->f[0]);
+   dst->f[1] = fmaf(src0->f[1], src1->f[1], src2->f[1]);
+   dst->f[2] = fmaf(src0->f[2], src1->f[2], src2->f[2]);
+   dst->f[3] = fmaf(src0->f[3], src1->f[3], src2->f[3]);
+}
+#endif
 
 static void
 micro_mad(union tgsi_exec_channel *dst,
@@ -5080,6 +5106,12 @@ exec_instruction(
       exec_vector_binary(mach, inst, micro_sge, TGSI_EXEC_DATA_FLOAT, TGSI_EXEC_DATA_FLOAT);
       break;
 
+#if __FP_FAST_FMAF
+   case TGSI_OPCODE_FMA:
+      exec_vector_trinary(mach, inst, micro_fma, TGSI_EXEC_DATA_FLOAT, TGSI_EXEC_DATA_FLOAT);
+      break;
+#endif
+
    case TGSI_OPCODE_MAD:
       exec_vector_trinary(mach, inst, micro_mad, TGSI_EXEC_DATA_FLOAT, TGSI_EXEC_DATA_FLOAT);
       break;
@@ -5871,6 +5903,12 @@ exec_instruction(
    case TGSI_OPCODE_DRSQ:
       exec_double_unary(mach, inst, micro_drsq);
       break;
+
+#if __FP_FAST_FMA
+   case TGSI_OPCODE_DFMA:
+      exec_double_trinary(mach, inst, micro_dfma);
+      break;
+#endif
 
    case TGSI_OPCODE_DMAD:
       exec_double_trinary(mach, inst, micro_dmad);

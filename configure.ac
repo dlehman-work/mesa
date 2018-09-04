@@ -308,6 +308,7 @@ AX_CHECK_COMPILE_FLAG([-fno-math-errno],                       [CFLAGS="$CFLAGS 
 
 AX_CHECK_COMPILE_FLAG([-fno-trapping-math],                    [CFLAGS="$CFLAGS -fno-trapping-math"])
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],                   [VISIBILITY_CFLAGS="-fvisibility=hidden"])
+AX_CHECK_COMPILE_FLAG([-mfma],                                 [CFLAGS="$CFLAGS -mfma"])
 
 dnl
 dnl Check C++ compiler flags
@@ -318,6 +319,7 @@ AX_CHECK_COMPILE_FLAG([-fno-math-errno],                       [CXXFLAGS="$CXXFL
 AX_CHECK_COMPILE_FLAG([-fno-trapping-math],                    [CXXFLAGS="$CXXFLAGS -fno-trapping-math"])
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],                   [VISIBILITY_CXXFLAGS="-fvisibility=hidden"])
 AX_CHECK_COMPILE_FLAG([-Wmissing-field-initializers],          [CXXFLAGS="$CXXFLAGS -Wno-missing-field-initializers"])
+AX_CHECK_COMPILE_FLAG([-mfma],                                 [CXXFLAGS="$CXXFLAGS -mfma"])
 AC_LANG_POP([C++])
 
 # Flags to help ensure that certain portions of the code -- and only those
