@@ -172,8 +172,11 @@ softpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_VERTEX_BUFFER_OFFSET_4BYTE_ALIGNED_ONLY:
    case PIPE_CAP_VERTEX_BUFFER_STRIDE_4BYTE_ALIGNED_ONLY:
    case PIPE_CAP_VERTEX_ELEMENT_SRC_OFFSET_4BYTE_ALIGNED_ONLY:
-   case PIPE_CAP_TEXTURE_MULTISAMPLE:
       return 0;
+   case PIPE_CAP_TEXTURE_MULTISAMPLE:
+      return (softpipe_screen(screen)->msaa_max_count > 1) ? 1 : 0;
+   case PIPE_CAP_FAKE_SW_MSAA:
+      return (softpipe_screen(screen)->msaa_max_count > 1) ? 0 : 1;
    case PIPE_CAP_MIN_MAP_BUFFER_ALIGNMENT:
       return 64;
    case PIPE_CAP_QUERY_TIMESTAMP:
@@ -208,8 +211,6 @@ softpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_TGSI_FS_FINE_DERIVATIVE:
       return 0;
    case PIPE_CAP_SAMPLER_VIEW_TARGET:
-      return 1;
-   case PIPE_CAP_FAKE_SW_MSAA:
       return 1;
    case PIPE_CAP_MIN_TEXTURE_GATHER_OFFSET:
       return -32;
