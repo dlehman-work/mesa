@@ -98,6 +98,12 @@ softpipe_destroy( struct pipe_context *pipe )
    sp_destroy_tile_cache(softpipe->zsbuf_cache);
    pipe_surface_reference(&softpipe->framebuffer.zsbuf, NULL);
 
+   for (sh = 0; i < ARRAY_SIZE(softpipe->msbuffers); sh++) {
+      for (i = 0; i < PIPE_MAX_COLOR_BUFS; i++)
+         pipe_surface_reference(&softpipe->msbuffers[sh].cbufs[i], NULL);
+      pipe_surface_reference(&softpipe->msbuffers[sh].zsbuf, NULL);
+   }
+
    for (sh = 0; sh < ARRAY_SIZE(softpipe->tex_cache); sh++) {
       for (i = 0; i < ARRAY_SIZE(softpipe->tex_cache[0]); i++) {
          sp_destroy_tex_tile_cache(softpipe->tex_cache[sh][i]);
