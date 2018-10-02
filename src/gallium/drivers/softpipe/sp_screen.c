@@ -397,7 +397,8 @@ softpipe_is_format_supported( struct pipe_screen *screen,
                               unsigned storage_sample_count,
                               unsigned bind)
 {
-   struct sw_winsys *winsys = softpipe_screen(screen)->winsys;
+   struct softpipe_screen *sp_screen = softpipe_screen(screen);
+   struct sw_winsys *winsys = sp_screen->winsys;
    const struct util_format_description *format_desc;
 
    assert(target == PIPE_BUFFER ||
@@ -417,7 +418,7 @@ softpipe_is_format_supported( struct pipe_screen *screen,
    if (!format_desc)
       return FALSE;
 
-   if (sample_count > 1)
+   if (sample_count > sp_screen->msaa_max_count)
       return FALSE;
 
    if (bind & (PIPE_BIND_DISPLAY_TARGET |
@@ -602,6 +603,7 @@ softpipe_create_screen(struct sw_winsys *winsys)
    screen->base.flush_frontbuffer = softpipe_flush_frontbuffer;
    screen->base.get_compute_param = softpipe_get_compute_param;
    screen->use_llvm = debug_get_option_use_llvm();
+   screen->msaa_max_count = SP_MAX_NUM_MULTISAMPLES;
 
    softpipe_init_screen_texture_funcs(&screen->base);
    softpipe_init_screen_fence_funcs(&screen->base);

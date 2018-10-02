@@ -47,6 +47,7 @@ struct softpipe_screen {
     */
    unsigned timestamp;
    boolean use_llvm;
+   uint8_t msaa_max_count;
 };
 
 static inline struct softpipe_screen *
