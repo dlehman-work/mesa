@@ -40,6 +40,7 @@
 #include "sp_quad.h"
 #include "sp_tile_cache.h"
 #include "sp_quad_pipe.h"
+#include "sp_screen.h"
 
 
 enum format
@@ -1161,6 +1162,35 @@ blend_single_add_one_one(struct quad_stage *qs,
    }
 }
 
+static void
+single_output_color_ms(struct quad_stage *qs, 
+                       struct quad_header *quads[],
+                       unsigned nr)
+{
+   uint i, j, q;
+
+   struct softpipe_cached_tile *tile
+      = sp_get_cached_tile(qs->softpipe->cbuf_cache[0],
+                           quads[0]->input.x0, 
+                           quads[0]->input.y0, quads[0]->input.layer);
+
+   for (q = 0; q < nr; q++) {
+      struct quad_header *quad = quads[q];
+      //float (*quadColor)[4] = quad->output.color[0];
+      const int itx = (quad->input.x0 & (TILE_SIZE-1));
+      const int ity = (quad->input.y0 & (TILE_SIZE-1));
+
+      for (j = 0; j < TGSI_QUAD_SIZE; j++) {
+         if (quad->inout.mask & (1 << j)) {
+            int x = itx + (j & 1);
+            int y = ity + (j >> 1);
+            for (i = 0; i < 4; i++) { /* loop over color chans */
+               tile->data.color[y][x][i] = 1.0f; //quadColor[i][j];
+            }
+         }
+      }
+   }
+}
 
 /**
  * Just copy the quad color to the framebuffer tile (respecting the writemask),
@@ -1220,6 +1250,7 @@ choose_blend_quad(struct quad_stage *qs,
    struct blend_quad_stage *bqs = blend_quad_stage(qs);
    struct softpipe_context *softpipe = qs->softpipe;
    const struct pipe_blend_state *blend = softpipe->blend;
+   struct softpipe_screen *screen = softpipe_screen(softpipe->pipe.screen);
    unsigned i;
 
    qs->run = blend_fallback;
@@ -1235,7 +1266,7 @@ choose_blend_quad(struct quad_stage *qs,
          qs->run = blend_noop;
       }
       else if (!blend->rt[0].blend_enable) {
-         qs->run = single_output_color;
+         qs->run = screen->msaa_max_count == 1 ? single_output_color : single_output_color_ms;
       }
       else if (blend->rt[0].rgb_src_factor == blend->rt[0].alpha_src_factor &&
                blend->rt[0].rgb_dst_factor == blend->rt[0].alpha_dst_factor &&
