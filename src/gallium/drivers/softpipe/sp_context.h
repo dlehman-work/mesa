@@ -46,7 +46,8 @@
 /** Do polygon stipple with the util module? */
 #define DO_PSTIPPLE_IN_HELPER_MODULE 1
 
-#define SP_MAX_NUM_MULTISAMPLES     4
+/** Maximum number of multisamples */
+#define SP_MAX_NUM_MULTISAMPLES     16
 
 struct softpipe_vbuf_render;
 struct draw_context;
