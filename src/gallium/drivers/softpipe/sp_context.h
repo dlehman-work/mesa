@@ -82,7 +82,6 @@ struct softpipe_context {
    struct pipe_clip_state clip;
    struct pipe_resource *constants[PIPE_SHADER_TYPES][PIPE_MAX_CONSTANT_BUFFERS];
    struct pipe_framebuffer_state framebuffer;
-   struct pipe_framebuffer_state msbuffers[SP_MAX_NUM_MULTISAMPLES];
    struct pipe_poly_stipple poly_stipple;
    struct pipe_scissor_state scissors[PIPE_MAX_VIEWPORTS];
    struct pipe_sampler_view *sampler_views[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_SAMPLER_VIEWS];
