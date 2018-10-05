@@ -115,10 +115,53 @@ struct setup_context {
    unsigned nr_vertex_attrs;
 };
 
+enum sp_multisample {
+    SP_MULTISAMPLE_1X,
+    SP_MULTISAMPLE_2X,
+    SP_MULTISAMPLE_4X,
+    SP_MULTISAMPLE_8X,
+    SP_MULTISAMPLE_16X,
+    SP_MULTISAMPLE_MAX
+};
 
+static const float sample_pos[][2] = {
+    /* 1x */ { 0.0f, 0.0f },
+    /* 2x */ { 0.0f, 0.0f }, { 0.0f, 0.0f },
+    /* 4x */ { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+    /* 8x */ { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+    /* 16x*/ { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+};
 
-
-
+static inline const float *get_sample_pos(enum sp_multisample mode)
+{
+    switch (mode)
+    {
+        case SP_MULTISAMPLE_1X:
+            return sample_pos[0];
+        case SP_MULTISAMPLE_2X:
+            return sample_pos[1];
+        case SP_MULTISAMPLE_4X:
+            return sample_pos[3];
+        case SP_MULTISAMPLE_8X:
+            return sample_pos[7];
+        case SP_MULTISAMPLE_16X:
+            return sample_pos[15];
+        default:
+            assert(0);
+            return sample_pos[0];
+    }
+}
 
 
 /**
@@ -814,7 +857,7 @@ sp_setup_tri(struct setup_context *setup,
    float det;
    uint layer = 0;
    unsigned viewport_index = 0;
-   const float pos[2] = { 0.0f, 0.0f };
+   const float *pos;
 #if DEBUG_VERTS
    debug_printf("Setup triangle:\n");
    print_vertex(setup, v0);
@@ -838,6 +881,7 @@ sp_setup_tri(struct setup_context *setup,
    if (!setup_sort_vertices( setup, det, v0, v1, v2 ))
       return;
 
+   pos = get_sample_pos(SP_MULTISAMPLE_1X);
    setup_tri_coefficients( setup, pos );
    setup_tri_edges( setup, pos );
 
