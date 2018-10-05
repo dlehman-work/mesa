@@ -678,14 +678,14 @@ setup_tri_coefficients(struct setup_context *setup)
 
 
 static void
-setup_tri_edges(struct setup_context *setup)
+setup_tri_edges(struct setup_context *setup, float pos)
 {
-   float vmin_x = setup->vmin[0][0] + setup->pixel_offset;
-   float vmid_x = setup->vmid[0][0] + setup->pixel_offset;
+   float vmin_x = setup->vmin[0][0] + setup->pixel_offset + pos;
+   float vmid_x = setup->vmid[0][0] + setup->pixel_offset + pos;
 
-   float vmin_y = setup->vmin[0][1] - setup->pixel_offset;
-   float vmid_y = setup->vmid[0][1] - setup->pixel_offset;
-   float vmax_y = setup->vmax[0][1] - setup->pixel_offset;
+   float vmin_y = setup->vmin[0][1] - setup->pixel_offset - pos;
+   float vmid_y = setup->vmid[0][1] - setup->pixel_offset - pos;
+   float vmax_y = setup->vmax[0][1] - setup->pixel_offset - pos;
 
    setup->emaj.sy = ceilf(vmin_y);
    setup->emaj.lines = (int) ceilf(vmax_y - setup->emaj.sy);
@@ -838,7 +838,7 @@ sp_setup_tri(struct setup_context *setup,
       return;
 
    setup_tri_coefficients( setup );
-   setup_tri_edges( setup );
+   setup_tri_edges( setup, 0.0f );
 
    assert(setup->softpipe->reduced_prim == PIPE_PRIM_TRIANGLES);
 
