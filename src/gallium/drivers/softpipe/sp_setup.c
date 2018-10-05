@@ -132,14 +132,14 @@ static const float sample_pos[][2] = {
     /* 8x */ { -0.25f, -0.25f }, { 0.0f, -0.25f }, {  0.25f, -0.25f },
              { -0.25f,  0.00f }, { 0.0f,  0.00f }, {  0.25f,  0.00f },
              { -0.25f,  0.25f }, { 0.0f,  0.25f }, {  0.25f,  0.25f },
-    /* 16x*/ { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
-             { 0.0f, 0.0f }, { 0.0f, 0.0f },
+    /* 16x*/ { -0.250f, -0.250f }, { -0.125f, -0.250f },
+             {  0.125f, -0.250f }, {  0.250f, -0.250f },
+             { -0.250f, -0.125f }, { -0.125f, -0.125f },
+             {  0.125f, -0.125f }, {  0.250f, -0.125f },
+             { -0.250f,  0.125f }, { -0.125f,  0.125f },
+             {  0.125f,  0.125f }, {  0.250f,  0.125f },
+             { -0.250f,  0.250f }, { -0.125f,  0.250f },
+             {  0.125f,  0.250f }, {  0.250f,  0.250f },
 };
 
 static inline int get_num_samples(enum sp_multisample mode)
@@ -898,7 +898,7 @@ sp_setup_tri(struct setup_context *setup,
    if (!setup_sort_vertices( setup, det, v0, v1, v2 ))
       return;
 
-   msmode = SP_MULTISAMPLE_1X;
+   msmode = SP_MULTISAMPLE_16X;
    for (i = 0; i < get_num_samples(msmode); i++) {
       get_sample_position( msmode, i, pos );
       setup_tri_coefficients( setup, pos );
