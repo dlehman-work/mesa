@@ -529,7 +529,8 @@ static void
 tri_persp_coeff(struct setup_context *setup,
                 struct tgsi_interp_coef *coef,
                 uint i,
-                const float v[3])
+                const float v[3],
+                float pos)
 {
    /* premultiply by 1/w  (v[0][3] is always W):
     */
@@ -548,8 +549,8 @@ tri_persp_coeff(struct setup_context *setup,
    coef->dadx[i] = dadx;
    coef->dady[i] = dady;
    coef->a0[i] = (mina -
-                  (dadx * (setup->vmin[0][0] - setup->pixel_offset) +
-                   dady * (setup->vmin[0][1] - setup->pixel_offset)));
+                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos) +
+                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos)));
 }
 
 
@@ -646,7 +647,7 @@ setup_tri_coefficients(struct setup_context *setup)
                                        setup->vmax[vertSlot][j],
                                        fsInfo->input_cylindrical_wrap[fragSlot] & (1 << j),
                                        v);
-            tri_persp_coeff(setup, &setup->coef[fragSlot], j, v);
+            tri_persp_coeff(setup, &setup->coef[fragSlot], j, v, 0.0f);
          }
          break;
       case SP_INTERP_POS:
