@@ -483,7 +483,8 @@ static void
 tri_linear_coeff(struct setup_context *setup,
                  struct tgsi_interp_coef *coef,
                  uint i,
-                 const float v[3])
+                 const float v[3],
+                 float pos)
 {
    float botda = v[1] - v[0];
    float majda = v[2] - v[0];
@@ -510,8 +511,8 @@ tri_linear_coeff(struct setup_context *setup,
     * instead - i'll switch to this later.
     */
    coef->a0[i] = (v[0] -
-                  (dadx * (setup->vmin[0][0] - setup->pixel_offset) +
-                   dady * (setup->vmin[0][1] - setup->pixel_offset)));
+                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos) +
+                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos)));
 }
 
 
@@ -609,12 +610,12 @@ setup_tri_coefficients(struct setup_context *setup)
    v[0] = setup->vmin[0][2];
    v[1] = setup->vmid[0][2];
    v[2] = setup->vmax[0][2];
-   tri_linear_coeff(setup, &setup->posCoef, 2, v);
+   tri_linear_coeff(setup, &setup->posCoef, 2, v, 0.0f);
 
    v[0] = setup->vmin[0][3];
    v[1] = setup->vmid[0][3];
    v[2] = setup->vmax[0][3];
-   tri_linear_coeff(setup, &setup->posCoef, 3, v);
+   tri_linear_coeff(setup, &setup->posCoef, 3, v, 0.0f);
 
    /* setup interpolation for all the remaining attributes:
     */
@@ -635,7 +636,7 @@ setup_tri_coefficients(struct setup_context *setup)
                                        setup->vmax[vertSlot][j],
                                        fsInfo->input_cylindrical_wrap[fragSlot] & (1 << j),
                                        v);
-            tri_linear_coeff(setup, &setup->coef[fragSlot], j, v);
+            tri_linear_coeff(setup, &setup->coef[fragSlot], j, v, 0.0f);
          }
          break;
       case SP_INTERP_PERSPECTIVE:
