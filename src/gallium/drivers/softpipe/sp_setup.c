@@ -254,7 +254,7 @@ block_x(int x)
  * Render a horizontal span of quads
  */
 static void
-flush_spans(struct setup_context *setup)
+flush_spans(struct setup_context *setup, int sampleid)
 {
    const int step = MAX_QUADS;
    const int xleft0 = setup->span.left[0];
@@ -771,7 +771,8 @@ subtriangle(struct setup_context *setup,
             struct edge *eleft,
             struct edge *eright,
             int lines,
-            unsigned viewport_index)
+            unsigned viewport_index,
+            int sampleid)
 {
    const struct pipe_scissor_state *cliprect = &setup->softpipe->cliprect[viewport_index];
    const int minx = (int) cliprect->minx;
@@ -820,7 +821,7 @@ subtriangle(struct setup_context *setup,
       if (left < right) {
          int _y = sy + y;
          if (block(_y) != setup->span.y) {
-            flush_spans(setup);
+            flush_spans(setup, sampleid);
             setup->span.y = block(_y);
          }
 
@@ -927,17 +928,17 @@ sp_setup_tri(struct setup_context *setup,
       if (setup->oneoverarea < 0.0) {
          /* emaj on left:
           */
-         subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index);
-         subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index);
+         subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index, i);
+         subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index, i);
       }
       else {
          /* emaj on right:
           */
-         subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index);
-         subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index);
+         subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index, i);
+         subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index, i);
       }
 
-      flush_spans( setup );
+      flush_spans( setup, i );
    }
 
    if (setup->softpipe->active_statistics_queries) {
