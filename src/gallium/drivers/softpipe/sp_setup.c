@@ -596,7 +596,7 @@ setup_fragcoord_coeff(struct setup_context *setup, uint slot)
  * Must be called after setup->vmin,vmid,vmax,vprovoke are initialized.
  */
 static void
-setup_tri_coefficients(struct setup_context *setup)
+setup_tri_coefficients(struct setup_context *setup, float pos)
 {
    struct softpipe_context *softpipe = setup->softpipe;
    const struct tgsi_shader_info *fsInfo = &setup->softpipe->fs_variant->info;
@@ -611,12 +611,12 @@ setup_tri_coefficients(struct setup_context *setup)
    v[0] = setup->vmin[0][2];
    v[1] = setup->vmid[0][2];
    v[2] = setup->vmax[0][2];
-   tri_linear_coeff(setup, &setup->posCoef, 2, v, 0.0f);
+   tri_linear_coeff(setup, &setup->posCoef, 2, v, pos);
 
    v[0] = setup->vmin[0][3];
    v[1] = setup->vmid[0][3];
    v[2] = setup->vmax[0][3];
-   tri_linear_coeff(setup, &setup->posCoef, 3, v, 0.0f);
+   tri_linear_coeff(setup, &setup->posCoef, 3, v, pos);
 
    /* setup interpolation for all the remaining attributes:
     */
@@ -837,7 +837,7 @@ sp_setup_tri(struct setup_context *setup,
    if (!setup_sort_vertices( setup, det, v0, v1, v2 ))
       return;
 
-   setup_tri_coefficients( setup );
+   setup_tri_coefficients( setup, 0.0f );
    setup_tri_edges( setup, 0.0f );
 
    assert(setup->softpipe->reduced_prim == PIPE_PRIM_TRIANGLES);
