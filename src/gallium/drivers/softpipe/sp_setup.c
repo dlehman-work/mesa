@@ -484,7 +484,7 @@ tri_linear_coeff(struct setup_context *setup,
                  struct tgsi_interp_coef *coef,
                  uint i,
                  const float v[3],
-                 float pos)
+                 const float pos[2])
 {
    float botda = v[1] - v[0];
    float majda = v[2] - v[0];
@@ -511,8 +511,8 @@ tri_linear_coeff(struct setup_context *setup,
     * instead - i'll switch to this later.
     */
    coef->a0[i] = (v[0] -
-                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos) +
-                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos)));
+                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos[0]) +
+                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos[1])));
 }
 
 
@@ -530,7 +530,7 @@ tri_persp_coeff(struct setup_context *setup,
                 struct tgsi_interp_coef *coef,
                 uint i,
                 const float v[3],
-                float pos)
+                const float pos[2])
 {
    /* premultiply by 1/w  (v[0][3] is always W):
     */
@@ -549,8 +549,8 @@ tri_persp_coeff(struct setup_context *setup,
    coef->dadx[i] = dadx;
    coef->dady[i] = dady;
    coef->a0[i] = (mina -
-                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos) +
-                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos)));
+                  (dadx * (setup->vmin[0][0] - setup->pixel_offset - pos[0]) +
+                   dady * (setup->vmin[0][1] - setup->pixel_offset - pos[1])));
 }
 
 
@@ -596,7 +596,7 @@ setup_fragcoord_coeff(struct setup_context *setup, uint slot)
  * Must be called after setup->vmin,vmid,vmax,vprovoke are initialized.
  */
 static void
-setup_tri_coefficients(struct setup_context *setup, float pos)
+setup_tri_coefficients(struct setup_context *setup, const float pos[2])
 {
    struct softpipe_context *softpipe = setup->softpipe;
    const struct tgsi_shader_info *fsInfo = &setup->softpipe->fs_variant->info;
@@ -637,7 +637,7 @@ setup_tri_coefficients(struct setup_context *setup, float pos)
                                        setup->vmax[vertSlot][j],
                                        fsInfo->input_cylindrical_wrap[fragSlot] & (1 << j),
                                        v);
-            tri_linear_coeff(setup, &setup->coef[fragSlot], j, v, 0.0f);
+            tri_linear_coeff(setup, &setup->coef[fragSlot], j, v, pos);
          }
          break;
       case SP_INTERP_PERSPECTIVE:
@@ -647,7 +647,7 @@ setup_tri_coefficients(struct setup_context *setup, float pos)
                                        setup->vmax[vertSlot][j],
                                        fsInfo->input_cylindrical_wrap[fragSlot] & (1 << j),
                                        v);
-            tri_persp_coeff(setup, &setup->coef[fragSlot], j, v, 0.0f);
+            tri_persp_coeff(setup, &setup->coef[fragSlot], j, v, pos);
          }
          break;
       case SP_INTERP_POS:
@@ -678,14 +678,14 @@ setup_tri_coefficients(struct setup_context *setup, float pos)
 
 
 static void
-setup_tri_edges(struct setup_context *setup, float pos)
+setup_tri_edges(struct setup_context *setup, const float pos[2])
 {
-   float vmin_x = setup->vmin[0][0] + setup->pixel_offset + pos;
-   float vmid_x = setup->vmid[0][0] + setup->pixel_offset + pos;
+   float vmin_x = setup->vmin[0][0] + setup->pixel_offset + pos[0];
+   float vmid_x = setup->vmid[0][0] + setup->pixel_offset + pos[0];
 
-   float vmin_y = setup->vmin[0][1] - setup->pixel_offset - pos;
-   float vmid_y = setup->vmid[0][1] - setup->pixel_offset - pos;
-   float vmax_y = setup->vmax[0][1] - setup->pixel_offset - pos;
+   float vmin_y = setup->vmin[0][1] - setup->pixel_offset - pos[1];
+   float vmid_y = setup->vmid[0][1] - setup->pixel_offset - pos[1];
+   float vmax_y = setup->vmax[0][1] - setup->pixel_offset - pos[1];
 
    setup->emaj.sy = ceilf(vmin_y);
    setup->emaj.lines = (int) ceilf(vmax_y - setup->emaj.sy);
@@ -814,6 +814,7 @@ sp_setup_tri(struct setup_context *setup,
    float det;
    uint layer = 0;
    unsigned viewport_index = 0;
+   const float pos[2] = { 0.0f, 0.0f };
 #if DEBUG_VERTS
    debug_printf("Setup triangle:\n");
    print_vertex(setup, v0);
@@ -837,8 +838,8 @@ sp_setup_tri(struct setup_context *setup,
    if (!setup_sort_vertices( setup, det, v0, v1, v2 ))
       return;
 
-   setup_tri_coefficients( setup, 0.0f );
-   setup_tri_edges( setup, 0.0f );
+   setup_tri_coefficients( setup, pos );
+   setup_tri_edges( setup, pos );
 
    assert(setup->softpipe->reduced_prim == PIPE_PRIM_TRIANGLES);
 
