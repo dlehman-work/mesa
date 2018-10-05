@@ -90,6 +90,15 @@ struct quad_header_output
    uint8_t stencil[TGSI_QUAD_SIZE];
 };
 
+/**
+ * Quad stage outputs for multisampling (color & depth).
+ */
+struct quad_header_output_ms
+{
+   float color[TGSI_NUM_CHANNELS][TGSI_QUAD_SIZE];
+   float depth[TGSI_QUAD_SIZE];
+   uint8_t stencil[TGSI_QUAD_SIZE];
+};
 
 /**
  * Encodes everything we need to know about a 2x2 pixel block.  Uses
