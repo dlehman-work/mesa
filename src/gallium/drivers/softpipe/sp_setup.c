@@ -143,23 +143,39 @@ static const float sample_pos[][2] = {
              { 0.0f, 0.0f }, { 0.0f, 0.0f },
 };
 
-static inline const float *get_sample_pos(enum sp_multisample mode)
+static inline int get_num_samples(enum sp_multisample mode)
+{
+    return 1 << (int)mode;
+}
+
+static inline void get_sample_position(enum sp_multisample mode, int idx, float *out)
 {
     switch (mode)
     {
         case SP_MULTISAMPLE_1X:
-            return sample_pos[0];
+            out[0] = sample_pos[0][0];
+            out[1] = sample_pos[0][1];
+            break;
         case SP_MULTISAMPLE_2X:
-            return sample_pos[1];
+            out[0] = sample_pos[1+idx][0];
+            out[1] = sample_pos[1+idx][1];
+            break;
         case SP_MULTISAMPLE_4X:
-            return sample_pos[3];
+            out[0] = sample_pos[3+idx][0];
+            out[1] = sample_pos[3+idx][1];
+            break;
         case SP_MULTISAMPLE_8X:
-            return sample_pos[7];
+            out[0] = sample_pos[7+idx][0];
+            out[1] = sample_pos[7+idx][1];
+            break;
         case SP_MULTISAMPLE_16X:
-            return sample_pos[15];
+            out[0] = sample_pos[15+idx][0];
+            out[1] = sample_pos[15+idx][1];
+            break;
         default:
             assert(0);
-            return sample_pos[0];
+            out[0] = sample_pos[0][0];
+            out[1] = sample_pos[0][1];
     }
 }
 
@@ -854,10 +870,12 @@ sp_setup_tri(struct setup_context *setup,
              const float (*v1)[4],
              const float (*v2)[4])
 {
+   int i;
    float det;
+   float pos[2];
    uint layer = 0;
    unsigned viewport_index = 0;
-   const float *pos;
+   enum sp_multisample msmode;
 #if DEBUG_VERTS
    debug_printf("Setup triangle:\n");
    print_vertex(setup, v0);
@@ -881,44 +899,47 @@ sp_setup_tri(struct setup_context *setup,
    if (!setup_sort_vertices( setup, det, v0, v1, v2 ))
       return;
 
-   pos = get_sample_pos(SP_MULTISAMPLE_1X);
-   setup_tri_coefficients( setup, pos );
-   setup_tri_edges( setup, pos );
+   msmode = SP_MULTISAMPLE_1X;
+   for (i = 0; i < get_num_samples(msmode); i++) {
+      get_sample_position( msmode, i, pos );
+      setup_tri_coefficients( setup, pos );
+      setup_tri_edges( setup, pos );
 
-   assert(setup->softpipe->reduced_prim == PIPE_PRIM_TRIANGLES);
+      assert(setup->softpipe->reduced_prim == PIPE_PRIM_TRIANGLES);
 
-   setup->span.y = 0;
-   setup->span.right[0] = 0;
-   setup->span.right[1] = 0;
-   /*   setup->span.z_mode = tri_z_mode( setup->ctx ); */
-   if (setup->softpipe->layer_slot > 0) {
-      layer = *(unsigned *)setup->vprovoke[setup->softpipe->layer_slot];
-      layer = MIN2(layer, setup->max_layer);
+      setup->span.y = 0;
+      setup->span.right[0] = 0;
+      setup->span.right[1] = 0;
+      /*   setup->span.z_mode = tri_z_mode( setup->ctx ); */
+      if (setup->softpipe->layer_slot > 0) {
+         layer = *(unsigned *)setup->vprovoke[setup->softpipe->layer_slot];
+         layer = MIN2(layer, setup->max_layer);
+      }
+      setup->quad[0].input.layer = layer;
+
+      if (setup->softpipe->viewport_index_slot > 0) {
+         unsigned *udata = (unsigned*)v0[setup->softpipe->viewport_index_slot];
+         viewport_index = sp_clamp_viewport_idx(*udata);
+      }
+      setup->quad[0].input.viewport_index = viewport_index;
+
+      /*   init_constant_attribs( setup ); */
+
+      if (setup->oneoverarea < 0.0) {
+         /* emaj on left:
+          */
+         subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index);
+         subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index);
+      }
+      else {
+         /* emaj on right:
+          */
+         subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index);
+         subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index);
+      }
+
+      flush_spans( setup );
    }
-   setup->quad[0].input.layer = layer;
-
-   if (setup->softpipe->viewport_index_slot > 0) {
-      unsigned *udata = (unsigned*)v0[setup->softpipe->viewport_index_slot];
-      viewport_index = sp_clamp_viewport_idx(*udata);
-   }
-   setup->quad[0].input.viewport_index = viewport_index;
-
-   /*   init_constant_attribs( setup ); */
-
-   if (setup->oneoverarea < 0.0) {
-      /* emaj on left:
-       */
-      subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index);
-      subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index);
-   }
-   else {
-      /* emaj on right:
-       */
-      subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index);
-      subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index);
-   }
-
-   flush_spans( setup );
 
    if (setup->softpipe->active_statistics_queries) {
       setup->softpipe->pipeline_statistics.c_primitives++;
