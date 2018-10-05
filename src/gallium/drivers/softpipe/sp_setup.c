@@ -266,7 +266,7 @@ flush_spans(struct setup_context *setup, int sampleid)
 
    const int minleft = block_x(MIN2(xleft0, xleft1));
    const int maxright = MAX2(xright0, xright1);
-   int x, i;
+   int x;
 
    /* process quads in horizontal chunks of 16 */
    for (x = minleft; x < maxright; x += step) {
@@ -308,15 +308,6 @@ flush_spans(struct setup_context *setup, int sampleid)
          } while (mask0 | mask1);
 
          pipe->run( pipe, setup->quad_ptrs, q );
-
-         for (i = 0; i < q; i++) {
-            memcpy(&setup->quadms[sampleid][i].color, setup->quad[i].output.color[0],
-                   sizeof(setup->quad[i].output.color[0]));
-            memcpy(&setup->quadms[sampleid][i].depth, setup->quad[i].output.depth,
-                   sizeof(setup->quad[i].output.depth));
-            memcpy(&setup->quadms[sampleid][i].stencil, setup->quad[i].output.stencil,
-                   sizeof(setup->quad[i].output.stencil));
-         }
       }
    }
 
