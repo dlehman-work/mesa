@@ -142,12 +142,12 @@ static const float sample_pos[][2] = {
              {  0.125f,  0.250f }, {  0.250f,  0.250f },
 };
 
-static inline int get_num_samples(enum sp_multisample mode)
+static inline unsigned get_num_samples(enum sp_multisample mode)
 {
-    return 1 << (int)mode;
+    return 1 << (unsigned)mode;
 }
 
-static inline void get_sample_position(enum sp_multisample mode, int idx, float *out)
+static inline void get_sample_position(enum sp_multisample mode, unsigned idx, float *out)
 {
     switch (mode)
     {
@@ -254,7 +254,7 @@ block_x(int x)
  * Render a horizontal span of quads
  */
 static void
-flush_spans(struct setup_context *setup, int sampleid)
+flush_spans(struct setup_context *setup, unsigned sampleid)
 {
    const int step = MAX_QUADS;
    const int xleft0 = setup->span.left[0];
@@ -772,7 +772,7 @@ subtriangle(struct setup_context *setup,
             struct edge *eright,
             int lines,
             unsigned viewport_index,
-            int sampleid)
+            unsigned sampleid)
 {
    const struct pipe_scissor_state *cliprect = &setup->softpipe->cliprect[viewport_index];
    const int minx = (int) cliprect->minx;
@@ -870,10 +870,10 @@ sp_setup_tri(struct setup_context *setup,
              const float (*v1)[4],
              const float (*v2)[4])
 {
-   int i;
    float det;
    float pos[2];
    uint layer = 0;
+   unsigned sample_id;
    unsigned viewport_index = 0;
    enum sp_multisample msmode;
 #if DEBUG_VERTS
@@ -900,8 +900,8 @@ sp_setup_tri(struct setup_context *setup,
       return;
 
    msmode = SP_MULTISAMPLE_16X;
-   for (i = 0; i < get_num_samples(msmode); i++) {
-      get_sample_position( msmode, i, pos );
+   for (sample_id = 0; sample_id < get_num_samples(msmode); sample_id++) {
+      get_sample_position( msmode, sample_id, pos );
       setup_tri_coefficients( setup, pos );
       setup_tri_edges( setup, pos );
 
@@ -928,17 +928,17 @@ sp_setup_tri(struct setup_context *setup,
       if (setup->oneoverarea < 0.0) {
          /* emaj on left:
           */
-         subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index, i);
-         subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index, i);
+         subtriangle(setup, &setup->emaj, &setup->ebot, setup->ebot.lines, viewport_index, sample_id);
+         subtriangle(setup, &setup->emaj, &setup->etop, setup->etop.lines, viewport_index, sample_id);
       }
       else {
          /* emaj on right:
           */
-         subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index, i);
-         subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index, i);
+         subtriangle(setup, &setup->ebot, &setup->emaj, setup->ebot.lines, viewport_index, sample_id);
+         subtriangle(setup, &setup->etop, &setup->emaj, setup->etop.lines, viewport_index, sample_id);
       }
 
-      flush_spans( setup, i );
+      flush_spans( setup, sample_id );
    }
 
    if (setup->softpipe->active_statistics_queries) {
