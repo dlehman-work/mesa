@@ -726,7 +726,8 @@ ALPHATEST( GEQUAL,   >= )
 static unsigned
 alpha_test_quads(struct quad_stage *qs, 
                  struct quad_header *quads[], 
-                 unsigned nr)
+                 unsigned nr,
+                 unsigned sampleid)
 {
    switch (qs->softpipe->depth_stencil->alpha.func) {
    case PIPE_FUNC_LESS:
@@ -778,7 +779,8 @@ static unsigned mask_count[16] =
 static void
 depth_test_quads_fallback(struct quad_stage *qs, 
                           struct quad_header *quads[],
-                          unsigned nr)
+                          unsigned nr,
+                          unsigned sampleid)
 {
    unsigned i, pass = 0;
    const struct tgsi_shader_info *fsInfo = &qs->softpipe->fs_variant->info;
@@ -790,7 +792,7 @@ depth_test_quads_fallback(struct quad_stage *qs,
    data.use_shader_stencil_refs = FALSE;
 
    if (qs->softpipe->depth_stencil->alpha.enabled) {
-      nr = alpha_test_quads(qs, quads, nr);
+      nr = alpha_test_quads(qs, quads, nr, sampleid);
    }
 
    if (qs->softpipe->framebuffer.zsbuf &&
@@ -847,7 +849,7 @@ depth_test_quads_fallback(struct quad_stage *qs,
    }
 
    if (nr)
-      qs->next->run(qs->next, quads, nr);
+      qs->next->run(qs->next, quads, nr, sampleid);
 }
 
 
@@ -888,9 +890,10 @@ depth_test_quads_fallback(struct quad_stage *qs,
 static void
 depth_noop(struct quad_stage *qs, 
            struct quad_header *quads[],
-           unsigned nr)
+           unsigned nr,
+           unsigned sampleid)
 {
-   qs->next->run(qs->next, quads, nr);
+   qs->next->run(qs->next, quads, nr, sampleid);
 }
 
 
@@ -898,7 +901,8 @@ depth_noop(struct quad_stage *qs,
 static void
 choose_depth_test(struct quad_stage *qs, 
                   struct quad_header *quads[],
-                  unsigned nr)
+                  unsigned nr,
+                  unsigned sampleid)
 {
    const struct tgsi_shader_info *fsInfo = &qs->softpipe->fs_variant->info;
 
@@ -974,7 +978,7 @@ choose_depth_test(struct quad_stage *qs,
    }
 
    /* next quad/fragment stage */
-   qs->run( qs, quads, nr );
+   qs->run( qs, quads, nr, sampleid );
 }
 
 

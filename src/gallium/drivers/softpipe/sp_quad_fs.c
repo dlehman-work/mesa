@@ -103,7 +103,8 @@ coverage_quad(struct quad_stage *qs, struct quad_header *quad)
 static void
 shade_quads(struct quad_stage *qs, 
             struct quad_header *quads[],
-            unsigned nr)
+            unsigned nr,
+            unsigned sampleid)
 {
    struct softpipe_context *softpipe = qs->softpipe;
    struct tgsi_exec_machine *machine = softpipe->fs_machine;
@@ -135,7 +136,7 @@ shade_quads(struct quad_stage *qs,
    }
    
    if (nr_quads)
-      qs->next->run(qs->next, quads, nr_quads);
+      qs->next->run(qs->next, quads, nr_quads, sampleid);
 }
    
 

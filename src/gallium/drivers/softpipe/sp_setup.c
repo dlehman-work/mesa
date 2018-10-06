@@ -226,7 +226,7 @@ clip_emit_quad(struct setup_context *setup, struct quad_header *quad)
       setup->numFragsEmitted += util_bitcount(quad->inout.mask);
 #endif
 
-      sp->quad.first->run( sp->quad.first, &quad, 1 );
+      sp->quad.first->run( sp->quad.first, &quad, 1, 0 );
    }
 }
 
@@ -306,7 +306,7 @@ flush_spans(struct setup_context *setup, unsigned sampleid)
             lx += 2;
          } while (mask0 | mask1);
 
-         pipe->run( pipe, setup->quad_ptrs, q );
+         pipe->run( pipe, setup->quad_ptrs, q, sampleid );
       }
    }
 

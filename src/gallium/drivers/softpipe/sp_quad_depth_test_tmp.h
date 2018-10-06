@@ -48,7 +48,8 @@
 static void
 NAME(struct quad_stage *qs, 
      struct quad_header *quads[],
-     unsigned nr)
+     unsigned nr,
+     unsigned sampleid)
 {
    unsigned i, pass = 0;
    const unsigned ix = quads[0]->input.x0;
@@ -138,7 +139,7 @@ NAME(struct quad_stage *qs,
    }
 
    if (pass)
-      qs->next->run(qs->next, quads, pass);
+      qs->next->run(qs->next, quads, pass, sampleid);
 }
 
 

@@ -15,7 +15,7 @@
  */
 static void
 stipple_quad(struct quad_stage *qs, struct quad_header *quads[], unsigned nr,
-             unsigned sample_id)
+             unsigned sampleid)
 {
    static const uint bit31 = 1u << 31;
    static const uint bit30 = 1u << 30;
@@ -52,7 +52,7 @@ stipple_quad(struct quad_stage *qs, struct quad_header *quads[], unsigned nr,
          quads[pass++] = quad;
    }
 
-   qs->next->run(qs->next, quads, pass);
+   qs->next->run(qs->next, quads, pass, sampleid);
 }
 
 

@@ -917,7 +917,8 @@ rebase_colors(enum format base_format, float (*quadColor)[4])
 static void
 blend_fallback(struct quad_stage *qs, 
                struct quad_header *quads[],
-               unsigned nr)
+               unsigned nr,
+               unsigned sampleid)
 {
    const struct blend_quad_stage *bqs = blend_quad_stage(qs);
    struct softpipe_context *softpipe = qs->softpipe;
@@ -1025,7 +1026,8 @@ blend_fallback(struct quad_stage *qs,
 static void
 blend_single_add_src_alpha_inv_src_alpha(struct quad_stage *qs, 
                                          struct quad_header *quads[],
-                                         unsigned nr)
+                                         unsigned nr,
+                                         unsigned sampleid)
 {
    const struct blend_quad_stage *bqs = blend_quad_stage(qs);
    static const float one[4] = { 1, 1, 1, 1 };
@@ -1102,7 +1104,8 @@ blend_single_add_src_alpha_inv_src_alpha(struct quad_stage *qs,
 static void
 blend_single_add_one_one(struct quad_stage *qs, 
                          struct quad_header *quads[],
-                         unsigned nr)
+                         unsigned nr,
+                         unsigned sampleid)
 {
    const struct blend_quad_stage *bqs = blend_quad_stage(qs);
    float dest[4][TGSI_QUAD_SIZE];
@@ -1171,7 +1174,8 @@ blend_single_add_one_one(struct quad_stage *qs,
 static void
 single_output_color(struct quad_stage *qs, 
                     struct quad_header *quads[],
-                    unsigned nr)
+                    unsigned nr,
+                    unsigned sampleid)
 {
    const struct blend_quad_stage *bqs = blend_quad_stage(qs);
    uint i, j, q;
@@ -1207,7 +1211,8 @@ single_output_color(struct quad_stage *qs,
 static void
 blend_noop(struct quad_stage *qs, 
            struct quad_header *quads[],
-           unsigned nr)
+           unsigned nr,
+           unsigned sampleid)
 {
 }
 
@@ -1215,7 +1220,8 @@ blend_noop(struct quad_stage *qs,
 static void
 choose_blend_quad(struct quad_stage *qs, 
                   struct quad_header *quads[],
-                  unsigned nr)
+                  unsigned nr,
+                  unsigned sampleid)
 {
    struct blend_quad_stage *bqs = blend_quad_stage(qs);
    struct softpipe_context *softpipe = qs->softpipe;
@@ -1279,7 +1285,7 @@ choose_blend_quad(struct quad_stage *qs,
       }
    }
 
-   qs->run(qs, quads, nr);
+   qs->run(qs, quads, nr, sampleid);
 }
 
 

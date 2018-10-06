@@ -49,7 +49,7 @@ struct quad_stage {
    void (*begin)(struct quad_stage *qs);
 
    /** the stage action */
-   void (*run)(struct quad_stage *qs, struct quad_header *quad[], unsigned nr);
+   void (*run)(struct quad_stage *qs, struct quad_header *quad[], unsigned nr, unsigned sampleid);
 
    void (*destroy)(struct quad_stage *qs);
 };
