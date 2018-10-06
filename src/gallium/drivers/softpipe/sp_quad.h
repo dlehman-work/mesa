@@ -97,6 +97,7 @@ struct quad_header_output
 struct quad_header_output_ms
 {
    float color[TGSI_NUM_CHANNELS][TGSI_QUAD_SIZE];
+   uint32_t colormask[TGSI_QUAD_SIZE];
    float depth[TGSI_QUAD_SIZE];
    uint8_t stencil[TGSI_QUAD_SIZE];
 };
