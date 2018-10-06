@@ -33,6 +33,7 @@
 
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_exec.h"
+#include "sp_context.h"
 
 
 #define QUAD_PRIM_POINT 1
@@ -108,6 +109,7 @@ struct quad_header {
    struct quad_header_input input;
    struct quad_header_inout inout;
    struct quad_header_output output;
+   struct quad_header_output_ms outputms[SP_MAX_NUM_MULTISAMPLES];
 
    /* Redundant/duplicated:
     */

@@ -95,7 +95,6 @@ struct setup_context {
 
    struct quad_header quad[MAX_QUADS];
    struct quad_header *quad_ptrs[MAX_QUADS];
-   struct quad_header_output_ms quadms[SP_MAX_NUM_MULTISAMPLES][MAX_QUADS];
    unsigned count;
 
    struct tgsi_interp_coef coef[PIPE_MAX_SHADER_INPUTS];
