@@ -191,7 +191,8 @@ tex_cache_pos( union tex_tile_address addr )
    uint entry = (addr.bits.x + 
                  addr.bits.y * 9 + 
                  addr.bits.z +
-                 addr.bits.level * 7);
+                 addr.bits.level * 7 +
+                 addr.bits.sample * 13);
 
    return entry % NUM_TEX_TILE_ENTRIES;
 }
