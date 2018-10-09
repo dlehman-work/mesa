@@ -137,7 +137,8 @@ tex_tile_address( unsigned x,
                   unsigned y,
                   unsigned z,
                   unsigned face,
-                  unsigned level )
+                  unsigned level,
+                  unsigned sample )
 {
    union tex_tile_address addr;
 
@@ -146,6 +147,7 @@ tex_tile_address( unsigned x,
    addr.bits.y = y / TEX_TILE_SIZE;
    addr.bits.z = z;
    addr.bits.level = level;
+   addr.bits.sample = sample;
 
    return addr;
 }
