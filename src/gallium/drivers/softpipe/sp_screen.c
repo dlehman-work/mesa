@@ -41,6 +41,7 @@
 
 #include "sp_texture.h"
 #include "sp_screen.h"
+#include "sp_tex_tile_cache.h"
 #include "sp_context.h"
 #include "sp_fence.h"
 #include "sp_public.h"

@@ -47,6 +47,10 @@ struct softpipe_tex_tile_cache;
 #define TEX_ADDR_BITS (SP_MAX_TEXTURE_2D_LEVELS - 1 - TEX_TILE_SIZE_LOG2)
 #define TEX_Z_BITS (SP_MAX_TEXTURE_2D_LEVELS - 1)
 
+/** Maximum number of multisamples */
+#define NUM_MULTISAMPLES_BITS   4
+#define SP_MAX_NUM_MULTISAMPLES (1 << NUM_MULTISAMPLES_BITS)
+
 /**
  * Texture tile address as a union for fast compares.
  */
@@ -56,6 +60,7 @@ union tex_tile_address {
       unsigned y:TEX_ADDR_BITS;  /* 16K / TILE_SIZE */
       unsigned z:TEX_Z_BITS;     /* 16K -- z not tiled */
       unsigned level:4;
+      unsigned sample:NUM_MULTISAMPLES_BITS;
       unsigned invalid:1;
    } bits;
    uint64_t value;

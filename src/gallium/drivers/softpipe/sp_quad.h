@@ -33,7 +33,7 @@
 
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_exec.h"
-#include "sp_context.h"
+#include "sp_tex_tile_cache.h"
 
 
 #define QUAD_PRIM_POINT 1
