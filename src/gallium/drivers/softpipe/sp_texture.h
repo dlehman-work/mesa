@@ -66,6 +66,9 @@ struct softpipe_resource
    boolean userBuffer;
 
    unsigned timestamp;
+
+   /* Used for resolving if multisampling is enabled */
+   struct pipe_resource *resolve_target;
 };
 
 
