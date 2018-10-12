@@ -483,7 +483,6 @@ pipe_put_tile_rgba_format(struct pipe_transfer *pt,
                           enum pipe_format format,
                           const float *p)
 {
-   const struct util_format_description *desc = util_format_description(format);
    unsigned src_stride = w * 4;
    void *packed;
 
@@ -517,18 +516,10 @@ pipe_put_tile_rgba_format(struct pipe_transfer *pt,
       /*z32f_s8x24_put_tile_rgba((unsigned *) packed, w, h, p, src_stride);*/
       break;
    default:
-      if (util_format_is_rgba8_variant(desc)) {
-         util_format_write_4ub(format,
-                               p, src_stride * sizeof(uint32_t),
-                               packed, util_format_get_stride(format, w),
-                               0, 0, w, h);
-      }
-      else {
-         util_format_write_4f(format,
-                              p, src_stride * sizeof(float),
-                              packed, util_format_get_stride(format, w),
-                              0, 0, w, h);
-      }
+      util_format_write_4f(format,
+                           p, src_stride * sizeof(float),
+                           packed, util_format_get_stride(format, w),
+                           0, 0, w, h);
    }
 
    pipe_put_tile_raw(pt, dst, x, y, w, h, packed, 0);
