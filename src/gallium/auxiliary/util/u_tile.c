@@ -519,7 +519,7 @@ pipe_put_tile_rgba_format(struct pipe_transfer *pt,
    default:
       if (util_format_is_rgba8_variant(desc)) {
          util_format_write_4ub(format,
-                               p, src_stride,
+                               p, src_stride * sizeof(uint32_t),
                                packed, util_format_get_stride(format, w),
                                0, 0, w, h);
       }
