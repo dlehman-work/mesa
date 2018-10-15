@@ -81,6 +81,11 @@ struct llvmpipe_resource
    struct pipe_resource *resolve;
 
    /**
+    * Size of mipmap for each sample
+    */
+   uint64_t mip_size;
+
+   /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
     */
    void *tex_data;
