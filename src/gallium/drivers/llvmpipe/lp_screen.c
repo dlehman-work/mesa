@@ -484,7 +484,7 @@ llvmpipe_is_format_supported( struct pipe_screen *_screen,
           target == PIPE_TEXTURE_CUBE ||
           target == PIPE_TEXTURE_CUBE_ARRAY);
 
-   if (sample_count > 1)
+   if (sample_count > LP_MAX_SAMPLES)
       return FALSE;
 
    if (MAX2(1, sample_count) != MAX2(1, storage_sample_count))
