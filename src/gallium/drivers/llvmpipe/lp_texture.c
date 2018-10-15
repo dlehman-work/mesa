@@ -164,10 +164,14 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
       width = u_minify(width, 1);
       height = u_minify(height, 1);
       depth = u_minify(depth, 1);
+
+      if (!level)
+         lpr->mip_size = total_size;
    }
 
    if (allocate) {
-      lpr->tex_data = align_malloc(total_size, mip_align);
+      unsigned nr_samples = MAX2(pt->nr_samples, 1);
+      lpr->tex_data = align_malloc(total_size * nr_samples, mip_align);
       if (!lpr->tex_data) {
          return FALSE;
       }
