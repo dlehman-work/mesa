@@ -76,6 +76,11 @@ struct llvmpipe_resource
    struct sw_displaytarget *dt;
 
    /**
+    * Resource containing resolved multisample surface if not null
+    */
+   struct pipe_resource *resolve;
+
+   /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
     */
    void *tex_data;
