@@ -51,15 +51,11 @@
 #include "util/u_pwr8.h"
 #endif
 
-#if !defined(PIPE_ARCH_SSE)
-
 static inline int
 subpixel_snap(float a)
 {
    return util_iround(FIXED_ONE * a);
 }
-
-#endif
 
 /* Position and area in fixed point coordinates */
 struct fixed_position {
