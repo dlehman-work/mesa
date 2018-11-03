@@ -38,5 +38,10 @@ struct llvmpipe_context;
 extern void
 llvmpipe_init_surface_functions(struct llvmpipe_context *lp);
 
+extern void
+lp_get_sample_position(struct pipe_context *context,
+                       unsigned sample_count,
+                       unsigned sample_index,
+                       float *out_value);
 
 #endif /* LP_SURFACE_H */

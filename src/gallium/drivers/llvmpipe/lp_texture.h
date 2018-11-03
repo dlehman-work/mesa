@@ -76,6 +76,16 @@ struct llvmpipe_resource
    struct sw_displaytarget *dt;
 
    /**
+    * Resource containing resolved multisample surface if not null
+    */
+   struct pipe_resource *resolve;
+
+   /**
+    * Stride of each sample
+    */
+   unsigned sample_stride;
+
+   /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
     */
    void *tex_data;
@@ -195,11 +205,20 @@ llvmpipe_resource_stride(struct pipe_resource *resource,
 }
 
 
+static inline unsigned
+llvmpipe_sample_stride(struct pipe_resource *resource)
+{
+   struct llvmpipe_resource *lpr = llvmpipe_resource(resource);
+   return lpr->sample_stride;
+}
+
+
 void *
 llvmpipe_resource_map(struct pipe_resource *resource,
                       unsigned level,
                       unsigned layer,
                       enum lp_texture_usage tex_usage);
+
 
 void
 llvmpipe_resource_unmap(struct pipe_resource *resource,

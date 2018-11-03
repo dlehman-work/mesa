@@ -77,6 +77,7 @@ struct lp_fragment_shader_variant_key
    unsigned occlusion_count:1;
    unsigned resource_1d:1;
    unsigned depth_clamp:1;
+   unsigned nr_samples; /* TODO: field size? */
 
    enum pipe_format zsbuf_format;
    enum pipe_format cbuf_format[PIPE_MAX_COLOR_BUFS];

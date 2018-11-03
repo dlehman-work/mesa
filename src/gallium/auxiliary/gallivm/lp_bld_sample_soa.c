@@ -2585,6 +2585,7 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
                      const LLVMValueRef *coords,
                      LLVMValueRef explicit_lod,
                      const LLVMValueRef *offsets,
+                     LLVMValueRef sample,
                      LLVMValueRef *colors_out)
 {
    struct lp_build_context *perquadi_bld = &bld->lodi_bld;
@@ -2597,6 +2598,7 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    LLVMValueRef x = coords[0], y = coords[1], z = coords[2];
    LLVMValueRef width, height, depth, i, j;
    LLVMValueRef offset, out_of_bounds, out1;
+   LLVMValueRef nr_samples = NULL, sample_stride = NULL;
 
    out_of_bounds = int_coord_bld->zero;
 
@@ -2613,7 +2615,8 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    }
    else {
       assert(bld->num_mips == 1);
-      if (bld->static_texture_state->target != PIPE_BUFFER) {
+      /* TODO: does msaa always have level 0 or 'first_level'?  is first_level always 0 for msaa? */
+      if (!sample /* TODO: correct way to check? */ && bld->static_texture_state->target != PIPE_BUFFER) {
          ilevel = bld->dynamic_state->first_level(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
       }
@@ -2626,9 +2629,24 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
                                &row_stride_vec, &img_stride_vec);
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
+   if (sample) {
+      nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
+                                                  bld->context_ptr, texture_unit);
+      sample_stride = bld->dynamic_state->sample_stride(bld->dynamic_state, bld->gallivm,
+                                                        bld->context_ptr, texture_unit);
+      assert(dims == 2);
+      //z = sample; /* TODO: sample or coords[2] ?? */
+      nr_samples = lp_build_broadcast_scalar(&bld->int_coord_bld, nr_samples);
+      out1 = lp_build_cmp(&bld->int_coord_bld, PIPE_FUNC_LESS, sample, bld->int_coord_bld.zero);
+      out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
+      out1 = lp_build_cmp(&bld->int_coord_bld, PIPE_FUNC_GEQUAL, sample, nr_samples);
+      out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
 
-   if (target == PIPE_TEXTURE_1D_ARRAY ||
-       target == PIPE_TEXTURE_2D_ARRAY) {
+      z = sample;
+      img_stride_vec = lp_build_broadcast_scalar(&bld->int_coord_bld, sample_stride);
+   }
+   else if (target == PIPE_TEXTURE_1D_ARRAY ||
+            target == PIPE_TEXTURE_2D_ARRAY) {
       if (out_of_bound_ret_zero) {
          z = lp_build_layer_coord(bld, texture_unit, FALSE, z, &out1);
          out_of_bounds = lp_build_or(int_coord_bld, out_of_bounds, out1);
@@ -2747,6 +2765,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const LLVMValueRef *offsets,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
+                         LLVMValueRef sample, /* optional */ /* TODO: why this and not coords[2]? */
                          LLVMValueRef texel_out[4])
 {
    unsigned target = static_texture_state->target;
@@ -3094,7 +3113,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
 
    else if (op_type == LP_SAMPLER_OP_FETCH) {
       lp_build_fetch_texel(&bld, texture_index, newcoords,
-                           lod, offsets,
+                           lod, offsets, sample,
                            texel_out);
    }
 
@@ -3414,6 +3433,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
    LLVMValueRef coords[5];
    LLVMValueRef offsets[3] = { NULL };
    LLVMValueRef lod = NULL;
+   LLVMValueRef sample = NULL;
    LLVMValueRef context_ptr;
    LLVMValueRef thread_data_ptr = NULL;
    LLVMValueRef texel_out[4];
@@ -3472,6 +3492,9 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
       }
       deriv_ptr = &derivs;
    }
+   if (sample_key & LP_SAMPLER_MSAA) {
+      sample = LLVMGetParam(function, num_param++);
+   }
 
    assert(num_args == num_param);
 
@@ -3498,6 +3521,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
                             offsets,
                             deriv_ptr,
                             lod,
+                            sample,
                             texel_out);
 
    LLVMBuildAggregateRet(gallivm->builder, texel_out, 4);
@@ -3609,6 +3633,11 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
             assert(LLVMTypeOf(derivs->ddy[0]) == LLVMTypeOf(derivs->ddy[i]));
          }
       }
+      if (sample_key & LP_SAMPLER_MSAA) {
+         /* sample index is always in coords[2] */
+         arg_types[num_param++] = LLVMTypeOf(coords[2]);
+         /* TODO: assert(LLVMTypeOf(???) == LLVMTypeOf(coords[2])); */
+      }
 
       val_type[0] = val_type[1] = val_type[2] = val_type[3] =
          lp_build_vec_type(gallivm, params->type);
@@ -3666,6 +3695,9 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
          args[num_args++] = derivs->ddx[i];
          args[num_args++] = derivs->ddy[i];
       }
+   }
+   if (sample_key & LP_SAMPLER_MSAA) {
+      args[num_args++] = coords[2];
    }
 
    assert(num_args <= LP_MAX_TEX_FUNC_ARGS);
@@ -3752,6 +3784,7 @@ lp_build_sample_soa(const struct lp_static_texture_state *static_texture_state,
                                params->offsets,
                                params->derivs,
                                params->lod,
+                               params->sample,
                                params->texel);
    }
 }
