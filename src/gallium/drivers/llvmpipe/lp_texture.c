@@ -59,6 +59,31 @@ static struct llvmpipe_resource resource_list;
 #endif
 static unsigned id_counter = 0;
 
+/**
+ * Create a resource for resolving multisample buffers.
+ */
+static boolean
+llvmpipe_resource_create_resolve(struct llvmpipe_screen *screen,
+                                 struct llvmpipe_resource *lpr)
+{
+   struct pipe_resource templ;
+
+   /* Return if not multisample */
+   if (lpr->base.nr_samples == 0) /* TODO: also check enabled/disabled? */
+      return TRUE;
+
+   templ = lpr->base;
+   templ.nr_samples = 0;
+   templ.nr_storage_samples = 0;
+
+   /* TODO: TexImage*Multisample do not support multiple image levels
+    * (OpenGL spec 4.6 sec 8.8 "Multisample Textures")
+    */
+   lpr->resolve = screen->base.resource_create(&screen->base, &templ);
+   printf("%s: %d: resolve %p sample %d\n", __FUNCTION__, __LINE__, lpr->resolve, lpr->base.nr_samples); fflush(stdout);
+   return !!lpr->resolve;
+}
+
 
 /**
  * Conventional allocation path for non-display textures:
@@ -87,6 +112,7 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
 
    assert(LP_MAX_TEXTURE_2D_LEVELS <= LP_MAX_TEXTURE_LEVELS);
    assert(LP_MAX_TEXTURE_3D_LEVELS <= LP_MAX_TEXTURE_LEVELS);
+   assert(pt->nr_samples <= 1 || !pt->last_level); /* multisample textures don't have mipmaps */
 
    for (level = 0; level <= pt->last_level; level++) {
       uint64_t mipsize;
@@ -166,13 +192,16 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
       depth = u_minify(depth, 1);
    }
 
+   lpr->sample_stride = align(total_size, mip_align);
+
    if (allocate) {
-      lpr->tex_data = align_malloc(total_size, mip_align);
+      unsigned nr_samples = MAX2(pt->nr_samples, 1);
+      lpr->tex_data = align_malloc(lpr->sample_stride * nr_samples, mip_align);
       if (!lpr->tex_data) {
          return FALSE;
       }
       else {
-         memset(lpr->tex_data, 0, total_size);
+         memset(lpr->tex_data, 0, lpr->sample_stride * nr_samples);
       }
    }
 
@@ -265,6 +294,18 @@ llvmpipe_resource_create_front(struct pipe_screen *_screen,
          if (!llvmpipe_texture_layout(screen, lpr, true))
             goto fail;
       }
+
+      if (!llvmpipe_resource_create_resolve(screen, lpr)) {
+         /* do partial free */
+         if (lpr->dt) {
+            struct sw_winsys *winsys = screen->winsys;
+            winsys->displaytarget_destroy(winsys, lpr->dt);
+         }
+         else if (lpr->tex_data) /* llvmpipe_resource_is_texture(&lpr->base) */
+            align_free(lpr->tex_data);
+
+         goto fail;
+      }
    }
    else {
       /* other data (vertex buffer, const buffer, etc) */
@@ -336,6 +377,9 @@ llvmpipe_resource_destroy(struct pipe_screen *pscreen,
       assert(lpr->data);
       align_free(lpr->data);
    }
+
+   if (lpr->resolve)
+      pscreen->resource_destroy(pscreen, lpr->resolve);
 
 #ifdef DEBUG
    if (lpr->next)

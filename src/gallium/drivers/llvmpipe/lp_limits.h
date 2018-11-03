@@ -91,4 +91,11 @@
  */
 #define LP_MAX_SETUP_VARIANTS 64
 
+/**
+ * Max number of samples supported by multisampling
+ */
+#define LP_MAX_SAMPLES 8
+
+#define LP_MAX_SAMPLES_MASKS 1
+
 #endif /* LP_LIMITS_H */

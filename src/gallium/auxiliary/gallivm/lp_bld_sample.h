@@ -95,6 +95,7 @@ enum lp_sampler_op_type {
 #define LP_SAMPLER_LOD_CONTROL_MASK   (3 << 4)
 #define LP_SAMPLER_LOD_PROPERTY_SHIFT       6
 #define LP_SAMPLER_LOD_PROPERTY_MASK  (3 << 6)
+#define LP_SAMPLER_MSAA               (1 << 8)
 
 struct lp_sampler_params
 {
@@ -109,6 +110,7 @@ struct lp_sampler_params
    LLVMValueRef lod;
    const struct lp_derivatives *derivs;
    LLVMValueRef *texel;
+   LLVMValueRef sample;
 };
 
 struct lp_sampler_size_query_params
@@ -239,6 +241,20 @@ struct lp_sampler_dynamic_state
                  struct gallivm_state *gallivm,
                  LLVMValueRef context_ptr,
                  unsigned texture_unit);
+
+   /** Obtain number of samples (returns int32) */
+   LLVMValueRef
+   (*nr_samples)(const struct lp_sampler_dynamic_state *state,
+                struct gallivm_state *gallivm,
+                LLVMValueRef context_ptr,
+                unsigned texture_unit);
+
+   /** Obtain stride in bytes between samples (returns int32) */
+   LLVMValueRef
+   (*sample_stride)(const struct lp_sampler_dynamic_state *state,
+                    struct gallivm_state *gallivm,
+                    LLVMValueRef context_ptr,
+                    unsigned texture_unit);
 
    /** Obtain pointer to base of texture */
    LLVMValueRef

@@ -60,6 +60,56 @@ lp_resource_copy(struct pipe_context *pipe,
                              src, src_level, src_box);
 }
 
+static void lp_resolve(struct pipe_context *pipe,
+                       struct pipe_blit_info *info)
+{
+    uint8_t *src_map;
+    uint8_t *dst_map;
+    struct pipe_box box;
+    struct pipe_transfer *src_transfer;
+    struct pipe_transfer *dst_transfer;
+    struct llvmpipe_resource *src;
+    struct llvmpipe_resource *dst;
+    unsigned i, j, stride;
+    uint8_t *src_maps[LP_MAX_SAMPLES];
+    float pix;
+
+    src = llvmpipe_resource(info->src.resource);
+    dst = llvmpipe_resource(info->dst.resource);
+    stride = llvmpipe_sample_stride(info->src.resource);
+    /* TODO: what validation do we need to do here?  how much has been done by callers? */
+
+    box = info->dst.box;
+    src_map = pipe->transfer_map(pipe, &src->base, 0, LP_TEX_USAGE_READ, &box, &src_transfer);
+    dst_map = pipe->transfer_map(pipe, &dst->base, 0, LP_TEX_USAGE_READ_WRITE, &box, &dst_transfer); /* TODO: WRITE_ALL? */
+    
+    if (0)
+    {
+        printf("%s: UNIMPLEMENTED %d -> %d map %p -> %p\n", __FUNCTION__,
+                src->base.nr_samples, dst->base.nr_samples,
+                src_map, dst_map);
+        memcpy(dst_map, src_map, box.width * box.height * box.depth * sizeof(uint32_t));
+    }
+    else
+    {
+        printf("%s: partially implemented %d -> %d map %p -> %p\n", __FUNCTION__,
+                src->base.nr_samples, dst->base.nr_samples,
+                src_map, dst_map);
+        for (i = 0; i < src->base.nr_samples; i++)
+            src_maps[i] = src_map + i * stride;
+
+        for (i = 0; i < box.width * box.height * box.depth * sizeof(uint32_t); i++)
+        {
+            pix = 0.0f;
+            for (j = 0; j < src->base.nr_samples; j++)
+                pix += ubyte_to_float(src_maps[j][i]);
+            dst_map[i] = float_to_ubyte(pix / src->base.nr_samples);
+        }
+    }
+
+    pipe->transfer_unmap(pipe, dst_transfer);
+    pipe->transfer_unmap(pipe, src_transfer);
+}
 
 static void lp_blit(struct pipe_context *pipe,
                     const struct pipe_blit_info *blit_info)
@@ -74,7 +124,7 @@ static void lp_blit(struct pipe_context *pipe,
        info.dst.resource->nr_samples <= 1 &&
        !util_format_is_depth_or_stencil(info.src.resource->format) &&
        !util_format_is_pure_integer(info.src.resource->format)) {
-      debug_printf("llvmpipe: color resolve unimplemented\n");
+      lp_resolve(pipe, &info);
       return;
    }
 
@@ -223,6 +273,50 @@ llvmpipe_clear_depth_stencil(struct pipe_context *pipe,
                             dstx, dsty, width, height);
 }
 
+/* taken from nv50 driver */
+static void lp_get_sample_position(struct pipe_context *context,
+                               unsigned sample_count,
+                               unsigned sample_index,
+                               float *out_value)
+{
+   static const uint8_t ms1[1][2] = { { 0x8, 0x8 } };
+   static const uint8_t ms2[2][2] = {
+      { 0x4, 0x4 }, { 0xc, 0xc } }; /* surface coords (0,0), (1,0) */
+   static const uint8_t ms4[4][2] = {
+      { 0x6, 0x2 }, { 0xe, 0x6 },   /* (0,0), (1,0) */
+      { 0x2, 0xa }, { 0xa, 0xe } }; /* (0,1), (1,1) */
+#if 1 /* to match lp_state_fs.c */
+   static const uint8_t ms8[8][2] = {
+      { 0x9, 0x5 }, { 0x7, 0xb },   /* (0,0), (1,0) */
+      { 0xd, 0x9 }, { 0x5, 0x3 },   /* (0,1), (1,1) */
+      { 0x3, 0xd }, { 0x1, 0x7 },   /* (2,0), (3,0) */
+      { 0xb, 0xf }, { 0xf, 0x1 } }; /* (2,1), (3,1) */
+#else
+   static const uint8_t ms8[8][2] = {
+      { 0x1, 0x7 }, { 0x5, 0x3 },   /* (0,0), (1,0) */
+      { 0x3, 0xd }, { 0x7, 0xb },   /* (0,1), (1,1) */
+      { 0x9, 0x5 }, { 0xf, 0x1 },   /* (2,0), (3,0) */
+      { 0xb, 0xf }, { 0xd, 0x9 } }; /* (2,1), (3,1) */
+#endif
+   const uint8_t (*ptr)[2];
+
+   switch (sample_count) {
+   case 0:
+   case 1: ptr = ms1; break;
+   case 2: ptr = ms2; break;
+   case 3: /* fall-through */
+   case 4: ptr = ms4; break;
+   case 5: /* fall-through */
+   case 6: /* fall-through */
+   case 7: /* fall-through */
+   case 8: ptr = ms8; break;
+   default:
+      assert(0);
+      return; /* bad sample count -> undefined locations */
+   }
+   out_value[0] = ptr[sample_index][0] * 0.0625f;
+   out_value[1] = ptr[sample_index][1] * 0.0625f;
+}
 
 void
 llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
@@ -236,4 +330,5 @@ llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
    lp->pipe.resource_copy_region = lp_resource_copy;
    lp->pipe.blit = lp_blit;
    lp->pipe.flush_resource = lp_flush_resource;
+   lp->pipe.get_sample_position = lp_get_sample_position;
 }

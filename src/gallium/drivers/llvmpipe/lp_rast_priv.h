@@ -134,7 +134,7 @@ struct lp_rasterizer
 
 void
 lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
-                         const struct lp_rast_shader_inputs *inputs,
+                         const struct lp_rast_triangle *tri,
                          unsigned x, unsigned y,
                          unsigned mask);
 
@@ -146,7 +146,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
 static inline uint8_t *
 lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
                                 unsigned buf, unsigned x, unsigned y,
-                                unsigned layer)
+                                unsigned layer, unsigned sampleid)
 {
    unsigned px, py, pixel_offset;
    uint8_t *color;
@@ -171,6 +171,10 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
                   py * task->scene->cbufs[buf].stride;
    color = task->color_tiles[buf] + pixel_offset;
 
+   if (sampleid) {
+      color += sampleid * task->scene->cbufs[buf].sample_stride;
+   }
+
    if (layer) {
       color += layer * task->scene->cbufs[buf].layer_stride;
    }
@@ -186,7 +190,7 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
  */
 static inline uint8_t *
 lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
-                                unsigned x, unsigned y, unsigned layer)
+                                unsigned x, unsigned y, unsigned layer, unsigned sampleid)
 {
    unsigned px, py, pixel_offset;
    uint8_t *depth;
@@ -222,9 +226,10 @@ lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
  */
 static inline void
 lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
-                         const struct lp_rast_shader_inputs *inputs,
+                         const struct lp_rast_triangle *tri,
                          unsigned x, unsigned y )
 {
+   const struct lp_rast_shader_inputs *inputs = &tri->inputs;
    const struct lp_scene *scene = task->scene;
    const struct lp_rast_state *state = task->state;
    struct lp_fragment_shader_variant *variant = state->variant;
@@ -239,7 +244,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
       if (scene->fb.cbufs[i]) {
          stride[i] = scene->cbufs[i].stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,
-                                                    inputs->layer);
+                                                    inputs->layer, tri->sampleid);
       }
       else {
          stride[i] = 0;
@@ -248,7 +253,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
    }
 
    if (scene->zsbuf.map) {
-      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer);
+      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer, tri->sampleid);
       depth_stride = scene->zsbuf.stride;
    }
 
@@ -259,6 +264,15 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
    if ((x % TILE_SIZE) < task->width && (y % TILE_SIZE) < task->height) {
       /* Propagate non-interpolated raster state. */
       task->thread_data.raster_state.viewport_index = inputs->viewport_index;
+
+     /* TODO:
+        if (per-sample)
+            for each sample
+                call jit_function
+        else
+            call jit_function
+            copy to color, depth
+      */
 
       /* run shader on 4x4 block */
       BEGIN_JIT_CALL(state, task);
@@ -273,7 +287,8 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
                                          0xffff,
                                          &task->thread_data,
                                          stride,
-                                         depth_stride);
+                                         depth_stride,
+                                         tri->sampleid);
       END_JIT_CALL();
    }
 }

@@ -286,6 +286,87 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
    return lp_build_clamp(&f32_bld, z, min_depth, max_depth);
 }
 
+/* from swr driver */
+static const uint8_t get_sample_positions[][2] =
+{         { 8, 8},
+  /* 1x*/ { 8, 8}, 
+  /* 2x*/ {12,12},{ 4, 4}, 
+  /* 4x*/ { 6, 2},{14, 6},{ 2,10},{10,14},
+  /* 8x*/ { 9, 5},{ 7,11},{13, 9},{ 5, 3}, 
+          { 3,13},{ 1, 7},{11,15},{15, 1}, 
+  /*16x*/ { 9, 9},{ 7, 5},{ 5,10},{12, 7}, 
+          { 3, 6},{10,13},{13,11},{11, 3}, 
+          { 6,14},{ 8, 1},{ 4, 2},{ 2,12},
+          { 0, 8},{15, 4},{14,15},{ 1, 0}
+};
+
+static void
+get_sample_position(unsigned sample_count, unsigned sample_index, float *out_value)
+{
+   /* validate sample_count */
+   sample_count = 1 << util_logbase2(sample_count);
+
+   const uint8_t *sample = get_sample_positions[sample_count + sample_index];
+   out_value[0] = sample[0] / 16.0f;
+   out_value[1] = sample[1] / 16.0f;
+}
+
+/**
+ * Build lookup for gl_SamplePosition.
+ * Assumes 2+ samples
+ */
+static void
+lp_build_sample_position(struct gallivm_state *gallivm,
+                         LLVMBuilderRef builder,
+                         struct lp_bld_tgsi_system_values *system_values)
+{
+    /* TODO: build table here using lp_get_sample_position */
+    /*
+    if (!global SamplePositions exists)
+        build SamplePosition
+
+    get SamplePositions
+    system_values->sample_pos + num_samples * 2 [ + sample_id * 2 ]     
+    */
+   float pos[2];
+   int idx, idx2, count;
+   LLVMModuleRef module;
+   LLVMValueRef samplepos_global;
+   LLVMTypeRef float_type;
+   LLVMTypeRef vec_type;
+   LLVMTypeRef arr_vec_type;
+   LLVMValueRef scalar;
+   LLVMValueRef arr_vec;
+   LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
+   
+   module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2DNew");
+   if (!samplepos_global)
+   {
+       float_type = LLVMFloatTypeInContext(gallivm->context);
+       vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
+       for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
+       {
+          count = 1 << util_logbase2(idx);
+          idx2 = idx & (count - 1);
+
+          get_sample_position(count, idx2, pos);
+
+          scalar = LLVMConstReal(float_type, pos[0]);
+          vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
+          scalar = LLVMConstReal(float_type, pos[1]);
+          vec[idx*2 + 1] = lp_build_broadcast(gallivm, vec_type, scalar);
+       }
+       arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+       arr_vec_type = LLVMTypeOf(arr_vec);
+       samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2DNew");
+       LLVMSetInitializer(samplepos_global, arr_vec);
+   }
+
+   system_values->sample_pos = samplepos_global;
+printf("%s: system_values->sample_pos %p\n", __FUNCTION__, system_values->sample_pos);
+}
+
 
 /**
  * Generate the fragment shader, depth/stencil test, and alpha tests.
@@ -305,7 +386,8 @@ generate_fs_loop(struct gallivm_state *gallivm,
                  LLVMValueRef depth_ptr,
                  LLVMValueRef depth_stride,
                  LLVMValueRef facing,
-                 LLVMValueRef thread_data_ptr)
+                 LLVMValueRef thread_data_ptr,
+                 LLVMValueRef sample_id)
 {
    const struct util_format_description *zs_format_desc = NULL;
    const struct tgsi_token *tokens = shader->base.tokens;
@@ -474,6 +556,11 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
    lp_build_interp_soa_update_inputs_dyn(interp, gallivm, loop_state.counter);
 
+   if (sample_id) { /* TODO: does this work? */
+      system_values.sample_id = sample_id;
+      lp_build_sample_position(gallivm, builder, &system_values);
+   }
+
    /* Build the actual shader */
    lp_build_tgsi_soa(gallivm, tokens, type, &mask,
                      consts_ptr, num_consts_ptr, &system_values,
@@ -528,12 +615,21 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
       assert(smaski >= 0);
       smask = LLVMBuildLoad(builder, outputs[smaski][0], "smask");
-      /*
-       * Pixel is alive according to the first sample in the mask.
-       */
       smask = LLVMBuildBitCast(builder, smask, smask_bld.vec_type, "");
-      smask = lp_build_and(&smask_bld, smask, smask_bld.one);
-      smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
+      if (sample_id) /* TODO: all that's needed? */
+      {
+          LLVMValueRef sample_id_vec = lp_build_broadcast(gallivm, smask_bld.vec_type, sample_id);
+          LLVMValueRef this_mask = lp_build_shl(&smask_bld, smask_bld.one, sample_id_vec);
+          smask = lp_build_and(&smask_bld, smask, this_mask);
+      }
+      else
+      {
+          /*
+           * Pixel is alive according to the first sample in the mask.
+           */
+          smask = lp_build_and(&smask_bld, smask, smask_bld.one);
+      }
+        smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
       lp_build_mask_update(&mask, smask);
    }
 
@@ -2410,7 +2506,7 @@ generate_fragment(struct llvmpipe_context *lp,
    struct lp_type blend_type;
    LLVMTypeRef fs_elem_type;
    LLVMTypeRef blend_vec_type;
-   LLVMTypeRef arg_types[13];
+   LLVMTypeRef arg_types[14];
    LLVMTypeRef func_type;
    LLVMTypeRef int32_type = LLVMInt32TypeInContext(gallivm->context);
    LLVMTypeRef int8_type = LLVMInt8TypeInContext(gallivm->context);
@@ -2424,6 +2520,7 @@ generate_fragment(struct llvmpipe_context *lp,
    LLVMValueRef stride_ptr;
    LLVMValueRef depth_ptr;
    LLVMValueRef depth_stride;
+   LLVMValueRef sample_id;
    LLVMValueRef mask_input;
    LLVMValueRef thread_data_ptr;
    LLVMBasicBlockRef block;
@@ -2502,6 +2599,7 @@ generate_fragment(struct llvmpipe_context *lp,
    arg_types[10] = variant->jit_thread_data_ptr_type;  /* per thread data */
    arg_types[11] = LLVMPointerType(int32_type, 0);     /* stride */
    arg_types[12] = int32_type;                         /* depth_stride */
+   arg_types[13] = int32_type;                         /* sample_id */
 
    func_type = LLVMFunctionType(LLVMVoidTypeInContext(gallivm->context),
                                 arg_types, ARRAY_SIZE(arg_types), 0);
@@ -2531,6 +2629,7 @@ generate_fragment(struct llvmpipe_context *lp,
    thread_data_ptr  = LLVMGetParam(function, 10);
    stride_ptr   = LLVMGetParam(function, 11);
    depth_stride = LLVMGetParam(function, 12);
+   sample_id    = LLVMGetParam(function, 13);
 
    lp_build_name(context_ptr, "context");
    lp_build_name(x, "x");
@@ -2544,6 +2643,7 @@ generate_fragment(struct llvmpipe_context *lp,
    lp_build_name(thread_data_ptr, "thread_data");
    lp_build_name(stride_ptr, "stride_ptr");
    lp_build_name(depth_stride, "depth_stride");
+   lp_build_name(sample_id, "sample_id");
 
    /*
     * Function body
@@ -2621,6 +2721,9 @@ generate_fragment(struct llvmpipe_context *lp,
          LLVMBuildStore(builder, mask, mask_ptr);
       }
 
+      /* TODO: HACK to make samples = 0 work
+       *       does writing sample mask even make sense if samples == 0? */
+      shader->info.base.writes_samplemask &= lp->framebuffer.samples != 0;
       generate_fs_loop(gallivm,
                        shader, key,
                        builder,
@@ -2634,7 +2737,8 @@ generate_fragment(struct llvmpipe_context *lp,
                        depth_ptr,
                        depth_stride,
                        facing,
-                       thread_data_ptr);
+                       thread_data_ptr,
+                       sample_id);
 
       for (i = 0; i < num_fs; i++) {
          LLVMValueRef indexi = lp_build_const_int32(gallivm, i);
