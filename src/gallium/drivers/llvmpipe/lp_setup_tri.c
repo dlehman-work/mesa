@@ -1065,19 +1065,19 @@ calc_fixed_position(struct lp_setup_context *setup,
 static inline void
 calc_fixed_position_offset(struct lp_setup_context *setup,
                            struct fixed_position* position,
-                           float offset,
+                           const float offsets[2],
                            const float (*v0)[4],
                            const float (*v1)[4],
                            const float (*v2)[4])
 {
-   position->x[0] = subpixel_snap(v0[0][0] - offset);
-   position->x[1] = subpixel_snap(v1[0][0] - offset);
-   position->x[2] = subpixel_snap(v2[0][0] - offset);
+   position->x[0] = subpixel_snap(v0[0][0] - offsets[0]);
+   position->x[1] = subpixel_snap(v1[0][0] - offsets[0]);
+   position->x[2] = subpixel_snap(v2[0][0] - offsets[0]);
    position->x[3] = 0; // should be unused
 
-   position->y[0] = subpixel_snap(v0[0][1] - offset);
-   position->y[1] = subpixel_snap(v1[0][1] - offset);
-   position->y[2] = subpixel_snap(v2[0][1] - offset);
+   position->y[0] = subpixel_snap(v0[0][1] - offsets[1]);
+   position->y[1] = subpixel_snap(v1[0][1] - offsets[1]);
+   position->y[2] = subpixel_snap(v2[0][1] - offsets[1]);
    position->y[3] = 0; // should be unused
 
    position->dx01 = position->x[0] - position->x[1];
@@ -1234,6 +1234,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
                              const float (*v2)[4])
 {
    int i;
+   const float offsets[2] = { setup->pixel_offset, setup->pixel_offset };
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
 
@@ -1243,7 +1244,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
 
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    for (i = 0; i < LP_MAX_SAMPLES; i++) /* TODO: nr_samples */
-       calc_fixed_position_offset(setup, &positions[i], 0.5f, v0, v1, v2);
+       calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
 
    if (0) {
       assert(!util_is_inf_or_nan(v0[0][0]));
