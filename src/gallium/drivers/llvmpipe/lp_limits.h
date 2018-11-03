@@ -91,4 +91,6 @@
  */
 #define LP_MAX_SETUP_VARIANTS 64
 
+#define LP_MAX_SAMPLES 16
+
 #endif /* LP_LIMITS_H */
