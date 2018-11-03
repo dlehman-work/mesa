@@ -57,6 +57,23 @@ subpixel_snap(float a)
    return util_iround(FIXED_ONE * a);
 }
 
+static inline unsigned
+lp_num_samples(const struct lp_setup_context *setup)
+{
+    const struct pipe_framebuffer_state *fb = &setup->fb;
+    if (!fb->nr_cbufs)
+        return fb->samples;
+
+    if (fb->cbufs[0]) /* TODO 0th? */
+        return fb->cbufs[0]->texture->nr_samples;
+
+    if (fb->zsbuf)
+        return fb->zsbuf->texture->nr_samples;
+
+    assert(0);
+    return 0;
+}
+
 /* Position and area in fixed point coordinates */
 struct fixed_position {
    int32_t x[4];
@@ -66,8 +83,8 @@ struct fixed_position {
    int32_t dx20;
    int32_t dy20;
    int64_t area;
+   int64_t pad;
 };
-
 
 /**
  * Alloc space for a new triangle plus the input.a0/dadx/dady arrays
@@ -263,7 +280,8 @@ do_triangle_ccw(struct lp_setup_context *setup,
                 const float (*v0)[4],
                 const float (*v1)[4],
                 const float (*v2)[4],
-                boolean frontfacing )
+                boolean frontfacing,
+                uint32_t sampleid)
 {
    struct lp_scene *scene = setup->scene;
    const struct lp_setup_variant_key *key = &setup->setup.variant->key;
@@ -377,6 +395,10 @@ do_triangle_ccw(struct lp_setup_context *setup,
                                       GET_DADX(&tri->inputs),
                                       GET_DADY(&tri->inputs));
 
+   tri->sampleid = sampleid;
+   tri->masks[0] = 0;
+   tri->pad[0] = 0;
+   tri->pad[1] = 0;
    tri->inputs.frontfacing = frontfacing;
    tri->inputs.disable = FALSE;
    tri->inputs.opaque = setup->fs.current.variant->opaque;
@@ -979,14 +1001,15 @@ static void retry_triangle_ccw( struct lp_setup_context *setup,
                                 const float (*v0)[4],
                                 const float (*v1)[4],
                                 const float (*v2)[4],
-                                boolean front)
+                                boolean front,
+                                uint32_t sample_id)
 {
-   if (!do_triangle_ccw( setup, position, v0, v1, v2, front ))
+   if (!do_triangle_ccw( setup, position, v0, v1, v2, front, sample_id ))
    {
       if (!lp_setup_flush_and_restart(setup))
          return;
 
-      if (!do_triangle_ccw( setup, position, v0, v1, v2, front ))
+      if (!do_triangle_ccw( setup, position, v0, v1, v2, front, sample_id ))
          return;
    }
 }
@@ -1062,6 +1085,33 @@ calc_fixed_position(struct lp_setup_context *setup,
          IMUL64(position->dx20, position->dy01);
 }
 
+static inline void
+calc_fixed_position_offset(struct lp_setup_context *setup,
+                           struct fixed_position* position,
+                           const float offsets[2],
+                           const float (*v0)[4],
+                           const float (*v1)[4],
+                           const float (*v2)[4])
+{
+   position->x[0] = subpixel_snap(v0[0][0] - offsets[0]);
+   position->x[1] = subpixel_snap(v1[0][0] - offsets[0]);
+   position->x[2] = subpixel_snap(v2[0][0] - offsets[0]);
+   position->x[3] = 0; // should be unused
+
+   position->y[0] = subpixel_snap(v0[0][1] - offsets[1]);
+   position->y[1] = subpixel_snap(v1[0][1] - offsets[1]);
+   position->y[2] = subpixel_snap(v2[0][1] - offsets[1]);
+   position->y[3] = 0; // should be unused
+
+   position->dx01 = position->x[0] - position->x[1];
+   position->dy01 = position->y[0] - position->y[1];
+
+   position->dx20 = position->x[2] - position->x[0];
+   position->dy20 = position->y[2] - position->y[0];
+
+   position->area = IMUL64(position->dx01, position->dy20) -
+         IMUL64(position->dx20, position->dy01);
+}
 
 /**
  * Rotate a triangle, flipping its clockwise direction,
@@ -1135,10 +1185,58 @@ static void triangle_cw(struct lp_setup_context *setup,
    if (position.area < 0) {
       if (setup->flatshade_first) {
          rotate_fixed_position_12(&position);
-         retry_triangle_ccw(setup, &position, v0, v2, v1, !setup->ccw_is_frontface);
+         retry_triangle_ccw(setup, &position, v0, v2, v1, !setup->ccw_is_frontface, 0);
       } else {
          rotate_fixed_position_01(&position);
-         retry_triangle_ccw(setup, &position, v1, v0, v2, !setup->ccw_is_frontface);
+         retry_triangle_ccw(setup, &position, v1, v0, v2, !setup->ccw_is_frontface, 0);
+      }
+   }
+}
+
+/**
+ * Draw triangle if it's CW, cull otherwise.
+ */
+static void triangle_cw_ms(struct lp_setup_context *setup,
+                           const float (*v0)[4],
+                           const float (*v1)[4],
+                           const float (*v2)[4])
+{
+   float offsets[2];
+   PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
+   struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
+   unsigned i, nr_samples = lp_num_samples(setup);
+
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
+   if (lp_context->active_statistics_queries) {
+      lp_context->pipeline_statistics.c_primitives++;
+   }
+
+   if (!nr_samples)
+      nr_samples = 1;
+
+   lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets);
+   calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
+
+   if (positions[0].area < 0) {
+      if (setup->flatshade_first) {
+         rotate_fixed_position_12(&positions[0]);
+         retry_triangle_ccw(setup, &positions[0], v0, v2, v1, !setup->ccw_is_frontface, 0);
+      } else {
+         rotate_fixed_position_01(&positions[0]);
+         retry_triangle_ccw(setup, &positions[0], v1, v0, v2, !setup->ccw_is_frontface, 0);
+      }
+
+      for (i = 1; i < nr_samples; i++) {
+          lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
+          calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
+
+          if (setup->flatshade_first) {
+             rotate_fixed_position_12(&positions[i]);
+             retry_triangle_ccw(setup, &positions[i], v0, v2, v1, !setup->ccw_is_frontface, i);
+          } else {
+             rotate_fixed_position_01(&positions[i]);
+             retry_triangle_ccw(setup, &positions[i], v1, v0, v2, !setup->ccw_is_frontface, i);
+          }
       }
    }
 }
@@ -1159,7 +1257,40 @@ static void triangle_ccw(struct lp_setup_context *setup,
    calc_fixed_position(setup, &position, v0, v1, v2);
 
    if (position.area > 0)
-      retry_triangle_ccw(setup, &position, v0, v1, v2, setup->ccw_is_frontface);
+      retry_triangle_ccw(setup, &position, v0, v1, v2, setup->ccw_is_frontface, 0);
+}
+
+
+static void triangle_ccw_ms(struct lp_setup_context *setup,
+                            const float (*v0)[4],
+                            const float (*v1)[4],
+                            const float (*v2)[4])
+{
+   float offsets[2];
+   PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
+   struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
+   unsigned i, nr_samples = lp_num_samples(setup);
+
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
+   if (lp_context->active_statistics_queries) {
+      lp_context->pipeline_statistics.c_primitives++;
+   }
+
+   if (!nr_samples)
+      nr_samples = 1;
+
+   lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets); /* TODO */
+   calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
+
+   if (positions[0].area > 0) {
+      retry_triangle_ccw(setup, &positions[0], v0, v1, v2, setup->ccw_is_frontface, 0);
+
+      for (i = 1; i < nr_samples; i++) {
+         lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
+         calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
+         retry_triangle_ccw(setup, &positions[i], v0, v1, v2, setup->ccw_is_frontface, i);
+      }
+   }
 }
 
 /**
@@ -1189,16 +1320,87 @@ static void triangle_both(struct lp_setup_context *setup,
    }
 
    if (position.area > 0)
-      retry_triangle_ccw( setup, &position, v0, v1, v2, setup->ccw_is_frontface );
+      retry_triangle_ccw( setup, &position, v0, v1, v2, setup->ccw_is_frontface, 0 );
    else if (position.area < 0) {
       if (setup->flatshade_first) {
          rotate_fixed_position_12( &position );
-         retry_triangle_ccw( setup, &position, v0, v2, v1, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &position, v0, v2, v1, !setup->ccw_is_frontface, 0 );
       } else {
          rotate_fixed_position_01( &position );
-         retry_triangle_ccw( setup, &position, v1, v0, v2, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &position, v1, v0, v2, !setup->ccw_is_frontface, 0 );
       }
    }
+}
+
+static void triangle_both_ms(struct lp_setup_context *setup,
+                             const float (*v0)[4],
+                             const float (*v1)[4],
+                             const float (*v2)[4])
+{
+   float offsets[2];
+   PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
+   struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
+   unsigned i, nr_samples = lp_num_samples(setup);
+
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
+   if (lp_context->active_statistics_queries) {
+      lp_context->pipeline_statistics.c_primitives++;
+   }
+
+   /* TODO: area is probably always the same, so are d[xy][01|20] */
+   /* TODO: do first one, figure out cw vs ccw, then figure out rest */
+   /* TODO: make sure to handle nr_samples == 0 !! */
+   if (!nr_samples)
+      nr_samples = 1;
+
+   for (i = 0; i < nr_samples; i++) {
+       lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
+       calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
+   }
+
+   if (0) {
+      assert(!util_is_inf_or_nan(v0[0][0]));
+      assert(!util_is_inf_or_nan(v0[0][1]));
+      assert(!util_is_inf_or_nan(v1[0][0]));
+      assert(!util_is_inf_or_nan(v1[0][1]));
+      assert(!util_is_inf_or_nan(v2[0][0]));
+      assert(!util_is_inf_or_nan(v2[0][1]));
+   }
+
+   if (positions[0].area > 0) {
+      for (i = 0; i < nr_samples; i++)
+        retry_triangle_ccw( setup, &positions[i], v0, v1, v2, setup->ccw_is_frontface, i );
+   }
+   else if (positions[0].area < 0) {
+      if (setup->flatshade_first) {
+         for (i = 0; i < nr_samples; i++)
+            rotate_fixed_position_12( &positions[i] );
+         for (i = 0; i < nr_samples; i++)
+            retry_triangle_ccw( setup, &positions[i], v0, v2, v1, !setup->ccw_is_frontface, i );
+      } else {
+         for (i = 0; i < nr_samples; i++)
+            rotate_fixed_position_01( &positions[i] );
+         for (i = 0; i < nr_samples; i++)
+            retry_triangle_ccw( setup, &positions[i], v1, v0, v2, !setup->ccw_is_frontface, i );
+      }
+   }
+
+   /* TODO: REMOVE ME */
+   if (0)
+   {
+        lp_setup_print_triangle(setup, v0, v1, v2);
+        for (i = 0; i < nr_samples; i++)
+        {
+            printf("%d/%d: x %08x %08x %08x %08x\n", i, nr_samples,
+                positions[i].x[0], positions[i].x[1], positions[i].x[2], positions[i].x[3]);
+            printf("%d/%d: y %08x %08x %08x %08x\n", i, nr_samples,
+                positions[i].y[0], positions[i].y[1], positions[i].y[2], positions[i].y[3]);
+            printf("%d/%d: dx01 %08x dy01 %08x\n", i, nr_samples, positions[i].dx01, positions[i].dy01);
+            printf("%d/%d: dx20 %08x dy20 %08x\n", i, nr_samples, positions[i].dx20, positions[i].dy20);
+            printf("%d/%d: area %016llx\n", i, nr_samples, positions[i].area);
+        }
+        printf("==============================\n");
+    }
 }
 
 
@@ -1220,12 +1422,26 @@ lp_setup_choose_triangle(struct lp_setup_context *setup)
    switch (setup->cullmode) {
    case PIPE_FACE_NONE:
       setup->triangle = triangle_both;
+      if (1) /* TODO: multisampling enabled */
+          setup->triangle = triangle_both_ms;
       break;
    case PIPE_FACE_BACK:
       setup->triangle = setup->ccw_is_frontface ? triangle_ccw : triangle_cw;
+      if (1) { /* TODO: multisampling enabled */
+        if (setup->triangle == triangle_cw)
+            setup->triangle = triangle_cw_ms;
+        else if (setup->triangle == triangle_ccw)
+            setup->triangle = triangle_ccw_ms;
+      }
       break;
    case PIPE_FACE_FRONT:
       setup->triangle = setup->ccw_is_frontface ? triangle_cw : triangle_ccw;
+      if (1) { /* TODO: multisampling enabled */
+        if (setup->triangle == triangle_cw)
+            setup->triangle = triangle_cw_ms;
+        else if (setup->triangle == triangle_ccw)
+            setup->triangle = triangle_ccw_ms;
+      }
       break;
    default:
       setup->triangle = triangle_noop;

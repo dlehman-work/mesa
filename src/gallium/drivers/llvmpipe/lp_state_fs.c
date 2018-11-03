@@ -102,6 +102,7 @@
 #include "lp_flush.h"
 #include "lp_state_fs.h"
 #include "lp_rast.h"
+#include "lp_surface.h"
 
 
 /** Fragment shader number (for debugging) */
@@ -288,6 +289,81 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
 
 
 /**
+ * Build lookup for gl_SamplePosition.
+ * Assumes 2+ samples
+ */
+static void
+lp_build_sample_position(struct gallivm_state *gallivm,
+                         LLVMBuilderRef builder,
+                         unsigned num_samples,
+                         LLVMValueRef sample_id,
+                         LLVMValueRef *sample_pos)
+{
+    /* TODO: build table here using lp_get_sample_position */
+    /*
+    if (!global SamplePositions exists)
+        build SamplePosition
+
+    get SamplePositions
+    system_values->sample_pos + num_samples * 2 [ + sample_id * 2 ]     
+    */
+   float pos[2];
+   int idx, idx2, count;
+   LLVMModuleRef module;
+   LLVMValueRef samplepos_global;
+   LLVMTypeRef float_type;
+   LLVMTypeRef vec_type;
+   LLVMTypeRef int_type;
+   LLVMTypeRef arr_vec_type;
+   LLVMValueRef load_num_samples;
+   LLVMValueRef load_sample_id;
+   LLVMValueRef scalar;
+   LLVMValueRef arr_vec;
+   LLVMValueRef indices[2];
+   LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
+   
+   module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
+   if (!samplepos_global)
+   {
+       float_type = LLVMFloatTypeInContext(gallivm->context);
+       vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
+       for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
+       {
+          count = 1 << util_logbase2(idx);
+          idx2 = idx & (count - 1);
+
+          lp_get_sample_position(NULL, count, idx2, pos);
+
+          scalar = LLVMConstReal(float_type, pos[0]);
+          vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
+          scalar = LLVMConstReal(float_type, pos[1]);
+          vec[idx*2 + 1] = lp_build_broadcast(gallivm, vec_type, scalar);
+       }
+       arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+       arr_vec_type = LLVMTypeOf(arr_vec);
+       samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2D");
+       LLVMSetInitializer(samplepos_global, arr_vec);
+   }
+
+   int_type = LLVMInt32TypeInContext(gallivm->context);
+    
+   load_num_samples = LLVMBuildMul(builder, LLVMConstInt(int_type, num_samples, 0), LLVMConstInt(int_type, 2, 0), "load_num_samples");
+   load_sample_id = LLVMBuildMul(builder, sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
+
+   /* TODO: add state->jit_context->constants[0] // gl_NumSamples
+    *       passed in lp_rast_shade_quads_mask to jit_function[]
+    *       (always 0th constant?) */
+        /* TODO: shifts instead of multiply? */
+        /* TODO: use helpers (lp_const) */
+   indices[0] = LLVMConstInt(int_type, 0, 0);
+   indices[1] = LLVMBuildAdd(builder, load_num_samples, load_sample_id, "");
+   *sample_pos = LLVMBuildGEP(builder, samplepos_global, indices,
+                              ARRAY_SIZE(indices), "gl_SamplePosion");
+}
+
+
+/**
  * Generate the fragment shader, depth/stencil test, and alpha tests.
  */
 static void
@@ -305,7 +381,8 @@ generate_fs_loop(struct gallivm_state *gallivm,
                  LLVMValueRef depth_ptr,
                  LLVMValueRef depth_stride,
                  LLVMValueRef facing,
-                 LLVMValueRef thread_data_ptr)
+                 LLVMValueRef thread_data_ptr,
+                 LLVMValueRef sample_id)
 {
    const struct util_format_description *zs_format_desc = NULL;
    const struct tgsi_token *tokens = shader->base.tokens;
@@ -474,6 +551,11 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
    lp_build_interp_soa_update_inputs_dyn(interp, gallivm, loop_state.counter);
 
+   if (sample_id) { /* TODO: does this work? TODO: nr_samples > 1? */
+      system_values.sample_id = sample_id;
+      lp_build_sample_position(gallivm, builder, key->nr_samples, sample_id, &system_values.sample_pos);
+   }
+
    /* Build the actual shader */
    lp_build_tgsi_soa(gallivm, tokens, type, &mask,
                      consts_ptr, num_consts_ptr, &system_values,
@@ -528,12 +610,21 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
       assert(smaski >= 0);
       smask = LLVMBuildLoad(builder, outputs[smaski][0], "smask");
-      /*
-       * Pixel is alive according to the first sample in the mask.
-       */
       smask = LLVMBuildBitCast(builder, smask, smask_bld.vec_type, "");
-      smask = lp_build_and(&smask_bld, smask, smask_bld.one);
-      smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
+      if (sample_id) /* TODO: all that's needed? */
+      {
+          LLVMValueRef sample_id_vec = lp_build_broadcast(gallivm, smask_bld.vec_type, sample_id);
+          LLVMValueRef this_mask = lp_build_shl(&smask_bld, smask_bld.one, sample_id_vec);
+          smask = lp_build_and(&smask_bld, smask, this_mask);
+      }
+      else
+      {
+          /*
+           * Pixel is alive according to the first sample in the mask.
+           */
+          smask = lp_build_and(&smask_bld, smask, smask_bld.one);
+      }
+        smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
       lp_build_mask_update(&mask, smask);
    }
 
@@ -2410,7 +2501,7 @@ generate_fragment(struct llvmpipe_context *lp,
    struct lp_type blend_type;
    LLVMTypeRef fs_elem_type;
    LLVMTypeRef blend_vec_type;
-   LLVMTypeRef arg_types[13];
+   LLVMTypeRef arg_types[14];
    LLVMTypeRef func_type;
    LLVMTypeRef int32_type = LLVMInt32TypeInContext(gallivm->context);
    LLVMTypeRef int8_type = LLVMInt8TypeInContext(gallivm->context);
@@ -2424,6 +2515,7 @@ generate_fragment(struct llvmpipe_context *lp,
    LLVMValueRef stride_ptr;
    LLVMValueRef depth_ptr;
    LLVMValueRef depth_stride;
+   LLVMValueRef sample_id;
    LLVMValueRef mask_input;
    LLVMValueRef thread_data_ptr;
    LLVMBasicBlockRef block;
@@ -2502,6 +2594,7 @@ generate_fragment(struct llvmpipe_context *lp,
    arg_types[10] = variant->jit_thread_data_ptr_type;  /* per thread data */
    arg_types[11] = LLVMPointerType(int32_type, 0);     /* stride */
    arg_types[12] = int32_type;                         /* depth_stride */
+   arg_types[13] = int32_type;                         /* sample_id */
 
    func_type = LLVMFunctionType(LLVMVoidTypeInContext(gallivm->context),
                                 arg_types, ARRAY_SIZE(arg_types), 0);
@@ -2531,6 +2624,7 @@ generate_fragment(struct llvmpipe_context *lp,
    thread_data_ptr  = LLVMGetParam(function, 10);
    stride_ptr   = LLVMGetParam(function, 11);
    depth_stride = LLVMGetParam(function, 12);
+   sample_id    = LLVMGetParam(function, 13);
 
    lp_build_name(context_ptr, "context");
    lp_build_name(x, "x");
@@ -2544,6 +2638,7 @@ generate_fragment(struct llvmpipe_context *lp,
    lp_build_name(thread_data_ptr, "thread_data");
    lp_build_name(stride_ptr, "stride_ptr");
    lp_build_name(depth_stride, "depth_stride");
+   lp_build_name(sample_id, "sample_id");
 
    /*
     * Function body
@@ -2621,6 +2716,9 @@ generate_fragment(struct llvmpipe_context *lp,
          LLVMBuildStore(builder, mask, mask_ptr);
       }
 
+      /* TODO: HACK to make samples = 0 work
+       *       does writing sample mask even make sense if samples == 0? */
+      shader->info.base.writes_samplemask &= lp->framebuffer.samples != 0;
       generate_fs_loop(gallivm,
                        shader, key,
                        builder,
@@ -2634,7 +2732,8 @@ generate_fragment(struct llvmpipe_context *lp,
                        depth_ptr,
                        depth_stride,
                        facing,
-                       thread_data_ptr);
+                       thread_data_ptr,
+                       sample_id);
 
       for (i = 0; i < num_fs; i++) {
          LLVMValueRef indexi = lp_build_const_int32(gallivm, i);
@@ -3214,6 +3313,8 @@ make_variant_key(struct llvmpipe_context *lp,
    } else {
       key->depth_clamp = (lp->rasterizer->depth_clip_near == 0) ? 1 : 0;
    }
+
+   key->nr_samples = lp->framebuffer.samples; /* TODO: 0 or 1? */
 
    /* alpha test only applies if render buffer 0 is non-integer (or does not exist) */
    if (!lp->framebuffer.nr_cbufs ||

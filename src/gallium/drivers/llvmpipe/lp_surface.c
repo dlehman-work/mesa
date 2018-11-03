@@ -60,6 +60,56 @@ lp_resource_copy(struct pipe_context *pipe,
                              src, src_level, src_box);
 }
 
+static void lp_resolve(struct pipe_context *pipe,
+                       struct pipe_blit_info *info)
+{
+    uint8_t *src_map;
+    uint8_t *dst_map;
+    struct pipe_box box;
+    struct pipe_transfer *src_transfer;
+    struct pipe_transfer *dst_transfer;
+    struct llvmpipe_resource *src;
+    struct llvmpipe_resource *dst;
+    unsigned i, j, stride;
+    uint8_t *src_maps[LP_MAX_SAMPLES];
+    float pix;
+
+    src = llvmpipe_resource(info->src.resource);
+    dst = llvmpipe_resource(info->dst.resource);
+    stride = llvmpipe_sample_stride(info->src.resource);
+    /* TODO: what validation do we need to do here?  how much has been done by callers? */
+
+    box = info->dst.box;
+    src_map = pipe->transfer_map(pipe, &src->base, 0, LP_TEX_USAGE_READ, &box, &src_transfer);
+    dst_map = pipe->transfer_map(pipe, &dst->base, 0, LP_TEX_USAGE_READ_WRITE, &box, &dst_transfer); /* TODO: WRITE_ALL? */
+    
+    if (0)
+    {
+        printf("%s: UNIMPLEMENTED %d -> %d map %p -> %p\n", __FUNCTION__,
+                src->base.nr_samples, dst->base.nr_samples,
+                src_map, dst_map);
+        memcpy(dst_map, src_map, box.width * box.height * box.depth * sizeof(uint32_t));
+    }
+    else
+    {
+        printf("%s: partially implemented %d -> %d map %p -> %p\n", __FUNCTION__,
+                src->base.nr_samples, dst->base.nr_samples,
+                src_map, dst_map);
+        for (i = 0; i < src->base.nr_samples; i++)
+            src_maps[i] = src_map + i * stride;
+
+        for (i = 0; i < box.width * box.height * box.depth * sizeof(uint32_t); i++)
+        {
+            pix = 0.0f;
+            for (j = 0; j < src->base.nr_samples; j++)
+                pix += ubyte_to_float(src_maps[j][i]);
+            dst_map[i] = float_to_ubyte(pix / src->base.nr_samples);
+        }
+    }
+
+    pipe->transfer_unmap(pipe, dst_transfer);
+    pipe->transfer_unmap(pipe, src_transfer);
+}
 
 static void lp_blit(struct pipe_context *pipe,
                     const struct pipe_blit_info *blit_info)
@@ -74,7 +124,7 @@ static void lp_blit(struct pipe_context *pipe,
        info.dst.resource->nr_samples <= 1 &&
        !util_format_is_depth_or_stencil(info.src.resource->format) &&
        !util_format_is_pure_integer(info.src.resource->format)) {
-      debug_printf("llvmpipe: color resolve unimplemented\n");
+      lp_resolve(pipe, &info);
       return;
    }
 
@@ -223,6 +273,33 @@ llvmpipe_clear_depth_stencil(struct pipe_context *pipe,
                             dstx, dsty, width, height);
 }
 
+/* from swr driver */
+static const uint8_t get_sample_positions[][2] =
+{         { 8, 8},
+  /* 1x*/ { 8, 8},
+  /* 2x*/ {12,12},{ 4, 4},
+  /* 4x*/ { 6, 2},{14, 6},{ 2,10},{10,14},
+  /* 8x*/ { 9, 5},{ 7,11},{13, 9},{ 5, 3},
+          { 3,13},{ 1, 7},{11,15},{15, 1},
+  /*16x*/ { 9, 9},{ 7, 5},{ 5,10},{12, 7},
+          { 3, 6},{10,13},{13,11},{11, 3},
+          { 6,14},{ 8, 1},{ 4, 2},{ 2,12},
+          { 0, 8},{15, 4},{14,15},{ 1, 0}
+};
+
+/* taken from nv50 driver */
+void lp_get_sample_position(struct pipe_context *context,
+                            unsigned sample_count,
+                            unsigned sample_index,
+                            float *out_value)
+{
+   /* validate sample_count */
+   sample_count = 1 << util_logbase2(sample_count);
+
+   const uint8_t *sample = get_sample_positions[sample_count + sample_index];
+   out_value[0] = sample[0] / 16.0f;
+   out_value[1] = sample[1] / 16.0f;
+}
 
 void
 llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
@@ -236,4 +313,5 @@ llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
    lp->pipe.resource_copy_region = lp_resource_copy;
    lp->pipe.blit = lp_blit;
    lp->pipe.flush_resource = lp_flush_resource;
+   lp->pipe.get_sample_position = lp_get_sample_position;
 }

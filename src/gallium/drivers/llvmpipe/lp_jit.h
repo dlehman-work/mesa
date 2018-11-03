@@ -55,6 +55,8 @@ struct lp_jit_texture
    uint32_t depth;        /* doubles as array size */
    uint32_t first_level;
    uint32_t last_level;
+   uint32_t nr_samples;
+   uint32_t sample_stride;
    const void *base;
    uint32_t row_stride[LP_MAX_TEXTURE_LEVELS];
    uint32_t img_stride[LP_MAX_TEXTURE_LEVELS];
@@ -84,6 +86,8 @@ enum {
    LP_JIT_TEXTURE_DEPTH,
    LP_JIT_TEXTURE_FIRST_LEVEL,
    LP_JIT_TEXTURE_LAST_LEVEL,
+   LP_JIT_TEXTURE_NR_SAMPLES,
+   LP_JIT_TEXTURE_SAMPLE_STRIDE,
    LP_JIT_TEXTURE_BASE,
    LP_JIT_TEXTURE_ROW_STRIDE,
    LP_JIT_TEXTURE_IMG_STRIDE,
@@ -256,7 +260,8 @@ typedef void
                     uint32_t mask,
                     struct lp_jit_thread_data *thread_data,
                     unsigned *stride,
-                    unsigned depth_stride);
+                    unsigned depth_stride,
+                    unsigned sampleid);
 
 
 void

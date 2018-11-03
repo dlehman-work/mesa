@@ -76,7 +76,9 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
       elem_types[LP_JIT_TEXTURE_HEIGHT] =
       elem_types[LP_JIT_TEXTURE_DEPTH] =
       elem_types[LP_JIT_TEXTURE_FIRST_LEVEL] =
-      elem_types[LP_JIT_TEXTURE_LAST_LEVEL] = LLVMInt32TypeInContext(lc);
+      elem_types[LP_JIT_TEXTURE_LAST_LEVEL] =
+      elem_types[LP_JIT_TEXTURE_NR_SAMPLES] =
+      elem_types[LP_JIT_TEXTURE_SAMPLE_STRIDE] = LLVMInt32TypeInContext(lc);
       elem_types[LP_JIT_TEXTURE_BASE] = LLVMPointerType(LLVMInt8TypeInContext(lc), 0);
       elem_types[LP_JIT_TEXTURE_ROW_STRIDE] =
       elem_types[LP_JIT_TEXTURE_IMG_STRIDE] =
@@ -101,6 +103,12 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
       LP_CHECK_MEMBER_OFFSET(struct lp_jit_texture, last_level,
                              gallivm->target, texture_type,
                              LP_JIT_TEXTURE_LAST_LEVEL);
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_texture, nr_samples,
+                             gallivm->target, texture_type,
+                             LP_JIT_TEXTURE_NR_SAMPLES);
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_texture, sample_stride,
+                             gallivm->target, texture_type,
+                             LP_JIT_TEXTURE_SAMPLE_STRIDE);
       LP_CHECK_MEMBER_OFFSET(struct lp_jit_texture, base,
                              gallivm->target, texture_type,
                              LP_JIT_TEXTURE_BASE);

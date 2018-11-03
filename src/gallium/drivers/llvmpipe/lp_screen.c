@@ -230,7 +230,9 @@ llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_CONSTANT_BUFFER_OFFSET_ALIGNMENT:
       return 16;
    case PIPE_CAP_TEXTURE_MULTISAMPLE:
-      return 0;
+      return LP_MAX_SAMPLES > 1 ? 1 : 0; /* TODO: don't hard-code */
+   case PIPE_CAP_FAKE_SW_MSAA:
+      return LP_MAX_SAMPLES > 1 ? 0 : 1; /* TODO: don't hard-code */
    case PIPE_CAP_MIN_MAP_BUFFER_ALIGNMENT:
       return 64;
    case PIPE_CAP_TEXTURE_BUFFER_OBJECTS:
@@ -262,8 +264,6 @@ llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_TGSI_TEX_TXF_LZ:
       return 0;
    case PIPE_CAP_SAMPLER_VIEW_TARGET:
-      return 1;
-   case PIPE_CAP_FAKE_SW_MSAA:
       return 1;
    case PIPE_CAP_TEXTURE_QUERY_LOD:
    case PIPE_CAP_CONDITIONAL_RENDER_INVERTED:
@@ -487,10 +487,14 @@ llvmpipe_is_format_supported( struct pipe_screen *_screen,
           target == PIPE_TEXTURE_CUBE ||
           target == PIPE_TEXTURE_CUBE_ARRAY);
 
-   if (sample_count > 1)
+   if (sample_count > LP_MAX_SAMPLES)
       return FALSE;
 
    if (MAX2(1, sample_count) != MAX2(1, storage_sample_count))
+      return false;
+
+   //if ((sample_count > screen->msaa_max_count) /* TODO: and/or LP_MAX_SAMPLES? (see swr) */
+   if (!util_is_power_of_two_or_zero(sample_count))
       return false;
 
    if (bind & PIPE_BIND_RENDER_TARGET) {

@@ -43,7 +43,7 @@ block_full_4(struct lp_rasterizer_task *task,
              const struct lp_rast_triangle *tri,
              int x, int y)
 {
-   lp_rast_shade_quads_all(task, &tri->inputs, x, y);
+   lp_rast_shade_quads_all(task, tri, x, y);
 }
 
 
@@ -344,7 +344,7 @@ lp_rast_triangle_32_3_16(struct lp_rasterizer_task *task,
 
    for (i = 0; i < nr; i++)
       lp_rast_shade_quads_mask(task,
-                               &tri->inputs,
+                               tri,
                                x + 4 * out[i].j,
                                y + 4 * out[i].i,
                                0xffff & ~out[i].mask);
@@ -425,7 +425,7 @@ lp_rast_triangle_32_3_4(struct lp_rasterizer_task *task,
 
       if (mask != 0xffff)
          lp_rast_shade_quads_mask(task,
-                                  &tri->inputs,
+                                  tri,
                                   x,
                                   y,
                                   0xffff & ~mask);
@@ -642,7 +642,7 @@ lp_rast_triangle_32_3_16(struct lp_rasterizer_task *task,
 
    for (i = 0; i < nr; i++)
       lp_rast_shade_quads_mask(task,
-                               &tri->inputs,
+                               tri,
                                x + 4 * out[i].j,
                                y + 4 * out[i].i,
                                0xffff & ~out[i].mask);

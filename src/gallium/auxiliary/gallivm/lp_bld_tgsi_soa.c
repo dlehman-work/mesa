@@ -1704,6 +1704,31 @@ emit_fetch_system_value(
       atype = TGSI_TYPE_UNSIGNED;
       break;
 
+   case TGSI_SEMANTIC_SAMPLEID:
+      res = lp_build_broadcast_scalar(&bld_base->uint_bld, bld->system_values.sample_id);
+      atype = TGSI_TYPE_UNSIGNED;
+      break;
+
+   case TGSI_SEMANTIC_SAMPLEPOS:
+      {
+        LLVMTypeRef int_type;
+        LLVMValueRef vec_ptr;
+        LLVMValueRef indices[1];
+
+        int_type = LLVMInt32TypeInContext(gallivm->context);
+        indices[0] = LLVMConstInt(int_type, swizzle_in, 0);
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "&gl_SamplePosition[idx]");
+        res = LLVMBuildLoad(builder, vec_ptr, "gl_SamplePosition");
+        atype = TGSI_TYPE_FLOAT;
+      }
+      break;
+   
+   case TGSI_SEMANTIC_SAMPLEMASK:
+      printf("%s: %s: %d: swizzle_in %u\n", __FILE__, __FUNCTION__, __LINE__, swizzle_in); fflush(stdout);
+      res = bld_base->base.zero;
+      atype = TGSI_TYPE_FLOAT;
+      break;
+
    default:
       assert(!"unexpected semantic in emit_fetch_system_value");
       res = bld_base->base.zero;
@@ -2278,6 +2303,7 @@ emit_tex( struct lp_build_tgsi_soa_context *bld,
    params.offsets = offsets;
    params.lod = lod;
    params.texel = texel;
+   params.sample = NULL; /* TODO: multisampling */
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
@@ -2447,6 +2473,7 @@ emit_sample(struct lp_build_tgsi_soa_context *bld,
    params.offsets = offsets;
    params.lod = lod;
    params.texel = texel;
+   params.sample = NULL; /* TODO: multisampling */
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
@@ -2475,6 +2502,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    unsigned unit, target;
    LLVMValueRef coord_undef = LLVMGetUndef(bld->bld_base.base.int_vec_type);
    LLVMValueRef explicit_lod = NULL;
+   LLVMValueRef sample = NULL;
    LLVMValueRef coords[5];
    LLVMValueRef offsets[3] = { NULL };
    struct lp_sampler_params params;
@@ -2517,30 +2545,26 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       dims = 2;
       break;
    case TGSI_TEXTURE_2D_ARRAY:
-   case TGSI_TEXTURE_2D_ARRAY_MSAA:
       layer_coord = 2;
       dims = 2;
       break;
    case TGSI_TEXTURE_3D:
       dims = 3;
       break;
+   case TGSI_TEXTURE_2D_ARRAY_MSAA: /* TODO */
    default:
       assert(0);
       return;
    }
 
-   /* always have lod except for buffers and msaa targets ? */
+   /* always have lod except for buffers, msaa, and rect targets */
    if (target != TGSI_TEXTURE_BUFFER &&
        target != TGSI_TEXTURE_2D_MSAA &&
-       target != TGSI_TEXTURE_2D_ARRAY_MSAA) {
+       target != TGSI_TEXTURE_RECT) {
       sample_key |= LP_SAMPLER_LOD_EXPLICIT << LP_SAMPLER_LOD_CONTROL_SHIFT;
       explicit_lod = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
       lod_property = lp_build_lod_property(&bld->bld_base, inst, 0);
    }
-   /*
-    * XXX: for real msaa support, the w component (or src2.x for sample_i_ms)
-    * would be the sample index.
-    */
 
    for (i = 0; i < dims; i++) {
       coords[i] = lp_build_emit_fetch(&bld->bld_base, inst, 0, i);
@@ -2549,7 +2573,15 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    for (i = dims; i < 5; i++) {
       coords[i] = coord_undef;
    }
-   if (layer_coord)
+   if (target == TGSI_TEXTURE_2D_MSAA) {
+      sample_key |= LP_SAMPLER_MSAA;
+      if (is_samplei)
+         sample = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0); /* TODO: ?? */
+      else
+         sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
+      coords[2] = sample; /* TODO: shouldn't be needed */
+   }
+   else if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
 
    if (inst->Texture.NumOffsets == 1) {
@@ -2577,6 +2609,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    params.derivs = NULL;
    params.lod = explicit_lod;
    params.texel = texel;
+   params.sample = sample;
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,

@@ -64,7 +64,7 @@ TAG(do_block_4)(struct lp_rasterizer_task *task,
    /* Now pass to the shader:
     */
    if (mask)
-      lp_rast_shade_quads_mask(task, &tri->inputs, x, y, mask);
+      lp_rast_shade_quads_mask(task, tri, x, y, mask);
 }
 
 /**
@@ -393,7 +393,7 @@ TRI_16(struct lp_rasterizer_task *task,
       }
 
       if (mask)
-	 lp_rast_shade_quads_mask(task, &tri->inputs, px, py, mask);
+	 lp_rast_shade_quads_mask(task, tri, px, py, mask);
    }
 }
 #endif
@@ -439,7 +439,7 @@ TRI_4(struct lp_rasterizer_task *task,
       }
 
       if (mask)
-	 lp_rast_shade_quads_mask(task, &tri->inputs, x, y, mask);
+	 lp_rast_shade_quads_mask(task, tri, x, y, mask);
    }
 }
 #endif
