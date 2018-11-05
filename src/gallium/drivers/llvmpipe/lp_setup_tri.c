@@ -1300,6 +1300,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
       lp_context->pipeline_statistics.c_primitives++;
    }
 
+   /* TODO: area is probably always the same */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    for (i = 0; i < LP_MAX_SAMPLES; i++) { /* TODO: nr_samples */
        get_sample_position(LLVM_MSAA_16X, i, offsets); /* TODO */
