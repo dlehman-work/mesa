@@ -66,6 +66,7 @@ struct fixed_position {
    int32_t dx20;
    int32_t dy20;
    int64_t area;
+   int64_t pad;
 };
 
 
