@@ -137,6 +137,10 @@ struct lp_rast_triangle {
    float pad1;
 #endif
 
+   uint32_t sampleid;
+   uint32_t masks[LP_MAX_SAMPLES_MASKS];
+   uint32_t pad[2];
+
    /* inputs for the shader */
    struct lp_rast_shader_inputs inputs;
    /* planes are also allocated here */

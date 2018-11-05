@@ -93,4 +93,6 @@
 
 #define LP_MAX_SAMPLES 16
 
+#define LP_MAX_SAMPLES_MASKS 1
+
 #endif /* LP_LIMITS_H */
