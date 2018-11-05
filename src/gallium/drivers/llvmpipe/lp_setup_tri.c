@@ -1228,13 +1228,71 @@ static void triangle_both(struct lp_setup_context *setup,
    }
 }
 
+/* taken from swr */
+typedef enum LLVM_MSAA
+{
+    LLVM_MSAA_1X = 0,
+    LLVM_MSAA_2X,
+    LLVM_MSAA_4X,
+    LLVM_MSAA_8X,
+    LLVM_MSAA_16X,
+    LLVM_MSAA_TYPE_COUNT
+} LLVM_MSAA;
+
+static inline LLVM_MSAA get_sample_count(unsigned nsamples)
+{
+    switch (nsamples)
+    {
+    case 1:
+        return LLVM_MSAA_1X;
+    case 2:
+        return LLVM_MSAA_2X;
+    case 4:
+        return LLVM_MSAA_4X;
+    case 8:
+        return LLVM_MSAA_8X;
+    case 16:
+        return LLVM_MSAA_16X;
+    default:
+        assert(0);
+        return LLVM_MSAA_1X;
+    }
+}
+
+static const uint8_t sample_positions[][2] =
+{ /* 1x*/ { 8, 8},
+  /* 2x*/ {12,12},{ 4, 4},
+  /* 4x*/ { 6, 2},{14, 6},{ 2,10},{10,14},
+  /* 8x*/ { 9, 5},{ 7,11},{13, 9},{ 5, 3},
+          { 3,13},{ 1, 7},{11,15},{15, 1},
+  /*16x*/ { 9, 9},{ 7, 5},{ 5,10},{12, 7},
+          { 3, 6},{10,13},{13,11},{11, 3},
+          { 6,14},{ 8, 1},{ 4, 2},{ 2,12},
+          { 0, 8},{15, 4},{14,15},{ 1, 0} };
+
+static inline unsigned get_num_samples(unsigned sample_enum)
+{
+    return 1 << sample_enum;
+}
+
+static void
+get_sample_position(unsigned sample_count, unsigned sample_index,
+                    float *out_value)
+{
+   sample_count = get_num_samples(get_sample_count(sample_count));
+
+   const uint8_t *sample = sample_positions[sample_count-1 + sample_index];
+   out_value[0] = sample[0] / 16.0f;
+   out_value[1] = sample[1] / 16.0f;
+}
+
 static void triangle_both_ms(struct lp_setup_context *setup,
                              const float (*v0)[4],
                              const float (*v1)[4],
                              const float (*v2)[4])
 {
    int i;
-   const float offsets[2] = { setup->pixel_offset, setup->pixel_offset };
+   float offsets[2];
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
 
@@ -1243,8 +1301,10 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    }
 
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
-   for (i = 0; i < LP_MAX_SAMPLES; i++) /* TODO: nr_samples */
+   for (i = 0; i < LP_MAX_SAMPLES; i++) { /* TODO: nr_samples */
+       get_sample_position(LLVM_MSAA_16X, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
+   }
 
    if (0) {
       assert(!util_is_inf_or_nan(v0[0][0]));
