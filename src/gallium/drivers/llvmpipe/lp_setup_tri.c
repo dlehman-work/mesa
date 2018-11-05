@@ -263,7 +263,8 @@ do_triangle_ccw(struct lp_setup_context *setup,
                 const float (*v0)[4],
                 const float (*v1)[4],
                 const float (*v2)[4],
-                boolean frontfacing )
+                boolean frontfacing,
+                uint32_t sampleid)
 {
    struct lp_scene *scene = setup->scene;
    const struct lp_setup_variant_key *key = &setup->setup.variant->key;
@@ -979,14 +980,15 @@ static void retry_triangle_ccw( struct lp_setup_context *setup,
                                 const float (*v0)[4],
                                 const float (*v1)[4],
                                 const float (*v2)[4],
-                                boolean front)
+                                boolean front,
+                                uint32_t sample_id)
 {
-   if (!do_triangle_ccw( setup, position, v0, v1, v2, front ))
+   if (!do_triangle_ccw( setup, position, v0, v1, v2, front, sample_id ))
    {
       if (!lp_setup_flush_and_restart(setup))
          return;
 
-      if (!do_triangle_ccw( setup, position, v0, v1, v2, front ))
+      if (!do_triangle_ccw( setup, position, v0, v1, v2, front, sample_id ))
          return;
    }
 }
@@ -1162,10 +1164,10 @@ static void triangle_cw(struct lp_setup_context *setup,
    if (position.area < 0) {
       if (setup->flatshade_first) {
          rotate_fixed_position_12(&position);
-         retry_triangle_ccw(setup, &position, v0, v2, v1, !setup->ccw_is_frontface);
+         retry_triangle_ccw(setup, &position, v0, v2, v1, !setup->ccw_is_frontface, 0);
       } else {
          rotate_fixed_position_01(&position);
-         retry_triangle_ccw(setup, &position, v1, v0, v2, !setup->ccw_is_frontface);
+         retry_triangle_ccw(setup, &position, v1, v0, v2, !setup->ccw_is_frontface, 0);
       }
    }
 }
@@ -1186,7 +1188,7 @@ static void triangle_ccw(struct lp_setup_context *setup,
    calc_fixed_position(setup, &position, v0, v1, v2);
 
    if (position.area > 0)
-      retry_triangle_ccw(setup, &position, v0, v1, v2, setup->ccw_is_frontface);
+      retry_triangle_ccw(setup, &position, v0, v1, v2, setup->ccw_is_frontface, 0);
 }
 
 /**
@@ -1216,14 +1218,14 @@ static void triangle_both(struct lp_setup_context *setup,
    }
 
    if (position.area > 0)
-      retry_triangle_ccw( setup, &position, v0, v1, v2, setup->ccw_is_frontface );
+      retry_triangle_ccw( setup, &position, v0, v1, v2, setup->ccw_is_frontface, 0 );
    else if (position.area < 0) {
       if (setup->flatshade_first) {
          rotate_fixed_position_12( &position );
-         retry_triangle_ccw( setup, &position, v0, v2, v1, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &position, v0, v2, v1, !setup->ccw_is_frontface, 0 );
       } else {
          rotate_fixed_position_01( &position );
-         retry_triangle_ccw( setup, &position, v1, v0, v2, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &position, v1, v0, v2, !setup->ccw_is_frontface, 0 );
       }
    }
 }
@@ -1317,16 +1319,16 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    }
 
    if (positions[0].area > 0)
-      retry_triangle_ccw( setup, &positions[0], v0, v1, v2, setup->ccw_is_frontface );
+      retry_triangle_ccw( setup, &positions[0], v0, v1, v2, setup->ccw_is_frontface, 0 );
    else if (positions[0].area < 0) {
       if (setup->flatshade_first) {
          for (i = 0; i < LP_MAX_SAMPLES; i++) /* TODO: nr_samples */
             rotate_fixed_position_12( &positions[i] );
-         retry_triangle_ccw( setup, &positions[0], v0, v2, v1, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &positions[0], v0, v2, v1, !setup->ccw_is_frontface, 0 );
       } else {
          for (i = 0; i < LP_MAX_SAMPLES; i++) /* TODO: nr_samples */
             rotate_fixed_position_01( &positions[i] );
-         retry_triangle_ccw( setup, &positions[0], v1, v0, v2, !setup->ccw_is_frontface );
+         retry_triangle_ccw( setup, &positions[0], v1, v0, v2, !setup->ccw_is_frontface, 0 );
       }
    }
 }
