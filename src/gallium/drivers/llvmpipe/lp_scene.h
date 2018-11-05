@@ -145,6 +145,16 @@ struct lp_scene {
       unsigned format_bytes;
    } zsbuf, cbufs[PIPE_MAX_COLOR_BUFS];
 
+   /* Framebuffer mappings when multisampling - valid only between begin_rasterization()
+    * and end_rasterization().
+    */
+   struct {
+      uint8_t *map[LP_MAX_SAMPLES];
+      unsigned stride;
+      unsigned layer_stride;
+      unsigned format_bytes;
+   } zsbuf_ms, cbufs_ms[PIPE_MAX_COLOR_BUFS];
+
    /* The amount of layers in the fb (minimum of all attachments) */
    unsigned fb_max_layer;
 
