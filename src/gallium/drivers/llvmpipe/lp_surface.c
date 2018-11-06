@@ -223,6 +223,38 @@ llvmpipe_clear_depth_stencil(struct pipe_context *pipe,
                             dstx, dsty, width, height);
 }
 
+/* taken from nv50 driver */
+void lp_get_sample_position(struct pipe_context *context,
+                               unsigned sample_count,
+                               unsigned sample_index,
+                               float *out_value)
+{
+   static const uint8_t ms1[1][2] = { { 0x8, 0x8 } };
+   static const uint8_t ms2[2][2] = {
+      { 0x4, 0x4 }, { 0xc, 0xc } }; /* surface coords (0,0), (1,0) */
+   static const uint8_t ms4[4][2] = {
+      { 0x6, 0x2 }, { 0xe, 0x6 },   /* (0,0), (1,0) */
+      { 0x2, 0xa }, { 0xa, 0xe } }; /* (0,1), (1,1) */
+   static const uint8_t ms8[8][2] = {
+      { 0x1, 0x7 }, { 0x5, 0x3 },   /* (0,0), (1,0) */
+      { 0x3, 0xd }, { 0x7, 0xb },   /* (0,1), (1,1) */
+      { 0x9, 0x5 }, { 0xf, 0x1 },   /* (2,0), (3,0) */
+      { 0xb, 0xf }, { 0xd, 0x9 } }; /* (2,1), (3,1) */
+   const uint8_t (*ptr)[2];
+
+   switch (sample_count) {
+   case 0:
+   case 1: ptr = ms1; break;
+   case 2: ptr = ms2; break;
+   case 4: ptr = ms4; break;
+   case 8: ptr = ms8; break;
+   default:
+      assert(0);
+      return; /* bad sample count -> undefined locations */
+   }
+   out_value[0] = ptr[sample_index][0] * 0.0625f;
+   out_value[1] = ptr[sample_index][1] * 0.0625f;
+}
 
 void
 llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
@@ -236,4 +268,5 @@ llvmpipe_init_surface_functions(struct llvmpipe_context *lp)
    lp->pipe.resource_copy_region = lp_resource_copy;
    lp->pipe.blit = lp_blit;
    lp->pipe.flush_resource = lp_flush_resource;
+   lp->pipe.get_sample_position = lp_get_sample_position;
 }
