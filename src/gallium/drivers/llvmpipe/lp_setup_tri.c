@@ -1297,6 +1297,35 @@ static void triangle_ccw(struct lp_setup_context *setup,
       retry_triangle_ccw(setup, &position, v0, v1, v2, setup->ccw_is_frontface, 0);
 }
 
+
+static void triangle_ccw_ms(struct lp_setup_context *setup,
+                            const float (*v0)[4],
+                            const float (*v1)[4],
+                            const float (*v2)[4])
+{
+   int i;
+   float offsets[2];
+   PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
+   struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
+
+   if (lp_context->active_statistics_queries) {
+      lp_context->pipeline_statistics.c_primitives++;
+   }
+
+   get_sample_position(LLVM_MSAA_16X, 0, offsets); /* TODO */
+   calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
+
+   if (positions[0].area > 0) {
+      retry_triangle_ccw(setup, &positions[0], v0, v1, v2, setup->ccw_is_frontface, 0);
+
+      for (i = 1; i < LP_MAX_SAMPLES; i++) { /* TODO: nr_samples */
+         get_sample_position(LLVM_MSAA_16X, i, offsets); /* TODO */
+         calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
+         retry_triangle_ccw(setup, &positions[i], v0, v1, v2, setup->ccw_is_frontface, i);
+      }
+   }
+}
+
 /**
  * Draw triangle whether it's CW or CCW.
  */
@@ -1409,15 +1438,21 @@ lp_setup_choose_triangle(struct lp_setup_context *setup)
       break;
    case PIPE_FACE_BACK:
       setup->triangle = setup->ccw_is_frontface ? triangle_ccw : triangle_cw;
-      if (1) /* TODO: multisampling enabled */
+      if (1) { /* TODO: multisampling enabled */
         if (setup->triangle == triangle_cw)
             setup->triangle = triangle_cw_ms;
+        else if (setup->triangle == triangle_ccw)
+            setup->triangle = triangle_ccw_ms;
+      }
       break;
    case PIPE_FACE_FRONT:
       setup->triangle = setup->ccw_is_frontface ? triangle_cw : triangle_ccw;
-      if (1) /* TODO: multisampling enabled */
+      if (1) { /* TODO: multisampling enabled */
         if (setup->triangle == triangle_cw)
             setup->triangle = triangle_cw_ms;
+        else if (setup->triangle == triangle_ccw)
+            setup->triangle = triangle_ccw_ms;
+      }
       break;
    default:
       setup->triangle = triangle_noop;
