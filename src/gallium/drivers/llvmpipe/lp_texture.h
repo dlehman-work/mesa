@@ -211,6 +211,13 @@ llvmpipe_resource_map(struct pipe_resource *resource,
                       unsigned layer,
                       enum lp_texture_usage tex_usage);
 
+void *
+llvmpipe_resource_map_ms(struct pipe_resource *resource,
+                         unsigned level,
+                         unsigned layer,
+                         unsigned sampleid,
+                         enum lp_texture_usage tex_usage);
+
 void
 llvmpipe_resource_unmap(struct pipe_resource *resource,
                         unsigned level,
@@ -228,6 +235,11 @@ llvmpipe_resource_size(const struct pipe_resource *resource);
 ubyte *
 llvmpipe_get_texture_image_address(struct llvmpipe_resource *lpr,
                                    unsigned face_slice, unsigned level);
+
+
+ubyte *
+llvmpipe_get_texture_image_address_ms(struct llvmpipe_resource *lpr,
+                                      unsigned face_slice, unsigned level, unsigned sampleid);
 
 
 extern void
