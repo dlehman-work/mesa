@@ -1234,6 +1234,50 @@ static void triangle_cw(struct lp_setup_context *setup,
    }
 }
 
+/**
+ * Draw triangle if it's CW, cull otherwise.
+ */
+static void triangle_cw_ms(struct lp_setup_context *setup,
+                           const float (*v0)[4],
+                           const float (*v1)[4],
+                           const float (*v2)[4])
+{
+   int i;
+   float offsets[2];
+   PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
+   struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
+
+   if (lp_context->active_statistics_queries) {
+      lp_context->pipeline_statistics.c_primitives++;
+   }
+
+   get_sample_position(LLVM_MSAA_16X, 0, offsets); /* TODO */
+   calc_fixed_position(setup, &positions[0], v0, v1, v2);
+
+   if (positions[0].area < 0) {
+      if (setup->flatshade_first) {
+         rotate_fixed_position_12(&positions[0]);
+         retry_triangle_ccw(setup, &positions[0], v0, v2, v1, !setup->ccw_is_frontface, 0);
+      } else {
+         rotate_fixed_position_01(&positions[0]);
+         retry_triangle_ccw(setup, &positions[0], v1, v0, v2, !setup->ccw_is_frontface, 0);
+      }
+
+      for (i = 1; i < LP_MAX_SAMPLES; i++) { /* TODO: nr_samples */
+          get_sample_position(LLVM_MSAA_16X, i, offsets); /* TODO */
+          calc_fixed_position(setup, &positions[i], v0, v1, v2);
+
+          if (setup->flatshade_first) {
+             rotate_fixed_position_12(&positions[i]);
+             retry_triangle_ccw(setup, &positions[i], v0, v2, v1, !setup->ccw_is_frontface, i);
+          } else {
+             rotate_fixed_position_01(&positions[i]);
+             retry_triangle_ccw(setup, &positions[i], v1, v0, v2, !setup->ccw_is_frontface, i);
+          }
+      }
+   }
+}
+
 
 static void triangle_ccw(struct lp_setup_context *setup,
                          const float (*v0)[4],
@@ -1365,9 +1409,15 @@ lp_setup_choose_triangle(struct lp_setup_context *setup)
       break;
    case PIPE_FACE_BACK:
       setup->triangle = setup->ccw_is_frontface ? triangle_ccw : triangle_cw;
+      if (1) /* TODO: multisampling enabled */
+        if (setup->triangle == triangle_cw)
+            setup->triangle = triangle_cw_ms;
       break;
    case PIPE_FACE_FRONT:
       setup->triangle = setup->ccw_is_frontface ? triangle_cw : triangle_ccw;
+      if (1) /* TODO: multisampling enabled */
+        if (setup->triangle == triangle_cw)
+            setup->triangle = triangle_cw_ms;
       break;
    default:
       setup->triangle = triangle_noop;
