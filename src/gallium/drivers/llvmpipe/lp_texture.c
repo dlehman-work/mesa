@@ -176,7 +176,7 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
          return FALSE;
       }
       else {
-         memset(lpr->tex_data, 0, total_size);
+         memset(lpr->tex_data, 0, total_size * nr_samples);
       }
    }
 
