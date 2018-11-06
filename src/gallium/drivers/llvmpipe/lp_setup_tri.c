@@ -1189,6 +1189,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
 
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
@@ -1250,6 +1251,7 @@ static void triangle_ccw_ms(struct lp_setup_context *setup,
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
 
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
@@ -1317,6 +1319,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
 
+   STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
