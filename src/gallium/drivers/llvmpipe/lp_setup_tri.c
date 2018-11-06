@@ -1252,7 +1252,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
    }
 
    get_sample_position(LLVM_MSAA_16X, 0, offsets); /* TODO */
-   calc_fixed_position(setup, &positions[0], v0, v1, v2);
+   calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
    if (positions[0].area < 0) {
       if (setup->flatshade_first) {
@@ -1265,7 +1265,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
 
       for (i = 1; i < LP_MAX_SAMPLES; i++) { /* TODO: nr_samples */
           get_sample_position(LLVM_MSAA_16X, i, offsets); /* TODO */
-          calc_fixed_position(setup, &positions[i], v0, v1, v2);
+          calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
 
           if (setup->flatshade_first) {
              rotate_fixed_position_12(&positions[i]);
