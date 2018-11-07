@@ -222,9 +222,10 @@ lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
  */
 static inline void
 lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
-                         const struct lp_rast_shader_inputs *inputs,
+                         const struct lp_rast_triangle *tri,
                          unsigned x, unsigned y )
 {
+   const struct lp_rast_shader_inputs *inputs = &tri->inputs;
    const struct lp_scene *scene = task->scene;
    const struct lp_rast_state *state = task->state;
    struct lp_fragment_shader_variant *variant = state->variant;

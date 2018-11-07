@@ -43,7 +43,7 @@ block_full_4(struct lp_rasterizer_task *task,
              const struct lp_rast_triangle *tri,
              int x, int y)
 {
-   lp_rast_shade_quads_all(task, &tri->inputs, x, y);
+   lp_rast_shade_quads_all(task, tri, x, y);
 }
 
 
