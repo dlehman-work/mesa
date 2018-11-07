@@ -330,7 +330,7 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
             if (scene->fb.cbufs[i]) {
                stride[i] = scene->cbufs[i].stride;
                color[i] = lp_rast_get_color_block_pointer(task, i, tile_x + x,
-                                                          tile_y + y, inputs->layer);
+                                                          tile_y + y, inputs->layer, 0 /* TODO */);
             }
             else {
                stride[i] = 0;
@@ -426,7 +426,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
       if (scene->fb.cbufs[i]) {
          stride[i] = scene->cbufs[i].stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,
-                                                    inputs->layer);
+                                                    inputs->layer, tri->sampleid);
       }
       else {
          stride[i] = 0;

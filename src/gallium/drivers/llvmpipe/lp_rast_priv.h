@@ -146,7 +146,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
 static inline uint8_t *
 lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
                                 unsigned buf, unsigned x, unsigned y,
-                                unsigned layer)
+                                unsigned layer, unsigned sampleid)
 {
    unsigned px, py, pixel_offset;
    uint8_t *color;
@@ -240,7 +240,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
       if (scene->fb.cbufs[i]) {
          stride[i] = scene->cbufs[i].stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,
-                                                    inputs->layer);
+                                                    inputs->layer, tri->sampleid);
       }
       else {
          stride[i] = 0;
