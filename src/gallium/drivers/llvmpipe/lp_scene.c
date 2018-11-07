@@ -161,8 +161,6 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
          scene->cbufs[i].stride = 0;
          scene->cbufs[i].layer_stride = 0;
          scene->cbufs[i].map = NULL;
-         for (j = 0; j < LP_MAX_SAMPLES; j++) /* TODO: not hard-code */
-            scene->cbufs[i].map_ms[j] = NULL;
          continue;
       }
 
@@ -177,11 +175,6 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
                                                      cbuf->u.tex.first_layer,
                                                      LP_TEX_USAGE_READ_WRITE);
          scene->cbufs[i].format_bytes = util_format_get_blocksize(cbuf->format);
-         for (j = 0; j < LP_MAX_SAMPLES; j++) /* TODO: take sample id into account */
-            scene->cbufs[i].map_ms[j] = llvmpipe_resource_map(cbuf->texture,
-                                                     cbuf->u.tex.level,
-                                                     cbuf->u.tex.first_layer,
-                                                     LP_TEX_USAGE_READ_WRITE);
       }
       else {
          struct llvmpipe_resource *lpr = llvmpipe_resource(cbuf->texture);
@@ -203,11 +196,6 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
                                                zsbuf->u.tex.level,
                                                zsbuf->u.tex.first_layer,
                                                LP_TEX_USAGE_READ_WRITE);
-      for (j = 0; j < LP_MAX_SAMPLES; j++) /* TODO: take sample id into account */
-         scene->zsbuf.map_ms[j] = llvmpipe_resource_map(zsbuf->texture,
-                                                        zsbuf->u.tex.level,
-                                                        zsbuf->u.tex.first_layer,
-                                                        LP_TEX_USAGE_READ_WRITE);
       scene->zsbuf.format_bytes = util_format_get_blocksize(zsbuf->format);
    }
 }
