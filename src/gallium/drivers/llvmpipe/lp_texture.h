@@ -237,11 +237,6 @@ llvmpipe_get_texture_image_address(struct llvmpipe_resource *lpr,
                                    unsigned face_slice, unsigned level);
 
 
-ubyte *
-llvmpipe_get_texture_image_address_ms(struct llvmpipe_resource *lpr,
-                                      unsigned face_slice, unsigned level, unsigned sampleid);
-
-
 extern void
 llvmpipe_print_resources(void);
 
