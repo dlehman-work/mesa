@@ -1211,7 +1211,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
       lp_context->pipeline_statistics.c_primitives++;
    }
 
-   lp_context->pipe.get_sample_position(&lp_context->pipe, 8 /* TODO */, 0, offsets); /* TODO */
+   lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets);
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
    if (positions[0].area < 0) {
@@ -1224,7 +1224,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
       }
 
       for (i = 1; i < nr_samples; i++) {
-          lp_context->pipe.get_sample_position(&lp_context->pipe, 8 /* TODO */, i, offsets); /* TODO */
+          lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
           calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
 
           if (setup->flatshade_first) {
@@ -1273,14 +1273,14 @@ static void triangle_ccw_ms(struct lp_setup_context *setup,
       lp_context->pipeline_statistics.c_primitives++;
    }
 
-   lp_context->pipe.get_sample_position(&lp_context->pipe, 8 /* TODO */, 0, offsets); /* TODO */
+   lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets); /* TODO */
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
    if (positions[0].area > 0) {
       retry_triangle_ccw(setup, &positions[0], v0, v1, v2, setup->ccw_is_frontface, 0);
 
       for (i = 1; i < nr_samples; i++) {
-         lp_context->pipe.get_sample_position(&lp_context->pipe, 8 /* TODO */, i, offsets); /* TODO */
+         lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
          calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
          retry_triangle_ccw(setup, &positions[i], v0, v1, v2, setup->ccw_is_frontface, i);
       }
@@ -1344,7 +1344,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    /* TODO: area is probably always the same */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    for (i = 0; i < nr_samples; i++) {
-       lp_context->pipe.get_sample_position(&lp_context->pipe, 8 /* TODO */, i, offsets); /* TODO */
+       lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
    }
 
