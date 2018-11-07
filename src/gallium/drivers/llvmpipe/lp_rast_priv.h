@@ -134,7 +134,7 @@ struct lp_rasterizer
 
 void
 lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
-                         const struct lp_rast_shader_inputs *inputs,
+                         const struct lp_rast_triangle *tri,
                          unsigned x, unsigned y,
                          unsigned mask);
 

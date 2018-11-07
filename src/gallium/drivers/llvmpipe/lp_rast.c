@@ -396,10 +396,11 @@ lp_rast_shade_tile_opaque(struct lp_rasterizer_task *task,
  */
 void
 lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
-                         const struct lp_rast_shader_inputs *inputs,
+                         const struct lp_rast_triangle *tri,
                          unsigned x, unsigned y,
                          unsigned mask)
 {
+   const struct lp_rast_shader_inputs *inputs = &tri->inputs;
    const struct lp_rast_state *state = task->state;
    struct lp_fragment_shader_variant *variant = state->variant;
    const struct lp_scene *scene = task->scene;
