@@ -81,9 +81,9 @@ struct llvmpipe_resource
    struct pipe_resource *resolve;
 
    /**
-    * Size of mipmap for each sample
+    * Size of mipmaps for each sample
     */
-   uint64_t mip_size;
+   uint64_t sample_size;
 
    /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
