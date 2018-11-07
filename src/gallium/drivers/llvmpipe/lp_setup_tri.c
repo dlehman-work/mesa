@@ -1341,7 +1341,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
       lp_context->pipeline_statistics.c_primitives++;
    }
 
-   /* TODO: area is probably always the same */
+   /* TODO: area is probably always the same, so are d[xy][01|20] */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    for (i = 0; i < nr_samples; i++) {
        lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
@@ -1374,6 +1374,23 @@ static void triangle_both_ms(struct lp_setup_context *setup,
             retry_triangle_ccw( setup, &positions[i], v1, v0, v2, !setup->ccw_is_frontface, i );
       }
    }
+
+   /* TODO: REMOVE ME */
+   if (1)
+   {
+        lp_setup_print_triangle(setup, v0, v1, v2);
+        for (i = 0; i < nr_samples; i++)
+        {
+            printf("%d/%d: x %08x %08x %08x %08x\n", i, nr_samples,
+                positions[i].x[0], positions[i].x[1], positions[i].x[2], positions[i].x[3]);
+            printf("%d/%d: y %08x %08x %08x %08x\n", i, nr_samples,
+                positions[i].y[0], positions[i].y[1], positions[i].y[2], positions[i].y[3]);
+            printf("%d/%d: dx01 %08x dy01 %08x\n", i, nr_samples, positions[i].dx01, positions[i].dy01);
+            printf("%d/%d: dx20 %08x dy20 %08x\n", i, nr_samples, positions[i].dx20, positions[i].dy20);
+            printf("%d/%d: area %016llx\n", i, nr_samples, positions[i].area);
+        }
+        printf("==============================\n");
+    }
 }
 
 
