@@ -160,6 +160,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
       if (!cbuf) {
          scene->cbufs[i].stride = 0;
          scene->cbufs[i].layer_stride = 0;
+         scene->cbufs[i].sample_stride = 0;
          scene->cbufs[i].map = NULL;
          continue;
       }
@@ -169,7 +170,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
                                                            cbuf->u.tex.level);
          scene->cbufs[i].layer_stride = llvmpipe_layer_stride(cbuf->texture,
                                                               cbuf->u.tex.level);
-
+         scene->cbufs[i].sample_stride = llvmpipe_sample_stride(cbuf->texture);
          scene->cbufs[i].map = llvmpipe_resource_map(cbuf->texture,
                                                      cbuf->u.tex.level,
                                                      cbuf->u.tex.first_layer,
@@ -181,6 +182,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
          unsigned pixstride = util_format_get_blocksize(cbuf->format);
          scene->cbufs[i].stride = cbuf->texture->width0;
          scene->cbufs[i].layer_stride = 0;
+         scene->cbufs[i].sample_stride = 0;
          scene->cbufs[i].map = lpr->data;
          scene->cbufs[i].map += cbuf->u.buf.first_element * pixstride;
          scene->cbufs[i].format_bytes = util_format_get_blocksize(cbuf->format);
@@ -191,6 +193,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
       struct pipe_surface *zsbuf = scene->fb.zsbuf;
       scene->zsbuf.stride = llvmpipe_resource_stride(zsbuf->texture, zsbuf->u.tex.level);
       scene->zsbuf.layer_stride = llvmpipe_layer_stride(zsbuf->texture, zsbuf->u.tex.level);
+      scene->zsbuf.sample_stride = llvmpipe_sample_stride(zsbuf->texture);
 
       scene->zsbuf.map = llvmpipe_resource_map(zsbuf->texture,
                                                zsbuf->u.tex.level,

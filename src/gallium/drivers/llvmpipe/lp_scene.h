@@ -143,6 +143,7 @@ struct lp_scene {
       unsigned stride;
       unsigned layer_stride;
       unsigned format_bytes;
+      unsigned sample_stride;
    } zsbuf, cbufs[PIPE_MAX_COLOR_BUFS];
 
    /* The amount of layers in the fb (minimum of all attachments) */
