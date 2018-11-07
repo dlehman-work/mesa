@@ -405,34 +405,6 @@ llvmpipe_resource_map(struct pipe_resource *resource,
 
 
 /**
- * Map a resource for read/write.
- */
-void *
-llvmpipe_resource_map_ms(struct pipe_resource *resource,
-                         unsigned level,
-                         unsigned layer,
-                         unsigned sampleid,
-                         enum lp_texture_usage tex_usage)
-{
-   struct llvmpipe_resource *lpr = llvmpipe_resource(resource);
-
-   assert(level < LP_MAX_TEXTURE_LEVELS);
-   assert(layer < (u_minify(resource->depth0, level) + resource->array_size - 1));
-   assert(sampleid < LP_MAX_SAMPLES);
-
-   assert(tex_usage == LP_TEX_USAGE_READ ||
-          tex_usage == LP_TEX_USAGE_READ_WRITE ||
-          tex_usage == LP_TEX_USAGE_WRITE_ALL);
-
-   /* TODO: does sampleid work for anything other than non-1d texure? */
-   if (lpr->dt || !llvmpipe_resource_is_texture(resource))
-      return NULL;
-
-   return llvmpipe_get_texture_image_address_ms(lpr, layer, level, sampleid);
-}
-
-
-/**
  * Unmap a resource.
  */
 void
@@ -771,27 +743,6 @@ llvmpipe_get_texture_image_address(struct llvmpipe_resource *lpr,
    assert(llvmpipe_resource_is_texture(&lpr->base));
 
    offset = lpr->mip_offsets[level];
-
-   if (face_slice > 0)
-      offset += face_slice * tex_image_face_size(lpr, level);
-
-   return (ubyte *) lpr->tex_data + offset;
-}
-
-
-/**
- * Return pointer to a 2D texture image/face/slice.
- * No tiled/linear conversion is done.
- */
-ubyte *
-llvmpipe_get_texture_image_address_ms(struct llvmpipe_resource *lpr,
-                                      unsigned face_slice, unsigned level, unsigned sampleid)
-{
-   unsigned offset;
-
-   assert(llvmpipe_resource_is_texture(&lpr->base));
-
-   offset = lpr->mip_size * sampleid + lpr->mip_offsets[level];
 
    if (face_slice > 0)
       offset += face_slice * tex_image_face_size(lpr, level);
