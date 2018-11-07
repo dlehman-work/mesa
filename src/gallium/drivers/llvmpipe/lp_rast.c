@@ -341,7 +341,7 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
          /* depth buffer */
          if (scene->zsbuf.map) {
             depth = lp_rast_get_depth_block_pointer(task, tile_x + x,
-                                                    tile_y + y, inputs->layer);
+                                                    tile_y + y, inputs->layer, 0 /* TODO */);
             depth_stride = scene->zsbuf.stride;
          }
 
@@ -437,7 +437,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
    /* depth buffer */
    if (scene->zsbuf.map) {
       depth_stride = scene->zsbuf.stride;
-      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer);
+      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer, tri->sampleid);
    }
 
    assert(lp_check_alignment(state->jit_context.u8_blend_color, 16));
