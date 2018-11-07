@@ -60,6 +60,26 @@ lp_resource_copy(struct pipe_context *pipe,
                              src, src_level, src_box);
 }
 
+static void lp_resolve(struct pipe_context *pipe,
+                       struct pipe_blit_info *info)
+{
+    int i;
+    uint8_t *map;
+    struct pipe_box box;
+    struct pipe_transfer *transfer;
+
+    box = info->dst.box;
+    map = pipe->transfer_map(pipe, info->dst.resource, 0, LP_TEX_USAGE_READ_WRITE, &box, &transfer);
+    printf("%s: UNIMPLEMENTED %d -> %d map %p\n", __FUNCTION__,
+            info->src.resource->nr_samples,
+            info->dst.resource->nr_samples, map);
+
+    /* NOTE: each pixel is uint32_t because R8G8B8A8 */
+    for (i = 0; i < box.width * box.height * box.depth; i++)
+        ((uint32_t *)map)[i] = 0xff0000ff;
+
+    pipe->transfer_unmap(pipe, transfer);
+}
 
 static void lp_blit(struct pipe_context *pipe,
                     const struct pipe_blit_info *blit_info)
@@ -74,7 +94,7 @@ static void lp_blit(struct pipe_context *pipe,
        info.dst.resource->nr_samples <= 1 &&
        !util_format_is_depth_or_stencil(info.src.resource->format) &&
        !util_format_is_pure_integer(info.src.resource->format)) {
-      debug_printf("llvmpipe: color resolve unimplemented\n");
+      lp_resolve(pipe, &info);
       return;
    }
 
