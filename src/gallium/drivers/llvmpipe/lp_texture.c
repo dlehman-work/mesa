@@ -164,19 +164,18 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
       width = u_minify(width, 1);
       height = u_minify(height, 1);
       depth = u_minify(depth, 1);
-
-      if (!level)
-         lpr->mip_size = total_size;
    }
+
+   lpr->sample_size = align(total_size, mip_align);
 
    if (allocate) {
       unsigned nr_samples = MAX2(pt->nr_samples, 1);
-      lpr->tex_data = align_malloc(total_size * nr_samples, mip_align);
+      lpr->tex_data = align_malloc(lpr->sample_size * nr_samples, mip_align); /* TODO: align_malloc is redundant */
       if (!lpr->tex_data) {
          return FALSE;
       }
       else {
-         memset(lpr->tex_data, 0, total_size * nr_samples);
+         memset(lpr->tex_data, 0, lpr->sample_size * nr_samples);
       }
    }
 
