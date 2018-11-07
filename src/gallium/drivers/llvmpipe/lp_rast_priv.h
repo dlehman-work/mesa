@@ -171,6 +171,10 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
                   py * task->scene->cbufs[buf].stride;
    color = task->color_tiles[buf] + pixel_offset;
 
+   if (sampleid) {
+      color += sampleid * task->scene->cbufs[buf].sample_stride;
+   }
+
    if (layer) {
       color += layer * task->scene->cbufs[buf].layer_stride;
    }
