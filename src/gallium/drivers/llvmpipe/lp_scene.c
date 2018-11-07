@@ -203,6 +203,11 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
                                                zsbuf->u.tex.level,
                                                zsbuf->u.tex.first_layer,
                                                LP_TEX_USAGE_READ_WRITE);
+      for (j = 0; j < LP_MAX_SAMPLES; j++) /* TODO: take sample id into account */
+         scene->zsbuf.map_ms[j] = llvmpipe_resource_map(zsbuf->texture,
+                                                        zsbuf->u.tex.level,
+                                                        zsbuf->u.tex.first_layer,
+                                                        LP_TEX_USAGE_READ_WRITE);
       scene->zsbuf.format_bytes = util_format_get_blocksize(zsbuf->format);
    }
 }
