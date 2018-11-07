@@ -186,7 +186,7 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
  */
 static inline uint8_t *
 lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
-                                unsigned x, unsigned y, unsigned layer)
+                                unsigned x, unsigned y, unsigned layer, unsigned sampleid)
 {
    unsigned px, py, pixel_offset;
    uint8_t *depth;
@@ -249,7 +249,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
    }
 
    if (scene->zsbuf.map) {
-      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer);
+      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer, tri->sampleid);
       depth_stride = scene->zsbuf.stride;
    }
 
