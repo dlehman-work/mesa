@@ -140,7 +140,7 @@ struct lp_scene {
     */
    struct {
       uint8_t *map;
-      uint8_t *map_ms[LP_MAX_SAMPLES];
+      uint8_t *map_ms[LP_MAX_SAMPLES]; /* TODO: or just make part of map?  then have 'map_stride' or something? */
       unsigned stride;
       unsigned layer_stride;
       unsigned format_bytes;
