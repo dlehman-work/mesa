@@ -1376,7 +1376,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    }
 
    /* TODO: REMOVE ME */
-   if (1)
+   if (0)
    {
         lp_setup_print_triangle(setup, v0, v1, v2);
         for (i = 0; i < nr_samples; i++)
