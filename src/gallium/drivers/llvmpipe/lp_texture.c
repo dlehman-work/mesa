@@ -170,7 +170,7 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
 
    if (allocate) {
       unsigned nr_samples = MAX2(pt->nr_samples, 1);
-      lpr->tex_data = align_malloc(lpr->sample_size * nr_samples, mip_align); /* TODO: align_malloc is redundant */
+      lpr->tex_data = align_malloc(lpr->sample_size * nr_samples, mip_align);
       if (!lpr->tex_data) {
          return FALSE;
       }
