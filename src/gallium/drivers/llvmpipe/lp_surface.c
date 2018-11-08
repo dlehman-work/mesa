@@ -76,7 +76,7 @@ static void lp_resolve(struct pipe_context *pipe,
 
     /* NOTE: each pixel is uint32_t because R8G8B8A8 */
     for (i = 0; i < box.width * box.height * box.depth; i++)
-        ((uint32_t *)map)[i] = 0xff0000ff;
+        ((uint32_t *)map)[i] = 0xff00ff00;
 
     pipe->transfer_unmap(pipe, transfer);
 }
