@@ -275,7 +275,11 @@ void lp_get_sample_position(struct pipe_context *context,
    case 0:
    case 1: ptr = ms1; break;
    case 2: ptr = ms2; break;
+   case 3: /* fall-through */
    case 4: ptr = ms4; break;
+   case 5: /* fall-through */
+   case 6: /* fall-through */
+   case 7: /* fall-through */
    case 8: ptr = ms8; break;
    default:
       assert(0);
