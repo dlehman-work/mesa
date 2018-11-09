@@ -63,22 +63,31 @@ lp_resource_copy(struct pipe_context *pipe,
 static void lp_resolve(struct pipe_context *pipe,
                        struct pipe_blit_info *info)
 {
-    int i;
-    uint8_t *map;
+    uint8_t *src_map;
+    uint8_t *dst_map;
     struct pipe_box box;
-    struct pipe_transfer *transfer;
+    struct pipe_transfer *src_transfer;
+    struct pipe_transfer *dst_transfer;
+    struct llvmpipe_resource *src;
+    struct llvmpipe_resource *dst;
+
+    src = llvmpipe_resource(info->src.resource);
+    dst = llvmpipe_resource(info->dst.resource);
+
+    /* TODO: what validation do we need to do here?  how much has been done by callers? */
 
     box = info->dst.box;
-    map = pipe->transfer_map(pipe, info->dst.resource, 0, LP_TEX_USAGE_READ_WRITE, &box, &transfer);
-    printf("%s: UNIMPLEMENTED %d -> %d map %p\n", __FUNCTION__,
-            info->src.resource->nr_samples,
-            info->dst.resource->nr_samples, map);
+    src_map = pipe->transfer_map(pipe, &src->base, 0, LP_TEX_USAGE_READ, &box, &src_transfer);
+    dst_map = pipe->transfer_map(pipe, &dst->base, 0, LP_TEX_USAGE_READ_WRITE, &box, &dst_transfer); /* TODO: WRITE_ALL? */
+    printf("%s: UNIMPLEMENTED %d -> %d map %p -> %p\n", __FUNCTION__,
+            src->base.nr_samples, dst->base.nr_samples,
+            src_map, dst_map);
 
-    /* NOTE: each pixel is uint32_t because R8G8B8A8 */
-    for (i = 0; i < box.width * box.height * box.depth; i++)
-        ((uint32_t *)map)[i] = 0xff00ff00;
+    /* TODO: for now, only copy the first sample */
+    memcpy(dst_map, src_map, box.width * box.height * box.depth * sizeof(uint32_t));
 
-    pipe->transfer_unmap(pipe, transfer);
+    pipe->transfer_unmap(pipe, dst_transfer);
+    pipe->transfer_unmap(pipe, src_transfer);
 }
 
 static void lp_blit(struct pipe_context *pipe,
