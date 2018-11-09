@@ -1211,6 +1211,9 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
       lp_context->pipeline_statistics.c_primitives++;
    }
 
+   if (!nr_samples)
+      nr_samples = 1;
+
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets);
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
@@ -1272,6 +1275,9 @@ static void triangle_ccw_ms(struct lp_setup_context *setup,
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
+
+   if (!nr_samples)
+      nr_samples = 1;
 
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets); /* TODO */
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
@@ -1343,6 +1349,10 @@ static void triangle_both_ms(struct lp_setup_context *setup,
 
    /* TODO: area is probably always the same, so are d[xy][01|20] */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
+   /* TODO: make sure to handle nr_samples == 0 !! */
+   if (!nr_samples)
+      nr_samples = 1;
+
    for (i = 0; i < nr_samples; i++) {
        lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
