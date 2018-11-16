@@ -1706,10 +1706,8 @@ printf("%s have %d sampleid %d\n", __FUNCTION__, info->system_value_semantic_nam
       break;
 
    case TGSI_SEMANTIC_SAMPLEID:
-   {
-      LLVMTypeRef type = LLVMIntTypeInContext(gallivm->context, 32);
-      res = LLVMConstInt(type, 0, 0);
-   }
+      if (0) res = bld->system_values.sample_id;
+      res = bld_base->base.zero;
       atype = TGSI_TYPE_UNSIGNED;
       break;
 
