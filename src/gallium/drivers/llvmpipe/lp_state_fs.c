@@ -2410,7 +2410,7 @@ generate_fragment(struct llvmpipe_context *lp,
    struct lp_type blend_type;
    LLVMTypeRef fs_elem_type;
    LLVMTypeRef blend_vec_type;
-   LLVMTypeRef arg_types[13];
+   LLVMTypeRef arg_types[14];
    LLVMTypeRef func_type;
    LLVMTypeRef int32_type = LLVMInt32TypeInContext(gallivm->context);
    LLVMTypeRef int8_type = LLVMInt8TypeInContext(gallivm->context);
@@ -2424,6 +2424,7 @@ generate_fragment(struct llvmpipe_context *lp,
    LLVMValueRef stride_ptr;
    LLVMValueRef depth_ptr;
    LLVMValueRef depth_stride;
+   LLVMValueRef sample_id;
    LLVMValueRef mask_input;
    LLVMValueRef thread_data_ptr;
    LLVMBasicBlockRef block;
@@ -2502,6 +2503,7 @@ generate_fragment(struct llvmpipe_context *lp,
    arg_types[10] = variant->jit_thread_data_ptr_type;  /* per thread data */
    arg_types[11] = LLVMPointerType(int32_type, 0);     /* stride */
    arg_types[12] = int32_type;                         /* depth_stride */
+   arg_types[13] = int32_type;                         /* sample_id */
 
    func_type = LLVMFunctionType(LLVMVoidTypeInContext(gallivm->context),
                                 arg_types, ARRAY_SIZE(arg_types), 0);
@@ -2531,6 +2533,7 @@ generate_fragment(struct llvmpipe_context *lp,
    thread_data_ptr  = LLVMGetParam(function, 10);
    stride_ptr   = LLVMGetParam(function, 11);
    depth_stride = LLVMGetParam(function, 12);
+   sample_id    = LLVMGetParam(function, 13);
 
    lp_build_name(context_ptr, "context");
    lp_build_name(x, "x");
@@ -2544,6 +2547,7 @@ generate_fragment(struct llvmpipe_context *lp,
    lp_build_name(thread_data_ptr, "thread_data");
    lp_build_name(stride_ptr, "stride_ptr");
    lp_build_name(depth_stride, "depth_stride");
+   lp_build_name(sample_id, "sample_id");
 
    /*
     * Function body
