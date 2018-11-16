@@ -361,7 +361,8 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
                                             0xffff,
                                             &task->thread_data,
                                             stride,
-                                            depth_stride);
+                                            depth_stride,
+                                            0 /* TODO: sample_id for entire tile */);
          END_JIT_CALL();
       }
    }
@@ -463,7 +464,8 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
                                             mask,
                                             &task->thread_data,
                                             stride,
-                                            depth_stride);
+                                            depth_stride,
+                                            tri->sampleid);
       END_JIT_CALL();
    }
 }

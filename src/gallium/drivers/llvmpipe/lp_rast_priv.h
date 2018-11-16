@@ -278,7 +278,8 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
                                          0xffff,
                                          &task->thread_data,
                                          stride,
-                                         depth_stride);
+                                         depth_stride,
+                                         tri->sampleid);
       END_JIT_CALL();
    }
 }
