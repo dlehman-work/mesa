@@ -305,7 +305,8 @@ generate_fs_loop(struct gallivm_state *gallivm,
                  LLVMValueRef depth_ptr,
                  LLVMValueRef depth_stride,
                  LLVMValueRef facing,
-                 LLVMValueRef thread_data_ptr)
+                 LLVMValueRef thread_data_ptr,
+                 LLVMValueRef sample_id)
 {
    const struct util_format_description *zs_format_desc = NULL;
    const struct tgsi_token *tokens = shader->base.tokens;
@@ -473,6 +474,8 @@ generate_fs_loop(struct gallivm_state *gallivm,
    }
 
    lp_build_interp_soa_update_inputs_dyn(interp, gallivm, loop_state.counter);
+
+   system_values.sample_id = sample_id;
 
    /* Build the actual shader */
    lp_build_tgsi_soa(gallivm, tokens, type, &mask,
@@ -2638,7 +2641,8 @@ generate_fragment(struct llvmpipe_context *lp,
                        depth_ptr,
                        depth_stride,
                        facing,
-                       thread_data_ptr);
+                       thread_data_ptr,
+                       sample_id);
 
       for (i = 0; i < num_fs; i++) {
          LLVMValueRef indexi = lp_build_const_int32(gallivm, i);
