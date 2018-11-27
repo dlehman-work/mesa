@@ -2535,10 +2535,11 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       return;
    }
 
-   /* always have lod except for buffers and msaa targets ? */
+   /* always have lod except for buffers, msaa, and rect targets */
    if (target != TGSI_TEXTURE_BUFFER &&
        target != TGSI_TEXTURE_2D_MSAA &&
-       target != TGSI_TEXTURE_2D_ARRAY_MSAA) {
+       target != TGSI_TEXTURE_2D_ARRAY_MSAA &&
+       target != TGSI_TEXTURE_RECT) {
       sample_key |= LP_SAMPLER_LOD_EXPLICIT << LP_SAMPLER_LOD_CONTROL_SHIFT;
       explicit_lod = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
       lod_property = lp_build_lod_property(&bld->bld_base, inst, 0);
