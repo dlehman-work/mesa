@@ -1706,8 +1706,7 @@ printf("%s have %d sampleid %d\n", __FUNCTION__, info->system_value_semantic_nam
       break;
 
    case TGSI_SEMANTIC_SAMPLEID:
-      if (0) res = bld->system_values.sample_id;
-      res = bld_base->base.zero;
+      res = lp_build_broadcast_scalar(&bld_base->uint_bld, bld->system_values.sample_id);
       atype = TGSI_TYPE_UNSIGNED;
       break;
 
