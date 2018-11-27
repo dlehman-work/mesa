@@ -429,13 +429,7 @@ llvmpipe_resource_map(struct pipe_resource *resource,
 
       /* install this linear image in texture data structure */
       lpr->tex_data = map;
-if (1) /* TODO: HACK gets ./bin/arb_sample_shading-builtin-gl-sample-id to pass */
-{
-int i;
-printf("%s: %d: resource %p samples %d map %p (display)\n", __FUNCTION__, __LINE__, resource, lpr->base.nr_samples, map); fflush(stdout);
-for (i = 0; i < resource->width0 * resource->height0; i++)
-    ((unsigned *)map)[i] = 0xff00ff00;
-}
+
       return map;
    }
    else if (llvmpipe_resource_is_texture(resource)) {
