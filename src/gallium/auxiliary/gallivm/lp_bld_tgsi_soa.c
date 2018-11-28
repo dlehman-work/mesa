@@ -2520,10 +2520,10 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    case TGSI_TEXTURE_2D:
    case TGSI_TEXTURE_RECT:
    case TGSI_TEXTURE_2D_MSAA:
+   case TGSI_TEXTURE_2D_ARRAY_MSAA:
       dims = 2;
       break;
    case TGSI_TEXTURE_2D_ARRAY:
-   case TGSI_TEXTURE_2D_ARRAY_MSAA:
       layer_coord = 2;
       dims = 2;
       break;
@@ -2544,10 +2544,6 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       explicit_lod = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
       lod_property = lp_build_lod_property(&bld->bld_base, inst, 0);
    }
-   /*
-    * XXX: for real msaa support, the w component (or src2.x for sample_i_ms)
-    * would be the sample index.
-    */
 
    for (i = 0; i < dims; i++) {
       coords[i] = lp_build_emit_fetch(&bld->bld_base, inst, 0, i);
@@ -2558,6 +2554,19 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    }
    if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
+   else {
+      /* TODO: where to put layer if 2D_ARRAY_MSAA has both layer and sample? */
+      if (target == TGSI_TEXTURE_2D_MSAA ||
+          target == TGSI_TEXTURE_2D_ARRAY_MSAA) {
+         /* TGSI docs and previous comment say the w component is sample index
+          * but table in tgsi_util_get_texture_coord_dim suggests it's after
+          * dims/layer.  src2.x is sample_index for sample_i_ms */
+         if (is_samplei)
+            coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0);
+         else
+            coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, 2); /* TODO: 3 (w)? */
+      }
+   }
 
    if (inst->Texture.NumOffsets == 1) {
       unsigned dim;
