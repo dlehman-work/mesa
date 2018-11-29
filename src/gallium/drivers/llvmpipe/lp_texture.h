@@ -83,7 +83,7 @@ struct llvmpipe_resource
    /**
     * Stride of each sample
     */
-   uint64_t sample_stride;
+   unsigned sample_stride;
 
    /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
