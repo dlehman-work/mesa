@@ -81,9 +81,9 @@ struct llvmpipe_resource
    struct pipe_resource *resolve;
 
    /**
-    * Size of mipmaps for each sample
+    * Stride of each sample
     */
-   uint64_t sample_size;
+   uint64_t sample_stride;
 
    /**
     * Malloc'ed data for regular textures, or a mapping to dt above.
@@ -209,7 +209,7 @@ static inline unsigned
 llvmpipe_sample_stride(struct pipe_resource *resource)
 {
    struct llvmpipe_resource *lpr = llvmpipe_resource(resource);
-   return lpr->sample_size;
+   return lpr->sample_stride;
 }
 
 
