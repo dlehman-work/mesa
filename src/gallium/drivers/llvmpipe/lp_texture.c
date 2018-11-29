@@ -112,6 +112,7 @@ llvmpipe_texture_layout(struct llvmpipe_screen *screen,
 
    assert(LP_MAX_TEXTURE_2D_LEVELS <= LP_MAX_TEXTURE_LEVELS);
    assert(LP_MAX_TEXTURE_3D_LEVELS <= LP_MAX_TEXTURE_LEVELS);
+   assert(!pt->nr_samples || !pt->last_level); /* multisample textures don't have mipmaps */
 
    for (level = 0; level <= pt->last_level; level++) {
       uint64_t mipsize;
