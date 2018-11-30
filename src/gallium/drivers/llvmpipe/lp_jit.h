@@ -59,6 +59,8 @@ struct lp_jit_texture
    uint32_t row_stride[LP_MAX_TEXTURE_LEVELS];
    uint32_t img_stride[LP_MAX_TEXTURE_LEVELS];
    uint32_t mip_offsets[LP_MAX_TEXTURE_LEVELS];
+   uint32_t nr_samples; /* TODO: move up? need to adjust jit code */
+   uint32_t sample_stride; /* TODO: move up? need to adjust jit code */
 };
 
 

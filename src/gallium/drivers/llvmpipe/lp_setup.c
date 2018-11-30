@@ -842,6 +842,8 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
                jit_tex->depth = 1;
                jit_tex->first_level = 0;
                jit_tex->last_level = 0;
+               jit_tex->nr_samples = 0;
+               jit_tex->sample_stride = 0;
                jit_tex->mip_offsets[0] = 0;
                jit_tex->row_stride[0] = 0;
                jit_tex->img_stride[0] = 0;
@@ -852,6 +854,8 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
                jit_tex->depth = res->depth0;
                jit_tex->first_level = first_level;
                jit_tex->last_level = last_level;
+               jit_tex->nr_samples = res->nr_samples;
+               jit_tex->sample_stride = lp_tex->sample_stride;
 
                if (llvmpipe_resource_is_texture(res)) {
                   for (j = first_level; j <= last_level; j++) {
@@ -918,6 +922,7 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
             jit_tex->height = res->height0;
             jit_tex->depth = res->depth0;
             jit_tex->first_level = jit_tex->last_level = 0;
+            jit_tex->nr_samples = jit_tex->sample_stride = 0;
             assert(jit_tex->base);
          }
       }
