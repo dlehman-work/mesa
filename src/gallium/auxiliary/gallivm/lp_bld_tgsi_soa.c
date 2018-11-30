@@ -2556,6 +2556,12 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
    else {
       /* TODO: where to put layer if 2D_ARRAY_MSAA has both layer and sample? */
+      /* 
+       * coords[0-2]: dims
+       * coords[1-3]: layer
+       * coords[4]: always shadow
+       *
+       */
       if (target == TGSI_TEXTURE_2D_MSAA ||
           target == TGSI_TEXTURE_2D_ARRAY_MSAA) {
          /* TGSI docs and previous comment say the w component is sample index
