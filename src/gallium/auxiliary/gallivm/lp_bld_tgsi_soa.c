@@ -2552,6 +2552,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       coords[i] = coord_undef;
    }
    if (target == TGSI_TEXTURE_2D_MSAA) {
+      sample_key |= LP_SAMPLER_MSAA;
       if (is_samplei)
          coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0);
       else

@@ -95,6 +95,7 @@ enum lp_sampler_op_type {
 #define LP_SAMPLER_LOD_CONTROL_MASK   (3 << 4)
 #define LP_SAMPLER_LOD_PROPERTY_SHIFT       6
 #define LP_SAMPLER_LOD_PROPERTY_MASK  (3 << 6)
+#define LP_SAMPLER_MSAA               (1 << 8)
 
 struct lp_sampler_params
 {
