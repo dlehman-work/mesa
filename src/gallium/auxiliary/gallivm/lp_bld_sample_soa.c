@@ -2747,6 +2747,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const LLVMValueRef *offsets,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
+                         LLVMValueRef sample, /* optional */
                          LLVMValueRef texel_out[4])
 {
    unsigned target = static_texture_state->target;
@@ -3414,6 +3415,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
    LLVMValueRef coords[5];
    LLVMValueRef offsets[3] = { NULL };
    LLVMValueRef lod = NULL;
+   LLVMValueRef sample = NULL;
    LLVMValueRef context_ptr;
    LLVMValueRef thread_data_ptr = NULL;
    LLVMValueRef texel_out[4];
@@ -3472,6 +3474,9 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
       }
       deriv_ptr = &derivs;
    }
+   if (sample_key & LP_SAMPLER_MSAA) {
+      sample = LLVMGetParam(function, num_param++);
+   }
 
    assert(num_args == num_param);
 
@@ -3498,6 +3503,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
                             offsets,
                             deriv_ptr,
                             lod,
+                            sample,
                             texel_out);
 
    LLVMBuildAggregateRet(gallivm->builder, texel_out, 4);
@@ -3672,6 +3678,9 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
          args[num_args++] = derivs->ddy[i];
       }
    }
+   if (sample_key & LP_SAMPLER_MSAA) {
+      printf("%s: CALLING function\n", __FUNCTION__);
+   }
 
    assert(num_args <= LP_MAX_TEX_FUNC_ARGS);
 
@@ -3757,6 +3766,7 @@ lp_build_sample_soa(const struct lp_static_texture_state *static_texture_state,
                                params->offsets,
                                params->derivs,
                                params->lod,
+                               NULL, /* TODO */
                                params->texel);
    }
 }
