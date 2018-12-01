@@ -2520,7 +2520,6 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    case TGSI_TEXTURE_2D:
    case TGSI_TEXTURE_RECT:
    case TGSI_TEXTURE_2D_MSAA:
-   case TGSI_TEXTURE_2D_ARRAY_MSAA:
       dims = 2;
       break;
    case TGSI_TEXTURE_2D_ARRAY:
@@ -2531,6 +2530,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       dims = 3;
       break;
    default:
+      case TGSI_TEXTURE_2D_ARRAY_MSAA: /* TODO */
       assert(0);
       return;
    }
@@ -2538,7 +2538,6 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    /* always have lod except for buffers, msaa, and rect targets */
    if (target != TGSI_TEXTURE_BUFFER &&
        target != TGSI_TEXTURE_2D_MSAA &&
-       target != TGSI_TEXTURE_2D_ARRAY_MSAA &&
        target != TGSI_TEXTURE_RECT) {
       sample_key |= LP_SAMPLER_LOD_EXPLICIT << LP_SAMPLER_LOD_CONTROL_SHIFT;
       explicit_lod = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
@@ -2552,27 +2551,14 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    for (i = dims; i < 5; i++) {
       coords[i] = coord_undef;
    }
+   if (target == TGSI_TEXTURE_2D_MSAA) {
+      if (is_samplei)
+         coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0);
+      else
+         coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
+   }
    if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
-   else {
-      /* TODO: where to put layer if 2D_ARRAY_MSAA has both layer and sample? */
-      /* 
-       * coords[0-2]: dims
-       * coords[1-3]: layer
-       * coords[4]: always shadow
-       *
-       */
-      if (target == TGSI_TEXTURE_2D_MSAA ||
-          target == TGSI_TEXTURE_2D_ARRAY_MSAA) {
-         /* TGSI docs and previous comment say the w component is sample index
-          * but table in tgsi_util_get_texture_coord_dim suggests it's after
-          * dims/layer.  src2.x is sample_index for sample_i_ms */
-         if (is_samplei)
-            coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0);
-         else
-            coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, 2); /* TODO: 3 (w)? */
-      }
-   }
 
    if (inst->Texture.NumOffsets == 1) {
       unsigned dim;
