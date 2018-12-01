@@ -3609,6 +3609,11 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
             assert(LLVMTypeOf(derivs->ddy[0]) == LLVMTypeOf(derivs->ddy[i]));
          }
       }
+      if (sample_key & LP_SAMPLER_MSAA) {
+         /* sample index is always in coords[2] */
+         arg_types[num_param++] = LLVMTypeOf(coords[2]);
+         /* TODO: assert(LLVMTypeOf(???) == LLVMTypeOf(coords[2])); */
+      }
 
       val_type[0] = val_type[1] = val_type[2] = val_type[3] =
          lp_build_vec_type(gallivm, params->type);
