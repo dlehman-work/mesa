@@ -241,6 +241,20 @@ struct lp_sampler_dynamic_state
                  LLVMValueRef context_ptr,
                  unsigned texture_unit);
 
+   /** Obtain number of samples (returns int32) */
+   LLVMValueRef
+   (*nr_samples)(const struct lp_sampler_dynamic_state *state,
+                struct gallivm_state *gallivm,
+                LLVMValueRef context_ptr,
+                unsigned texture_unit);
+
+   /** Obtain stride in bytes between samples (returns int32) */
+   LLVMValueRef
+   (*sample_stride)(const struct lp_sampler_dynamic_state *state,
+                    struct gallivm_state *gallivm,
+                    LLVMValueRef context_ptr,
+                    unsigned texture_unit);
+
    /** Obtain pointer to base of texture */
    LLVMValueRef
    (*base_ptr)(const struct lp_sampler_dynamic_state *state,
