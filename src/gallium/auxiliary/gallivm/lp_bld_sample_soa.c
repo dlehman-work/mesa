@@ -2585,6 +2585,7 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
                      const LLVMValueRef *coords,
                      LLVMValueRef explicit_lod,
                      const LLVMValueRef *offsets,
+                     LLVMValueRef sample,
                      LLVMValueRef *colors_out)
 {
    struct lp_build_context *perquadi_bld = &bld->lodi_bld;
@@ -2597,8 +2598,11 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    LLVMValueRef x = coords[0], y = coords[1], z = coords[2];
    LLVMValueRef width, height, depth, i, j;
    LLVMValueRef offset, out_of_bounds, out1;
+   LLVMValueRef nr_samples = NULL, sample_stride = NULL;
 
    out_of_bounds = int_coord_bld->zero;
+
+printf("%s: sample %p\n", __FUNCTION__, sample);
 
    if (explicit_lod && bld->static_texture_state->target != PIPE_BUFFER) {
       if (bld->num_mips != int_coord_bld->type.length) {
@@ -2613,7 +2617,8 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    }
    else {
       assert(bld->num_mips == 1);
-      if (bld->static_texture_state->target != PIPE_BUFFER) {
+      /* TODO: does msaa always have level 0 or 'first_level'?  is first_level always 0 for msaa? */
+      if (!sample /* TODO: correct way to check? */ && bld->static_texture_state->target != PIPE_BUFFER) {
          ilevel = bld->dynamic_state->first_level(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
       }
@@ -2626,9 +2631,23 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
                                &row_stride_vec, &img_stride_vec);
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
+   if (sample) {
+      LLVMValueRef sample_id;
 
-   if (target == PIPE_TEXTURE_1D_ARRAY ||
-       target == PIPE_TEXTURE_2D_ARRAY) {
+      nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
+                                                  bld->context_ptr, texture_unit);
+      sample_stride = bld->dynamic_state->sample_stride(bld->dynamic_state, bld->gallivm,
+                                                        bld->context_ptr, texture_unit);
+      assert(dims == 2);
+      //z = sample; /* TODO: sample or coords[2] ?? */
+      sample_id = bld->int_bld.one; //lp_build_const_int32(bld->gallivm, 0);
+      out1 = lp_build_cmp(&bld->int_bld, PIPE_FUNC_LESS, sample_id, bld->int_bld.zero);
+      out_of_bounds = lp_build_or(&bld->int_bld, out_of_bounds, out1);
+      out1 = lp_build_cmp(&bld->int_bld, PIPE_FUNC_GEQUAL, sample_id, nr_samples);
+      out_of_bounds = lp_build_or(&bld->int_bld, out_of_bounds, out1);
+   }
+   else if (target == PIPE_TEXTURE_1D_ARRAY ||
+            target == PIPE_TEXTURE_2D_ARRAY) {
       if (out_of_bound_ret_zero) {
          z = lp_build_layer_coord(bld, texture_unit, FALSE, z, &out1);
          out_of_bounds = lp_build_or(int_coord_bld, out_of_bounds, out1);
@@ -2747,7 +2766,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const LLVMValueRef *offsets,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
-                         LLVMValueRef sample, /* optional */
+                         LLVMValueRef sample, /* optional */ /* TODO: why this and not coords[2]? */
                          LLVMValueRef texel_out[4])
 {
    unsigned target = static_texture_state->target;
@@ -3095,7 +3114,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
 
    else if (op_type == LP_SAMPLER_OP_FETCH) {
       lp_build_fetch_texel(&bld, texture_index, newcoords,
-                           lod, offsets,
+                           lod, offsets, sample,
                            texel_out);
    }
 
