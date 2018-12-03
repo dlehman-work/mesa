@@ -3679,8 +3679,7 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
       }
    }
    if (sample_key & LP_SAMPLER_MSAA) {
-      printf("%s: CALLING function\n", __FUNCTION__);
-      args[num_args++] = LLVMConstNull(LLVMTypeOf(coords[0]));
+      args[num_args++] = coords[2];
    }
 
    assert(num_args <= LP_MAX_TEX_FUNC_ARGS);
