@@ -2558,7 +2558,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       else
          coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
    }
-   if (layer_coord)
+   else if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
 
    if (inst->Texture.NumOffsets == 1) {
