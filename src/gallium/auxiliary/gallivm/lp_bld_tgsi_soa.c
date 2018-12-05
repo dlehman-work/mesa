@@ -1710,7 +1710,7 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_SAMPLEPOS:
-      res = lp_build_const_vec(gallivm, bld_base->base.type, 0.5);
+      res = bld->system_values.sample_pos;
       atype = TGSI_TYPE_FLOAT;
       break;
 
