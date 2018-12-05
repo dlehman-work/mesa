@@ -1709,6 +1709,11 @@ emit_fetch_system_value(
       atype = TGSI_TYPE_UNSIGNED;
       break;
 
+   case TGSI_SEMANTIC_SAMPLEPOS:
+      res = lp_build_const_vec(gallivm, bld_base->base.type, 0.5);
+      atype = TGSI_TYPE_FLOAT;
+      break;
+
    default:
       assert(!"unexpected semantic in emit_fetch_system_value");
       res = bld_base->base.zero;
