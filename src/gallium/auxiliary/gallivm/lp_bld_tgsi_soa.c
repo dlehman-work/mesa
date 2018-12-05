@@ -1673,7 +1673,6 @@ emit_fetch_system_value(
 
    assert(!reg->Register.Indirect);
 
-printf("%s have %d sampleid %d\n", __FUNCTION__, info->system_value_semantic_name[reg->Register.Index], TGSI_SEMANTIC_SAMPLEID); fflush(stdout);
    switch (info->system_value_semantic_name[reg->Register.Index]) {
    case TGSI_SEMANTIC_INSTANCEID:
       res = lp_build_broadcast_scalar(&bld_base->uint_bld, bld->system_values.instance_id);

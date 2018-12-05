@@ -2602,8 +2602,6 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
 
    out_of_bounds = int_coord_bld->zero;
 
-printf("%s: sample %p\n", __FUNCTION__, sample);
-
    if (explicit_lod && bld->static_texture_state->target != PIPE_BUFFER) {
       if (bld->num_mips != int_coord_bld->type.length) {
          ilevel = lp_build_pack_aos_scalars(bld->gallivm, int_coord_bld->type,
