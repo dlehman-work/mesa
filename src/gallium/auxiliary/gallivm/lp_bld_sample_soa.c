@@ -2643,6 +2643,9 @@ printf("%s: sample %p\n", __FUNCTION__, sample);
       out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
       out1 = lp_build_cmp(&bld->int_coord_bld, PIPE_FUNC_GEQUAL, sample, nr_samples);
       out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
+
+      z = sample;
+      img_stride_vec = lp_build_broadcast_scalar(&bld->int_coord_bld, sample_stride);
    }
    else if (target == PIPE_TEXTURE_1D_ARRAY ||
             target == PIPE_TEXTURE_2D_ARRAY) {
