@@ -2632,19 +2632,17 @@ printf("%s: sample %p\n", __FUNCTION__, sample);
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
    if (sample) {
-      LLVMValueRef sample_id;
-
       nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
       sample_stride = bld->dynamic_state->sample_stride(bld->dynamic_state, bld->gallivm,
                                                         bld->context_ptr, texture_unit);
       assert(dims == 2);
       //z = sample; /* TODO: sample or coords[2] ?? */
-      sample_id = bld->int_bld.one; //lp_build_const_int32(bld->gallivm, 0);
-      out1 = lp_build_cmp(&bld->int_bld, PIPE_FUNC_LESS, sample_id, bld->int_bld.zero);
-      out_of_bounds = lp_build_or(&bld->int_bld, out_of_bounds, out1);
-      out1 = lp_build_cmp(&bld->int_bld, PIPE_FUNC_GEQUAL, sample_id, nr_samples);
-      out_of_bounds = lp_build_or(&bld->int_bld, out_of_bounds, out1);
+      nr_samples = lp_build_broadcast_scalar(&bld->int_coord_bld, nr_samples);
+      out1 = lp_build_cmp(&bld->int_coord_bld, PIPE_FUNC_LESS, sample, bld->int_coord_bld.zero);
+      out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
+      out1 = lp_build_cmp(&bld->int_coord_bld, PIPE_FUNC_GEQUAL, sample, nr_samples);
+      out_of_bounds = lp_build_or(&bld->int_coord_bld, out_of_bounds, out1);
    }
    else if (target == PIPE_TEXTURE_1D_ARRAY ||
             target == PIPE_TEXTURE_2D_ARRAY) {
