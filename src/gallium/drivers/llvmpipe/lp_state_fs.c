@@ -476,6 +476,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
    lp_build_interp_soa_update_inputs_dyn(interp, gallivm, loop_state.counter);
 
    system_values.sample_id = sample_id;
+   system_values.sample_pos = lp_build_const_vec(gallivm, lp_type_float_vec(32, 32 * 8) /* TODO */, 0.5);
 
    /* Build the actual shader */
    lp_build_tgsi_soa(gallivm, tokens, type, &mask,
