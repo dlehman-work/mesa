@@ -1711,6 +1711,15 @@ emit_fetch_system_value(
 
    case TGSI_SEMANTIC_SAMPLEPOS:
       res = bld->system_values.sample_pos;
+      {
+         /* TODO
+         table = tables[nr_samples]
+         if (sample_id >= 0 && sample_id < nr_samples)
+            position = table[idx]
+         else
+            position = 0.5
+         */
+      }
       atype = TGSI_TYPE_FLOAT;
       break;
 
