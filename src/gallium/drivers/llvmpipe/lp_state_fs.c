@@ -345,6 +345,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    for (i = 0; i < ARRAY_SIZE(elems); i++)
       elems[i] = lp_build_const_elem(gallivm, flt_type, 0.5f);
 
+   /* TODO: tgsi documentation says dst = (x,y,undef,undef) */
    vec_pos = LLVMConstVector(elems, ARRAY_SIZE(elems));
 if (0)
    system_values->sample_pos = vec_pos;
