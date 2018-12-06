@@ -346,10 +346,24 @@ lp_build_sample_position(struct gallivm_state *gallivm,
       elems[i] = lp_build_const_elem(gallivm, flt_type, 0.5f);
 
    vec_pos = LLVMConstVector(elems, ARRAY_SIZE(elems));
-if (1)
+if (0)
    system_values->sample_pos = vec_pos;
 else
-   system_values->sample_pos = lp_build_const_vec(gallivm, lp_type_float_vec(32, 32 * 8) /* TODO */, 0.5);
+{
+// #0  emit_fetch_system_value (bld_base=0x7fffffff2780, reg=0xb4b890, stype=TGSI_TYPE_FLOAT, swizzle_in=1) at gallivm/lp_bld_tgsi_soa.c:1713
+// Thread 1 "arb_sample_shad" hit Breakpoint 2, emit_fetch_system_value (bld_base=0x7fffffff2780, reg=0xb4ba30, stype=TGSI_TYPE_UNTYPED, swizzle_in=0) at gallivm/lp_bld_tgsi_soa.c:1713
+
+// swizzle_in can be 0 or 1  !!!
+// 0 == UNTYPED
+// 1 == FLOAT
+// times == 1 fs159_variant0_partial
+// times == 2 fs159_variant0_whole
+static int times;
+++times;
+float val = times == 1 ? 0.25 : 0.5;
+printf("%s: times %d val %.3f\n", __FUNCTION__, times, val);
+system_values->sample_pos = lp_build_const_vec(gallivm, lp_type_float_vec(32, 32 * 8) /* TODO */, val);
+}
 }
 
 
