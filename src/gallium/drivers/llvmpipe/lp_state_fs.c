@@ -336,7 +336,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    struct lp_type flt_type;
    float pos2[2];
    unsigned i;
-
+return;
    flt_type = lp_type_float(32);
    for (i = 0; i < ARRAY_SIZE(sample_pos); i++ ) {
       sample_pos[i] = lp_build_const_float(gallivm, 0.5f);

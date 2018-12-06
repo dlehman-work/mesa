@@ -1710,7 +1710,12 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_SAMPLEPOS:
-      res = bld->system_values.sample_pos;
+      //res = bld->system_values.sample_pos;
+{
+ float val = swizzle_in == 0? 0.25 : 0.5;
+ printf("%s: swizzle_in %d val %f\n", __FUNCTION__, swizzle_in, val);
+ res = lp_build_const_vec(gallivm, bld_base->base.type, val);
+}
       atype = TGSI_TYPE_FLOAT;
       break;
 
