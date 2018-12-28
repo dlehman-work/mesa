@@ -262,13 +262,8 @@ void lp_get_sample_position(struct pipe_context *context,
    static const uint8_t ms2[2][2] = {
       { 0x4, 0x4 }, { 0xc, 0xc } }; /* surface coords (0,0), (1,0) */
    static const uint8_t ms4[4][2] = {
-#if 1 /* TODO */
-      { 0x6, 0x8 }, { 0x4, 0x8 },   /* (0,0), (1,0) */
-      { 0x4, 0x8 }, { 0x4, 0x8 } }; /* (0,1), (1,1) */
-#else
       { 0x6, 0x2 }, { 0xe, 0x6 },   /* (0,0), (1,0) */
       { 0x2, 0xa }, { 0xa, 0xe } }; /* (0,1), (1,1) */
-#endif
    static const uint8_t ms8[8][2] = {
       { 0x1, 0x7 }, { 0x5, 0x3 },   /* (0,0), (1,0) */
       { 0x3, 0xd }, { 0x7, 0xb },   /* (0,1), (1,1) */

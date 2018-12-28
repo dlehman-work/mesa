@@ -1725,11 +1725,12 @@ if (1)
     if (!done)
     {
         /* TODO: hard-coded for 4x */
+        /* TODO: src/gallium/drivers/llvmpipe/lp_surface.c */
         static const float scalars[4][2] = {
-            { 0.375, 0.50 },
-            { 0.25, 0.50 },
-            { 0.25, 0.50 },
-            { 0.25, 0.50 },
+            {  6.0f/16.0f,  2.0f/16.0f },
+            { 14.0f/16.0f,  6.0f/16.0f },
+            {  2.0f/16.0f, 10.0f/16.0f },
+            { 10.0f/16.0f, 14.0f/16.0f },
         };  
         LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
         LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
@@ -1774,7 +1775,6 @@ if (1)
     indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
     vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
     res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-
 }
 else
 {
