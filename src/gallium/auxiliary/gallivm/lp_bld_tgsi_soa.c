@@ -1710,9 +1710,8 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_SAMPLEPOS:
-      //res = bld->system_values.sample_pos;
-if (1)
 {
+      //res = bld->system_values.sample_pos;
     static int done;
     LLVMModuleRef module;
     LLVMTypeRef int_type;
@@ -1775,12 +1774,6 @@ if (1)
     indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
     vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
     res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-}
-else
-{
- float val = swizzle_in == 0? 0.25 : 0.5;
- printf("%s: swizzle_in %d val %f\n", __FUNCTION__, swizzle_in, val);
- res = lp_build_const_vec(gallivm, bld_base->base.type, val);
 }
       atype = TGSI_TYPE_FLOAT;
       break;
