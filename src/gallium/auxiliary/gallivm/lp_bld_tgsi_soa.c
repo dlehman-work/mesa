@@ -1711,6 +1711,69 @@ emit_fetch_system_value(
 
    case TGSI_SEMANTIC_SAMPLEPOS:
       //res = bld->system_values.sample_pos;
+if (1)
+{
+    static int done;
+    LLVMModuleRef module;
+    LLVMTypeRef int_type;
+    LLVMValueRef vec_ptr;
+    LLVMValueRef indices[3];
+    LLVMValueRef samplepos_global;
+
+    int_type = LLVMInt32TypeInContext(gallivm->context);
+    module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+    if (!done)
+    {
+        /* TODO: hard-coded for 4x */
+        static const float scalars[2][2] = {
+            { 0.25, 0.50 },
+            { 0.25, 0.50 },
+        };  
+        LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
+        LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
+        LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
+        LLVMValueRef sampleid_global;
+        LLVMValueRef vec_ret;
+        LLVMValueRef scalar;
+        LLVMBasicBlockRef entry;
+        LLVMTypeRef param_types[1];
+        LLVMTypeRef arr_arr_vec_type;
+        LLVMTypeRef arr_vec_type;
+        LLVMTypeRef float_type;
+        LLVMTypeRef func_type;
+        LLVMTypeRef void_type;
+        LLVMTypeRef vec_type;
+        unsigned int i, j;
+
+        float_type = LLVMFloatTypeInContext(gallivm->context);
+        vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
+        for (i = 0; i < ARRAY_SIZE(scalars); i++)
+        {   
+            for (j = 0; j < ARRAY_SIZE(vec); j++)
+            {
+                scalar = LLVMConstReal(float_type, scalars[i][j]);
+                vec[j] = lp_build_broadcast(gallivm, vec_type, scalar);
+            }
+            arr_vec[i] = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+        }   
+        arr_vec_type = LLVMTypeOf(arr_vec[0]);
+        arr_arr_vec = LLVMConstArray(arr_vec_type, arr_vec, ARRAY_SIZE(arr_vec));
+
+        arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
+        samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
+        LLVMSetInitializer(samplepos_global, arr_arr_vec);
+    }
+    else
+        samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
+
+    indices[0] = LLVMConstInt(int_type, 0, 0);
+    indices[1] = bld->system_values.sample_id; // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
+    indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
+    vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
+    res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+
+}
+else
 {
  float val = swizzle_in == 0? 0.25 : 0.5;
  printf("%s: swizzle_in %d val %f\n", __FUNCTION__, swizzle_in, val);
