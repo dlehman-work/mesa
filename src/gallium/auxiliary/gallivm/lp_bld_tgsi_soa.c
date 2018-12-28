@@ -1725,7 +1725,9 @@ if (1)
     if (!done)
     {
         /* TODO: hard-coded for 4x */
-        static const float scalars[2][2] = {
+        static const float scalars[4][2] = {
+            { 0.375, 0.50 },
+            { 0.25, 0.50 },
             { 0.25, 0.50 },
             { 0.25, 0.50 },
         };  
