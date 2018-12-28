@@ -1762,6 +1762,7 @@ if (1)
         arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
         samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
         LLVMSetInitializer(samplepos_global, arr_arr_vec);
+        done = 1;
     }
     else
         samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
