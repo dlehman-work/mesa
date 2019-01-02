@@ -1777,6 +1777,12 @@ emit_fetch_system_value(
         atype = TGSI_TYPE_FLOAT;
       }
       break;
+   
+   case TGSI_SEMANTIC_SAMPLEMASK:
+      printf("%s: %s: %d: swizzle_in %u\n", __FILE__, __FUNCTION__, __LINE__, swizzle_in); fflush(stdout);
+      res = bld_base->base.zero;
+      atype = TGSI_TYPE_FLOAT;
+      break;
 
    default:
       assert(!"unexpected semantic in emit_fetch_system_value");
