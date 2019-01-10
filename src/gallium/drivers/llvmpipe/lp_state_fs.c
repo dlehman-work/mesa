@@ -622,21 +622,27 @@ generate_fs_loop(struct gallivm_state *gallivm,
       if (0)
       {
           smask = lp_build_and(&smask_bld, smask, smask_bld.one);
+          smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
       }
-      else /* TODO: */
+      else if (0) /* TODO: */
       {
           LLVMValueRef elems[LP_MAX_VECTOR_LENGTH];
           struct lp_type type = smask_bld.type;
           unsigned i;
           
           LLVMTypeRef bit_type = lp_build_elem_type(gallivm, type);
-          elems[0] = LLVMConstInt(bit_type, 2, 0);
+          elems[0] = LLVMConstInt(bit_type, 5, 0);
           for(i = 1; i < type.length; ++i)
               elems[i] = elems[0];
           LLVMValueRef bits = LLVMConstVector(elems, type.length);
           smask = lp_build_and(&smask_bld, smask, bits);
       }
-      smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
+      else
+      {
+          LLVMValueRef sample_id_vec = lp_build_broadcast(gallivm, smask_bld.vec_type, sample_id);
+          LLVMValueRef this_mask = lp_build_shl(&smask_bld, smask_bld.one, sample_id_vec);
+          smask = lp_build_and(&smask_bld, smask, this_mask);
+      }
       lp_build_mask_update(&mask, smask);
    }
 
