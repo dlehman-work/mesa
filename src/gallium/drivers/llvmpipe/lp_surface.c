@@ -103,6 +103,10 @@ static void lp_resolve(struct pipe_context *pipe,
             pix = 0;
             for (j = 0; j < src->base.nr_samples; j++)
                 pix += src_maps[j][i];
+            /* TODO: how to round here?
+             * want 255 / 4 (1 of 4 samples) to equal 0.250980 (64.0 / 255.0) 
+             * instead of current 0.247059 (63.0 / 255.0) */
+            //dst_map[i] = (uint8_t)(((double)pix / src->base.nr_samples) + 0.5);
             dst_map[i] = pix / src->base.nr_samples;
         }
     }
