@@ -642,6 +642,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
           LLVMValueRef sample_id_vec = lp_build_broadcast(gallivm, smask_bld.vec_type, sample_id);
           LLVMValueRef this_mask = lp_build_shl(&smask_bld, smask_bld.one, sample_id_vec);
           smask = lp_build_and(&smask_bld, smask, this_mask);
+          smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
       }
       lp_build_mask_update(&mask, smask);
    }
