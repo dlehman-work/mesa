@@ -2557,6 +2557,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    unsigned unit, target;
    LLVMValueRef coord_undef = LLVMGetUndef(bld->bld_base.base.int_vec_type);
    LLVMValueRef explicit_lod = NULL;
+   LLVMValueRef sample = NULL;
    LLVMValueRef coords[5];
    LLVMValueRef offsets[3] = { NULL };
    struct lp_sampler_params params;
@@ -2630,9 +2631,9 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    if (target == TGSI_TEXTURE_2D_MSAA) {
       sample_key |= LP_SAMPLER_MSAA;
       if (is_samplei)
-         coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0);
+         sample = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0); /* TODO: ?? */
       else
-         coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
+         sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 2); /* z component stores sample */
    }
    else if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
@@ -2662,7 +2663,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    params.derivs = NULL;
    params.lod = explicit_lod;
    params.texel = texel;
-   params.sample = NULL; /* TODO: multisampling */
+   params.sample = sample;
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
