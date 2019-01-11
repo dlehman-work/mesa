@@ -2600,7 +2600,12 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    LLVMValueRef offset, out_of_bounds, out1;
    LLVMValueRef nr_samples = NULL, sample_stride = NULL;
 
+   lp_build_name(x, "x");
+   lp_build_name(y, "y");
+   lp_build_name(z, "z");
+
    out_of_bounds = int_coord_bld->zero;
+   lp_build_name(out_of_bounds, "out_of_bounds");
 
    if (explicit_lod && bld->static_texture_state->target != PIPE_BUFFER) {
       if (bld->num_mips != int_coord_bld->type.length) {
@@ -2624,11 +2629,17 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
          ilevel = lp_build_const_int32(bld->gallivm, 0);
       }
    }
+   lp_build_name(ilevel, "ilevel");
    lp_build_mipmap_level_sizes(bld, ilevel,
                                &size,
                                &row_stride_vec, &img_stride_vec);
+   lp_build_name(size, "size");
+   lp_build_name(row_stride_vec, "row_stride_vec");
+   if (img_stride_vec) lp_build_name(img_stride_vec, "img_stride_vec");
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
+   lp_build_name(width, "width");
+   lp_build_name(height, "height");
    if (sample) {
       nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);

@@ -1988,6 +1988,9 @@ lp_build_sample_partial_offset(struct lp_build_context *bld,
    LLVMValueRef offset;
    LLVMValueRef subcoord;
 
+   lp_build_name(coord, "coord");
+   lp_build_name(stride, "stride");
+
    if (block_length == 1) {
       subcoord = bld->zero;
    }
@@ -2014,6 +2017,7 @@ lp_build_sample_partial_offset(struct lp_build_context *bld,
    }
 
    offset = lp_build_mul(bld, coord, stride);
+   lp_build_name(offset, "offset");
 
    assert(out_offset);
    assert(out_subcoord);
@@ -2048,6 +2052,10 @@ lp_build_sample_offset(struct lp_build_context *bld,
    x_stride = lp_build_const_vec(bld->gallivm, bld->type,
                                  format_desc->block.bits/8);
 
+   lp_build_name(x_stride, "x_stride");
+   lp_build_name(y_stride, "y_stride");
+   lp_build_name(z_stride, "z_stride");
+
    lp_build_sample_partial_offset(bld,
                                   format_desc->block.width,
                                   x, x_stride,
@@ -2060,6 +2068,7 @@ lp_build_sample_offset(struct lp_build_context *bld,
                                      y, y_stride,
                                      &y_offset, out_j);
       offset = lp_build_add(bld, offset, y_offset);
+      lp_build_name(offset, "offset(y)");
    }
    else {
       *out_j = bld->zero;
@@ -2073,6 +2082,7 @@ lp_build_sample_offset(struct lp_build_context *bld,
                                      z, z_stride,
                                      &z_offset, &k);
       offset = lp_build_add(bld, offset, z_offset);
+      lp_build_name(offset, "offset(z)");
    }
 
    *out_offset = offset;
