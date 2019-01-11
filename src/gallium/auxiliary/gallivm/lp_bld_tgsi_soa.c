@@ -2605,8 +2605,8 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    case TGSI_TEXTURE_3D:
       dims = 3;
       break;
+   case TGSI_TEXTURE_2D_ARRAY_MSAA: /* TODO */
    default:
-      case TGSI_TEXTURE_2D_ARRAY_MSAA: /* TODO */
       assert(0);
       return;
    }
