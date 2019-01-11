@@ -3784,7 +3784,7 @@ lp_build_sample_soa(const struct lp_static_texture_state *static_texture_state,
                                params->offsets,
                                params->derivs,
                                params->lod,
-                               NULL, /* TODO */
+                               params->sample,
                                params->texel);
    }
 }
