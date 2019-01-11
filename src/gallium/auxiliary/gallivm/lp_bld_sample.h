@@ -110,7 +110,7 @@ struct lp_sampler_params
    LLVMValueRef lod;
    const struct lp_derivatives *derivs;
    LLVMValueRef *texel;
-   LLVMValueRef *sample;
+   LLVMValueRef sample;
 };
 
 struct lp_sampler_size_query_params
