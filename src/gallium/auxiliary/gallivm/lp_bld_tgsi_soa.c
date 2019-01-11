@@ -2358,6 +2358,7 @@ emit_tex( struct lp_build_tgsi_soa_context *bld,
    params.offsets = offsets;
    params.lod = lod;
    params.texel = texel;
+   params.sample = NULL; /* TODO: multisampling */
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
@@ -2527,6 +2528,7 @@ emit_sample(struct lp_build_tgsi_soa_context *bld,
    params.offsets = offsets;
    params.lod = lod;
    params.texel = texel;
+   params.sample = NULL; /* TODO: multisampling */
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
@@ -2660,6 +2662,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    params.derivs = NULL;
    params.lod = explicit_lod;
    params.texel = texel;
+   params.sample = NULL; /* TODO: multisampling */
 
    bld->sampler->emit_tex_sample(bld->sampler,
                                  bld->bld_base.base.gallivm,
