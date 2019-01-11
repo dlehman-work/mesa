@@ -2641,6 +2641,7 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    lp_build_name(width, "width");
    lp_build_name(height, "height");
    if (sample) {
+      lp_build_name(sample, "sample"); /* TODO: better name? */
       nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
       sample_stride = bld->dynamic_state->sample_stride(bld->dynamic_state, bld->gallivm,
