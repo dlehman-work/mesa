@@ -219,6 +219,7 @@ lp_scene_end_rasterization(struct lp_scene *scene )
       if (scene->cbufs[i].map) {
          struct pipe_surface *cbuf = scene->fb.cbufs[i];
          if (llvmpipe_resource_is_texture(cbuf->texture)) {
+            // TODO: scene->fb.cbufs[0]->texture->nr_samples != 0
             llvmpipe_resource_unmap(cbuf->texture,
                                     cbuf->u.tex.level,
                                     cbuf->u.tex.first_layer);
