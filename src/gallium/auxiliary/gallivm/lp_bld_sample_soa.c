@@ -2641,6 +2641,10 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    lp_build_name(width, "width");
    lp_build_name(height, "height");
    if (sample) {
+/* TODO: */
+printf("%s: %s: forcing sample 3\n", __FILE__, __FUNCTION__); fflush(stdout);
+sample = lp_build_const_int32(bld->gallivm, 3);
+sample = lp_build_broadcast_scalar(&bld->int_coord_bld, sample);
       lp_build_name(sample, "sample"); /* TODO: better name? */
       nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
