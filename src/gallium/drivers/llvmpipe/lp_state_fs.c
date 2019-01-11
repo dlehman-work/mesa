@@ -2798,7 +2798,6 @@ generate_fragment(struct llvmpipe_context *lp,
    }
 
    LLVMBuildRetVoid(builder);
-   LLVMDumpValue(function);
 
    gallivm_verify_function(gallivm, function);
 }
