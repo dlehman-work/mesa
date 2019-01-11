@@ -2633,11 +2633,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
       if (is_samplei)
          sample = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0); /* TODO: ?? */
       else
-         sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 2); /* z component stores sample */
-/* TODO: */
-printf("%s: %s: forcing sample 3\n", __FILE__, __FUNCTION__); fflush(stdout);
-sample = lp_build_const_int32(bld->bld_base.base.gallivm, 3);
-sample = lp_build_broadcast_scalar(&bld->bld_base.int_bld, sample);
+         sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
       lp_build_name(sample, "sample"); /* TODO: better name? */
    }
    else if (layer_coord)
