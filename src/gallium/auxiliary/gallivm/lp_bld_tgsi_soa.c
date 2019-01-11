@@ -2634,7 +2634,7 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
          sample = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0); /* TODO: ?? */
       else
          sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 2); /* z component stores sample */
-      lp_build_name(sample, "fetch_texels.sample"); /* TODO: better name? */
+      lp_build_name(sample, "sample"); /* TODO: better name? */
    }
    else if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
