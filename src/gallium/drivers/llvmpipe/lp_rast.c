@@ -300,7 +300,8 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
    const struct lp_rast_state *state;
    struct lp_fragment_shader_variant *variant;
    const unsigned tile_x = task->x, tile_y = task->y;
-   unsigned x, y;
+   unsigned x, y, s;
+unsigned nr_samples;
 
    if (inputs->disable) {
       /* This command was partially binned and has been disabled */
@@ -316,6 +317,11 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
    }
    variant = state->variant;
 
+printf("%s: %s: %d: samples %u\n", __FILE__, __FUNCTION__, __LINE__, task->scene->fb.samples);
+
+nr_samples = task->scene->fb.samples;
+if (!nr_samples) nr_samples = 1;
+for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
    /* render the whole 64x64 tile in 4x4 chunks */
    for (y = 0; y < task->height; y += 4){
       for (x = 0; x < task->width; x += 4) {
@@ -330,7 +336,7 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
             if (scene->fb.cbufs[i]) {
                stride[i] = scene->cbufs[i].stride;
                color[i] = lp_rast_get_color_block_pointer(task, i, tile_x + x,
-                                                          tile_y + y, inputs->layer, 0 /* TODO */);
+                                                          tile_y + y, inputs->layer, s /* TODO */);
             }
             else {
                stride[i] = 0;
@@ -341,7 +347,7 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
          /* depth buffer */
          if (scene->zsbuf.map) {
             depth = lp_rast_get_depth_block_pointer(task, tile_x + x,
-                                                    tile_y + y, inputs->layer, 0 /* TODO */);
+                                                    tile_y + y, inputs->layer, s /* TODO */);
             depth_stride = scene->zsbuf.stride;
          }
 
@@ -371,10 +377,11 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
                                             &task->thread_data,
                                             stride,
                                             depth_stride,
-                                            0 /* TODO: sample_id for entire tile */);
+                                            s /* TODO: sample_id for entire tile */);
          END_JIT_CALL();
       }
    }
+} /* sample loop */
 }
 
 
