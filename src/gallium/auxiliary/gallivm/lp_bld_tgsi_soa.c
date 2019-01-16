@@ -1711,7 +1711,20 @@ emit_fetch_system_value(
 
    case TGSI_SEMANTIC_SAMPLEPOS:
       {
-        //res = bld->system_values.sample_pos;
+        if (0)
+        {
+            LLVMTypeRef int_type;
+            LLVMValueRef indices[1];
+            LLVMValueRef vec_ptr;
+        
+            int_type = LLVMInt32TypeInContext(gallivm->context);
+            indices[0] = LLVMConstInt(int_type, swizzle_in, 0);
+            vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
+            res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+            atype = TGSI_TYPE_FLOAT;
+        }
+        else
+        {
         static int done;
         LLVMModuleRef module;
         LLVMTypeRef int_type;
@@ -1775,6 +1788,7 @@ emit_fetch_system_value(
         vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
+        }
       }
       break;
    
