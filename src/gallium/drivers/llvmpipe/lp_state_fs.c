@@ -2721,6 +2721,9 @@ generate_fragment(struct llvmpipe_context *lp,
          LLVMBuildStore(builder, mask, mask_ptr);
       }
 
+      /* TODO: HACK to make samples = 0 work
+       *       does writing sample mask even make sense if samples == 0? */
+      shader->info.base.writes_samplemask &= lp->framebuffer.samples != 0;
       generate_fs_loop(gallivm,
                        shader, key,
                        builder,
