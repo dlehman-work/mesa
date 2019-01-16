@@ -296,6 +296,68 @@ lp_build_sample_position(struct gallivm_state *gallivm,
                          LLVMBuilderRef builder,
                          struct lp_bld_tgsi_system_values *system_values)
 {
+   LLVMModuleRef module;
+   LLVMTypeRef int_type;
+   LLVMValueRef vec_ptr;
+   LLVMValueRef indices[2];
+   LLVMValueRef samplepos_global;
+
+   /* TODO: hard-coded for 4x */
+   /* src/gallium/auxiliary/gallivm/lp_bld_tgsi_soa.c */
+   static const float scalars[4][2] = {
+      {  6.0f/16.0f,  2.0f/16.0f },
+      { 14.0f/16.0f,  6.0f/16.0f },
+      {  2.0f/16.0f, 10.0f/16.0f },
+      { 10.0f/16.0f, 14.0f/16.0f },
+   };  
+   LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
+   LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
+   LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
+   LLVMValueRef sampleid_global;
+   LLVMValueRef vec_ret;
+   LLVMValueRef scalar;
+   LLVMBasicBlockRef entry;
+   LLVMTypeRef param_types[1];
+   LLVMTypeRef arr_arr_vec_type;
+   LLVMTypeRef arr_vec_type;
+   LLVMTypeRef float_type;
+   LLVMTypeRef func_type;
+   LLVMTypeRef void_type;
+   LLVMTypeRef vec_type;
+   unsigned int i, j;
+
+   module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
+   if (samplepos_global)
+   {
+      system_values->sample_pos = samplepos_global;
+      return;
+   }
+
+   int_type = LLVMInt32TypeInContext(gallivm->context);
+   float_type = LLVMFloatTypeInContext(gallivm->context);
+   vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
+   for (i = 0; i < ARRAY_SIZE(scalars); i++)
+   {   
+       for (j = 0; j < ARRAY_SIZE(vec); j++)
+       {
+           scalar = LLVMConstReal(float_type, scalars[i][j]);
+           vec[j] = lp_build_broadcast(gallivm, vec_type, scalar);
+       }
+       arr_vec[i] = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+   }   
+   arr_vec_type = LLVMTypeOf(arr_vec[0]);
+   arr_arr_vec = LLVMConstArray(arr_vec_type, arr_vec, ARRAY_SIZE(arr_vec));
+
+   indices[0] = LLVMConstInt(int_type, 0, 0);
+   indices[1] = system_values->sample_id; // TODO: or pass in? // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
+   vec_ptr = LLVMBuildGEP(builder, arr_arr_vec, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
+
+   arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
+   samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
+   LLVMSetInitializer(samplepos_global, arr_arr_vec);
+        
+   system_values->sample_pos = samplepos_global;
 }
 
 
