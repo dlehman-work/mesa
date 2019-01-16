@@ -493,6 +493,10 @@ llvmpipe_is_format_supported( struct pipe_screen *_screen,
    if (MAX2(1, sample_count) != MAX2(1, storage_sample_count))
       return false;
 
+   //if ((sample_count > screen->msaa_max_count) /* TODO: and/or LP_MAX_SAMPLES? (see swr) */
+   if (!util_is_power_of_two_or_zero(sample_count))
+      return false;
+
    if (bind & PIPE_BIND_RENDER_TARGET) {
       if (format_desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB) {
          /* this is a lie actually other formats COULD exist where we would fail */
