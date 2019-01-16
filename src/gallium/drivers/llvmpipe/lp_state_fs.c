@@ -615,9 +615,6 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
       assert(smaski >= 0);
       smask = LLVMBuildLoad(builder, outputs[smaski][0], "smask");
-      /*
-       * Pixel is alive according to the first sample in the mask.
-       */
       smask = LLVMBuildBitCast(builder, smask, smask_bld.vec_type, "");
       if (sample_id) /* TODO: all that's needed? */
       {
@@ -627,6 +624,9 @@ generate_fs_loop(struct gallivm_state *gallivm,
       }
       else
       {
+          /*
+           * Pixel is alive according to the first sample in the mask.
+           */
           smask = lp_build_and(&smask_bld, smask, smask_bld.one);
       }
         smask = lp_build_cmp(&smask_bld, PIPE_FUNC_NOTEQUAL, smask, smask_bld.zero);
