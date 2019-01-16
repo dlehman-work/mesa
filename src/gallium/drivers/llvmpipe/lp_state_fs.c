@@ -296,12 +296,16 @@ lp_build_sample_position(struct gallivm_state *gallivm,
                          LLVMBuilderRef builder,
                          struct lp_bld_tgsi_system_values *system_values)
 {
+return;
    LLVMModuleRef module;
    LLVMTypeRef int_type;
    LLVMValueRef vec_ptr;
    LLVMValueRef indices[2];
    LLVMValueRef samplepos_global;
 
+   /* TODO; do we want address of all sample tables (can we mix textures of different # samples?) 
+    *       gl_NumSamples is the number of samples in the framebuffer
+    *       we could have multiple framebuffers with different number of samples each */
    /* TODO: hard-coded for 4x */
    /* src/gallium/auxiliary/gallivm/lp_bld_tgsi_soa.c */
    static const float scalars[4][2] = {
