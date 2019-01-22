@@ -274,7 +274,7 @@ llvmpipe_clear_depth_stencil(struct pipe_context *pipe,
 }
 
 /* taken from nv50 driver */
-void lp_get_sample_position(struct pipe_context *context,
+static void lp_get_sample_position(struct pipe_context *context,
                                unsigned sample_count,
                                unsigned sample_index,
                                float *out_value)
