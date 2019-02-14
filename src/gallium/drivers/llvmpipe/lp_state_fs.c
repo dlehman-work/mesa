@@ -300,8 +300,8 @@ static const uint8_t get_sample_positions[][2] =
           { 0, 8},{15, 4},{14,15},{ 1, 0}
 };
 
-static void get_sample_position(unsigned sample_count, unsigned sample_index,
-                                float *out_value)
+static void
+get_sample_position(unsigned sample_count, unsigned sample_index, float *out_value)
 {
    /* validate sample_count */
    sample_count = 1 << util_logbase2(sample_count);
