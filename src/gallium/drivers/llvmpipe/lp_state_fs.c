@@ -298,9 +298,6 @@ lp_build_sample_position(struct gallivm_state *gallivm,
 {
 return;
    LLVMModuleRef module;
-   LLVMTypeRef int_type;
-   LLVMValueRef vec_ptr;
-   LLVMValueRef indices[2];
    LLVMValueRef samplepos_global;
 
    /* TODO; do we want address of all sample tables (can we mix textures of different # samples?) 
@@ -317,16 +314,10 @@ return;
    LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
    LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
    LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
-   LLVMValueRef sampleid_global;
-   LLVMValueRef vec_ret;
    LLVMValueRef scalar;
-   LLVMBasicBlockRef entry;
-   LLVMTypeRef param_types[1];
    LLVMTypeRef arr_arr_vec_type;
    LLVMTypeRef arr_vec_type;
    LLVMTypeRef float_type;
-   LLVMTypeRef func_type;
-   LLVMTypeRef void_type;
    LLVMTypeRef vec_type;
    unsigned int i, j;
 
@@ -338,7 +329,6 @@ return;
       return;
    }
 
-   int_type = LLVMInt32TypeInContext(gallivm->context);
    float_type = LLVMFloatTypeInContext(gallivm->context);
    vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
    for (i = 0; i < ARRAY_SIZE(scalars); i++)
@@ -352,10 +342,6 @@ return;
    }   
    arr_vec_type = LLVMTypeOf(arr_vec[0]);
    arr_arr_vec = LLVMConstArray(arr_vec_type, arr_vec, ARRAY_SIZE(arr_vec));
-
-   indices[0] = LLVMConstInt(int_type, 0, 0);
-   indices[1] = system_values->sample_id; // TODO: or pass in? // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
-   vec_ptr = LLVMBuildGEP(builder, arr_arr_vec, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
 
    arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
    samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
