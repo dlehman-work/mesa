@@ -1711,6 +1711,13 @@ emit_fetch_system_value(
 
    case TGSI_SEMANTIC_SAMPLEPOS:
       {
+        /* TODO: 
+        gl_NumSamples = load *global num_samples
+        gl_SampleID = bld->system_values.sample_id
+        gl_SamplePosition = positions[gl_NumSamples][gl_SampleID]
+        pos = position + gl_NumSamples * 2 + gl_SampleID * 2
+        pos + swizzle_in
+        */
         if (0)
         {
             LLVMTypeRef int_type;
