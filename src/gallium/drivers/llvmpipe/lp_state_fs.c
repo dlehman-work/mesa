@@ -341,14 +341,19 @@ if (1)
    LLVMModuleRef module;
    LLVMValueRef samplepos_global;
    LLVMTypeRef float_type;
+   LLVMTypeRef vec_type;
+   LLVMTypeRef arr_vec_type;
+   LLVMValueRef scalar;
+   LLVMValueRef arr_vec;
    LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
    
    module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
-   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2DNew");
    printf("%s: %d: samplepos_global %p\n", __FUNCTION__, __LINE__, samplepos_global);
    //if (samplepos_global)
 
    float_type = LLVMFloatTypeInContext(gallivm->context);
+   vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
    for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
    {
       count = 1 << log2i(idx);
@@ -356,10 +361,17 @@ if (1)
 
       get_sample_position(count, idx2, pos);
 
-      vec[idx*2 + 0] = LLVMConstReal(float_type, pos[0]); /* TODO: vector type */
-      vec[idx*2 + 1] = LLVMConstReal(float_type, pos[1]);
+      scalar = LLVMConstReal(float_type, pos[0]);
+      vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
+      scalar = LLVMConstReal(float_type, pos[1]);
+      vec[idx*2 + 1] = lp_build_broadcast(gallivm, vec_type, scalar);
    }
+   arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+   arr_vec_type = LLVMTypeOf(arr_vec);
+   samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2DNew");
+   LLVMSetInitializer(samplepos_global, arr_vec);
 
+   system_values->sample_pos = samplepos_global;
 }
 return;
    LLVMModuleRef module;
