@@ -334,8 +334,6 @@ lp_build_sample_position(struct gallivm_state *gallivm,
     get SamplePositions
     system_values->sample_pos + num_samples * 2 [ + sample_id * 2 ]     
     */
-if (1)
-{
    float pos[2];
    int idx, idx2, count;
    LLVMModuleRef module;
@@ -349,81 +347,28 @@ if (1)
    
    module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
    samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2DNew");
-   printf("%s: %d: samplepos_global %p\n", __FUNCTION__, __LINE__, samplepos_global);
-   //if (samplepos_global)
-
-   float_type = LLVMFloatTypeInContext(gallivm->context);
-   vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
-   for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
+   if (!samplepos_global)
    {
-      count = 1 << log2i(idx);
-      idx2 = idx & (count - 1);
-
-      get_sample_position(count, idx2, pos);
-
-      scalar = LLVMConstReal(float_type, pos[0]);
-      vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
-      scalar = LLVMConstReal(float_type, pos[1]);
-      vec[idx*2 + 1] = lp_build_broadcast(gallivm, vec_type, scalar);
-   }
-   arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
-   arr_vec_type = LLVMTypeOf(arr_vec);
-   samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2DNew");
-   LLVMSetInitializer(samplepos_global, arr_vec);
-
-   system_values->sample_pos = samplepos_global;
-}
-return;
-   LLVMModuleRef module;
-   LLVMValueRef samplepos_global;
-
-   /* TODO; do we want address of all sample tables (can we mix textures of different # samples?) 
-    *       gl_NumSamples is the number of samples in the framebuffer
-    *       we could have multiple framebuffers with different number of samples each */
-   /* TODO: hard-coded for 4x */
-   /* src/gallium/auxiliary/gallivm/lp_bld_tgsi_soa.c */
-   static const float scalars[4][2] = {
-      {  6.0f/16.0f,  2.0f/16.0f },
-      { 14.0f/16.0f,  6.0f/16.0f },
-      {  2.0f/16.0f, 10.0f/16.0f },
-      { 10.0f/16.0f, 14.0f/16.0f },
-   };  
-   LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
-   LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
-   LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
-   LLVMValueRef scalar;
-   LLVMTypeRef arr_arr_vec_type;
-   LLVMTypeRef arr_vec_type;
-   LLVMTypeRef float_type;
-   LLVMTypeRef vec_type;
-   unsigned int i, j;
-
-   module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
-   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
-   if (samplepos_global)
-   {
-      system_values->sample_pos = samplepos_global;
-      return;
-   }
-
-   float_type = LLVMFloatTypeInContext(gallivm->context);
-   vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
-   for (i = 0; i < ARRAY_SIZE(scalars); i++)
-   {   
-       for (j = 0; j < ARRAY_SIZE(vec); j++)
+       float_type = LLVMFloatTypeInContext(gallivm->context);
+       vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
+       for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
        {
-           scalar = LLVMConstReal(float_type, scalars[i][j]);
-           vec[j] = lp_build_broadcast(gallivm, vec_type, scalar);
-       }
-       arr_vec[i] = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
-   }   
-   arr_vec_type = LLVMTypeOf(arr_vec[0]);
-   arr_arr_vec = LLVMConstArray(arr_vec_type, arr_vec, ARRAY_SIZE(arr_vec));
+          count = 1 << log2i(idx);
+          idx2 = idx & (count - 1);
 
-   arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
-   samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
-   LLVMSetInitializer(samplepos_global, arr_arr_vec);
-        
+          get_sample_position(count, idx2, pos);
+
+          scalar = LLVMConstReal(float_type, pos[0]);
+          vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
+          scalar = LLVMConstReal(float_type, pos[1]);
+          vec[idx*2 + 1] = lp_build_broadcast(gallivm, vec_type, scalar);
+       }
+       arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
+       arr_vec_type = LLVMTypeOf(arr_vec);
+       samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2DNew");
+       LLVMSetInitializer(samplepos_global, arr_vec);
+   }
+
    system_values->sample_pos = samplepos_global;
 }
 
