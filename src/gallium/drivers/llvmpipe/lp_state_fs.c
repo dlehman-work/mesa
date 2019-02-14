@@ -286,12 +286,6 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
    return lp_build_clamp(&f32_bld, z, min_depth, max_depth);
 }
 
-/* TODO: alternative in src/mesa/drivers/dri/nouveau/nouveau_util.h */
-static inline int log2i(int x)
-{
-    return __builtin_clz(x|1) ^ 0x1f;
-}
-
 /* from swr driver */
 static const uint8_t get_sample_positions[][2] =
 {         { 8, 8},
@@ -310,7 +304,7 @@ static void get_sample_position(unsigned sample_count, unsigned sample_index,
                                 float *out_value)
 {
    /* validate sample_count */
-   sample_count = 1 << log2i(sample_count);
+   sample_count = 1 << util_logbase2(sample_count);
 
    const uint8_t *sample = get_sample_positions[sample_count + sample_index];
    out_value[0] = sample[0] / 16.0f;
@@ -353,7 +347,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
        vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
        for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
        {
-          count = 1 << log2i(idx);
+          count = 1 << util_logbase2(idx);
           idx2 = idx & (count - 1);
 
           get_sample_position(count, idx2, pos);
