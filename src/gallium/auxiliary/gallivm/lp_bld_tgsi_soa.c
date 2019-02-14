@@ -1740,16 +1740,10 @@ emit_fetch_system_value(
             LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
             LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
             LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
-            LLVMValueRef sampleid_global;
-            LLVMValueRef vec_ret;
             LLVMValueRef scalar;
-            LLVMBasicBlockRef entry;
-            LLVMTypeRef param_types[1];
             LLVMTypeRef arr_arr_vec_type;
             LLVMTypeRef arr_vec_type;
             LLVMTypeRef float_type;
-            LLVMTypeRef func_type;
-            LLVMTypeRef void_type;
             LLVMTypeRef vec_type;
             unsigned int i, j;
 
