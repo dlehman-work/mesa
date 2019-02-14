@@ -1717,6 +1717,8 @@ emit_fetch_system_value(
         gl_SamplePosition = positions[gl_NumSamples][gl_SampleID]
         pos = position + gl_NumSamples * 2 + gl_SampleID * 2
         pos + swizzle_in
+
+        ret = build load bld->system_values->sample_pos [ + 2 * sample_id by caller?] + swizzle_in
         */
         static int done;
         LLVMModuleRef module;

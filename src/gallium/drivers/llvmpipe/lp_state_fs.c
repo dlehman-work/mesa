@@ -286,6 +286,36 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
    return lp_build_clamp(&f32_bld, z, min_depth, max_depth);
 }
 
+/* TODO: alternative in src/mesa/drivers/dri/nouveau/nouveau_util.h */
+static inline int log2i(int x)
+{
+    return __builtin_clz(x|1) ^ 0x1f;
+}
+
+/* from swr driver */
+static const uint8_t get_sample_positions[][2] =
+{         { 8, 8},
+  /* 1x*/ { 8, 8}, 
+  /* 2x*/ {12,12},{ 4, 4}, 
+  /* 4x*/ { 6, 2},{14, 6},{ 2,10},{10,14},
+  /* 8x*/ { 9, 5},{ 7,11},{13, 9},{ 5, 3}, 
+          { 3,13},{ 1, 7},{11,15},{15, 1}, 
+  /*16x*/ { 9, 9},{ 7, 5},{ 5,10},{12, 7}, 
+          { 3, 6},{10,13},{13,11},{11, 3}, 
+          { 6,14},{ 8, 1},{ 4, 2},{ 2,12},
+          { 0, 8},{15, 4},{14,15},{ 1, 0}
+};
+
+static void get_sample_position(unsigned sample_count, unsigned sample_index,
+                                float *out_value)
+{
+   /* validate sample_count */
+   sample_count = 1 << log2i(sample_count);
+
+   const uint8_t *sample = get_sample_positions[sample_count + sample_index];
+   out_value[0] = sample[0] / 16.0f;
+   out_value[1] = sample[1] / 16.0f;
+}
 
 /**
  * Build lookup for gl_SamplePosition.
@@ -296,6 +326,41 @@ lp_build_sample_position(struct gallivm_state *gallivm,
                          LLVMBuilderRef builder,
                          struct lp_bld_tgsi_system_values *system_values)
 {
+    /* TODO: build table here using lp_get_sample_position */
+    /*
+    if (!global SamplePositions exists)
+        build SamplePosition
+
+    get SamplePositions
+    system_values->sample_pos + num_samples * 2 [ + sample_id * 2 ]     
+    */
+if (1)
+{
+   float pos[2];
+   int idx, idx2, count;
+   LLVMModuleRef module;
+   LLVMValueRef samplepos_global;
+   LLVMTypeRef float_type;
+   LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
+   
+   module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
+   printf("%s: %d: samplepos_global %p\n", __FUNCTION__, __LINE__, samplepos_global);
+   //if (samplepos_global)
+
+   float_type = LLVMFloatTypeInContext(gallivm->context);
+   for (idx = 0; idx < LP_MAX_SAMPLES*2; idx++)
+   {
+      count = 1 << log2i(idx);
+      idx2 = idx & (count - 1);
+
+      get_sample_position(count, idx2, pos);
+
+      vec[idx*2 + 0] = LLVMConstReal(float_type, pos[0]); /* TODO: vector type */
+      vec[idx*2 + 1] = LLVMConstReal(float_type, pos[1]);
+   }
+
+}
 return;
    LLVMModuleRef module;
    LLVMValueRef samplepos_global;
