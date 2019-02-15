@@ -102,6 +102,7 @@
 #include "lp_flush.h"
 #include "lp_state_fs.h"
 #include "lp_rast.h"
+#include "lp_surface.h"
 
 
 /** Fragment shader number (for debugging) */
@@ -286,30 +287,6 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
    return lp_build_clamp(&f32_bld, z, min_depth, max_depth);
 }
 
-/* from swr driver */
-static const uint8_t get_sample_positions[][2] =
-{         { 8, 8},
-  /* 1x*/ { 8, 8}, 
-  /* 2x*/ {12,12},{ 4, 4}, 
-  /* 4x*/ { 6, 2},{14, 6},{ 2,10},{10,14},
-  /* 8x*/ { 9, 5},{ 7,11},{13, 9},{ 5, 3}, 
-          { 3,13},{ 1, 7},{11,15},{15, 1}, 
-  /*16x*/ { 9, 9},{ 7, 5},{ 5,10},{12, 7}, 
-          { 3, 6},{10,13},{13,11},{11, 3}, 
-          { 6,14},{ 8, 1},{ 4, 2},{ 2,12},
-          { 0, 8},{15, 4},{14,15},{ 1, 0}
-};
-
-static void
-get_sample_position(unsigned sample_count, unsigned sample_index, float *out_value)
-{
-   /* validate sample_count */
-   sample_count = 1 << util_logbase2(sample_count);
-
-   const uint8_t *sample = get_sample_positions[sample_count + sample_index];
-   out_value[0] = sample[0] / 16.0f;
-   out_value[1] = sample[1] / 16.0f;
-}
 
 /**
  * Build lookup for gl_SamplePosition.
@@ -350,7 +327,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
           count = 1 << util_logbase2(idx);
           idx2 = idx & (count - 1);
 
-          get_sample_position(count, idx2, pos);
+          lp_get_sample_position(NULL, count, idx2, pos);
 
           scalar = LLVMConstReal(float_type, pos[0]);
           vec[idx*2 + 0] = lp_build_broadcast(gallivm, vec_type, scalar);
