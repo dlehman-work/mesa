@@ -1720,8 +1720,6 @@ emit_fetch_system_value(
 
         ret = build load bld->system_values->sample_pos [ + 2 * sample_id by caller?] + swizzle_in
         */
-if (1)
-{
 /*
     load_num_samples = LLVMBuildLoad(builder, num_samples, "");
     load_num_samples = LLVMBuildMul(builder, load_num_samples, LLVMConstInt(int_type, 2, 0), "load_num_samples");
@@ -1755,68 +1753,6 @@ printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sa
         vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, 2 /* TODO */, "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
-}
-else
-{
-        static int done;
-        LLVMModuleRef module;
-        LLVMTypeRef int_type;
-        LLVMValueRef vec_ptr;
-        LLVMValueRef indices[3];
-        LLVMValueRef samplepos_global;
-
-printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sample_pos);
-        int_type = LLVMInt32TypeInContext(gallivm->context);
-        module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
-        if (!done)
-        {
-            /* TODO: hard-coded for 4x */
-            /* TODO: src/gallium/drivers/llvmpipe/lp_surface.c */
-            static const float scalars[4][2] = {
-                {  6.0f/16.0f,  2.0f/16.0f },
-                { 14.0f/16.0f,  6.0f/16.0f },
-                {  2.0f/16.0f, 10.0f/16.0f },
-                { 10.0f/16.0f, 14.0f/16.0f },
-            };  
-            LLVMValueRef arr_arr_vec;                   /* [X x [2 x <8 x float>]] */
-            LLVMValueRef arr_vec[ARRAY_SIZE(scalars)];  /*      [2 x <8 x float]]  */
-            LLVMValueRef vec[ARRAY_SIZE(scalars[0])];   /*           <8 x float>   */
-            LLVMValueRef scalar;
-            LLVMTypeRef arr_arr_vec_type;
-            LLVMTypeRef arr_vec_type;
-            LLVMTypeRef float_type;
-            LLVMTypeRef vec_type;
-            unsigned int i, j;
-
-            float_type = LLVMFloatTypeInContext(gallivm->context);
-            vec_type = LLVMVectorType(float_type, 8); /* TODO: 8? */
-            for (i = 0; i < ARRAY_SIZE(scalars); i++)
-            {   
-                for (j = 0; j < ARRAY_SIZE(vec); j++)
-                {
-                    scalar = LLVMConstReal(float_type, scalars[i][j]);
-                    vec[j] = lp_build_broadcast(gallivm, vec_type, scalar);
-                }
-                arr_vec[i] = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
-            }   
-            arr_vec_type = LLVMTypeOf(arr_vec[0]);
-            arr_arr_vec = LLVMConstArray(arr_vec_type, arr_vec, ARRAY_SIZE(arr_vec));
-
-            arr_arr_vec_type = LLVMTypeOf(arr_arr_vec);
-            samplepos_global = LLVMAddGlobal(module, arr_arr_vec_type, "SamplePosition2D");
-            LLVMSetInitializer(samplepos_global, arr_arr_vec);
-            done = 1;
-        }
-        else
-            samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
-
-        indices[0] = LLVMConstInt(int_type, 0, 0);
-        indices[1] = bld->system_values.sample_id; // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
-        indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
-        vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
-        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-        atype = TGSI_TYPE_FLOAT;
-}
       }
       break;
    
