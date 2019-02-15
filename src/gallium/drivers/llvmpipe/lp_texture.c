@@ -76,6 +76,8 @@ llvmpipe_resource_create_resolve(struct llvmpipe_screen *screen,
    templ.nr_samples = 0;
    templ.nr_storage_samples = 0;
 
+    /* TODO setup_glsl_blit_framebuffer with gl_constans.SampleMapXXx ?? */
+
    /* TODO: TexImage*Multisample do not support multiple image levels
     * (OpenGL spec 4.6 sec 8.8 "Multisample Textures")
     */
