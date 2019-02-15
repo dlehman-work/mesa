@@ -1720,6 +1720,46 @@ emit_fetch_system_value(
 
         ret = build load bld->system_values->sample_pos [ + 2 * sample_id by caller?] + swizzle_in
         */
+if (1)
+{
+/*
+    load_num_samples = LLVMBuildLoad(builder, num_samples, "");
+    load_num_samples = LLVMBuildMul(builder, load_num_samples, LLVMConstInt(int_type, 2, 0), "load_num_samples");
+    load_sample_id = LLVMBuildLoad(builder, sample_id, "");
+    load_sample_id = LLVMBuildMul(builder, load_sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
+
+    indices[0] = LLVMConstInt(int_type, 0, 0);
+    indices[1] = LLVMBuildAdd(builder, load_num_samples, load_sample_id, "");
+    sp_gep = LLVMBuildGEP(builder, sample_positions, indices,
+                          ARRAY_SIZE(indices), "gl_SamplePosion");
+
+*/
+printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sample_pos);
+        LLVMTypeRef int_type;
+        LLVMValueRef vec_ptr;
+        LLVMValueRef indices[3];
+
+        int_type = LLVMInt32TypeInContext(gallivm->context);
+        indices[0] = LLVMConstInt(int_type, 0, 0);
+        indices[1] = LLVMConstInt(int_type, 0, 0);
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, 2, "vec_ptr"); /* TODO: name */
+        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+        atype = TGSI_TYPE_FLOAT;
+if (0)
+{
+        int_type = LLVMInt32TypeInContext(gallivm->context);
+        indices[0] = LLVMConstInt(int_type, 0, 0);
+        indices[1] = bld->system_values.sample_id; // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
+        indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
+        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+        atype = TGSI_TYPE_FLOAT;
+      res = bld_base->base.zero;
+      atype = TGSI_TYPE_FLOAT;
+}
+}
+else
+{
         static int done;
         LLVMModuleRef module;
         LLVMTypeRef int_type;
@@ -1727,6 +1767,7 @@ emit_fetch_system_value(
         LLVMValueRef indices[3];
         LLVMValueRef samplepos_global;
 
+printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sample_pos);
         int_type = LLVMInt32TypeInContext(gallivm->context);
         module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
         if (!done)
@@ -1777,6 +1818,7 @@ emit_fetch_system_value(
         vec_ptr = LLVMBuildGEP(builder, samplepos_global, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
+}
       }
       break;
    

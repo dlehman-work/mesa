@@ -364,6 +364,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    }
 
    system_values->sample_pos = samplepos_global;
+printf("%s: system_values->sample_pos %p\n", __FUNCTION__, system_values->sample_pos);
 }
 
 
