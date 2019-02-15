@@ -1743,7 +1743,7 @@ printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sa
         int_type = LLVMInt32TypeInContext(gallivm->context);
 
         /* TODO: shifts instead of multiply? */
-        offset = LLVMBuildMul(builder, LLVMConstInt(int_type, 4, 0) /* TODO: num_samples */, LLVMConstInt(int_type, 2, 0), "load_num_samples");        
+        offset = LLVMBuildMul(builder, LLVMConstInt(int_type, 8, 0) /* TODO: num_samples */, LLVMConstInt(int_type, 2, 0), "load_num_samples");        
         idoffset = LLVMBuildMul(builder, bld->system_values.sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
         szoffset = LLVMConstInt(int_type, swizzle_in, 0);
 

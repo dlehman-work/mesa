@@ -285,11 +285,19 @@ static void lp_get_sample_position(struct pipe_context *context,
    static const uint8_t ms4[4][2] = {
       { 0x6, 0x2 }, { 0xe, 0x6 },   /* (0,0), (1,0) */
       { 0x2, 0xa }, { 0xa, 0xe } }; /* (0,1), (1,1) */
+#if 1 /* to match lp_state_fs.c */
+   static const uint8_t ms8[8][2] = {
+      { 0x9, 0x5 }, { 0x7, 0xb },   /* (0,0), (1,0) */
+      { 0xd, 0x9 }, { 0x5, 0x3 },   /* (0,1), (1,1) */
+      { 0x3, 0xd }, { 0x1, 0x7 },   /* (2,0), (3,0) */
+      { 0xb, 0xf }, { 0xf, 0x1 } }; /* (2,1), (3,1) */
+#else
    static const uint8_t ms8[8][2] = {
       { 0x1, 0x7 }, { 0x5, 0x3 },   /* (0,0), (1,0) */
       { 0x3, 0xd }, { 0x7, 0xb },   /* (0,1), (1,1) */
       { 0x9, 0x5 }, { 0xf, 0x1 },   /* (2,0), (3,0) */
       { 0xb, 0xf }, { 0xd, 0x9 } }; /* (2,1), (3,1) */
+#endif
    const uint8_t (*ptr)[2];
 
    switch (sample_count) {
