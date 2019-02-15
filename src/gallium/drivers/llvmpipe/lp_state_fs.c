@@ -340,6 +340,9 @@ lp_build_sample_position(struct gallivm_state *gallivm,
        LLVMSetInitializer(samplepos_global, arr_vec);
    }
 
+   /* TODO: add state->jit_context->constants[0] // gl_NumSamples
+    *       passed in lp_rast_shade_quads_mask to jit_function[]
+    *       (always 0th constant?) */
    system_values->sample_pos = samplepos_global;
 printf("%s: system_values->sample_pos %p\n", __FUNCTION__, system_values->sample_pos);
 }
