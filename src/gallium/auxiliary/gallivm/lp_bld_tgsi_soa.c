@@ -1737,12 +1737,22 @@ if (1)
 printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sample_pos);
         LLVMTypeRef int_type;
         LLVMValueRef vec_ptr;
+        LLVMValueRef offset;    // offset for num samples
+        LLVMValueRef idoffset;  // offset for sample id
+        LLVMValueRef szoffset;  // offset for swizzle_in
         LLVMValueRef indices[3];
 
         int_type = LLVMInt32TypeInContext(gallivm->context);
+
+        /* TODO: shifts instead of multiply? */
+        offset = LLVMBuildMul(builder, LLVMConstInt(int_type, 4, 0) /* TODO: num_samples */, LLVMConstInt(int_type, 2, 0), "load_num_samples");        
+        idoffset = LLVMBuildMul(builder, bld->system_values.sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
+        szoffset = LLVMConstInt(int_type, swizzle_in, 0);
+
         indices[0] = LLVMConstInt(int_type, 0, 0);
-        indices[1] = LLVMConstInt(int_type, 0, 0);
-        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, 2, "vec_ptr"); /* TODO: name */
+        indices[1] = LLVMBuildAdd(builder, offset, idoffset, "");
+        indices[1] = LLVMBuildAdd(builder, indices[1], szoffset, "");        
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, 2 /* TODO */, "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
 if (0)
