@@ -317,7 +317,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
    
    module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
-   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2DNew");
+   samplepos_global = LLVMGetNamedGlobal(module, "SamplePosition2D");
    if (!samplepos_global)
    {
        float_type = LLVMFloatTypeInContext(gallivm->context);
@@ -336,7 +336,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
        }
        arr_vec = LLVMConstArray(vec_type, vec, ARRAY_SIZE(vec));
        arr_vec_type = LLVMTypeOf(arr_vec);
-       samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2DNew");
+       samplepos_global = LLVMAddGlobal(module, arr_vec_type, "SamplePosition2D");
        LLVMSetInitializer(samplepos_global, arr_vec);
    }
 
