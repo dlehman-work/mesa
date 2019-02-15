@@ -1755,18 +1755,6 @@ printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sa
         vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, 2 /* TODO */, "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
-if (0)
-{
-        int_type = LLVMInt32TypeInContext(gallivm->context);
-        indices[0] = LLVMConstInt(int_type, 0, 0);
-        indices[1] = bld->system_values.sample_id; // TODO: LLVMBuildLoad(builder, sampleid_global, "sampleid");
-        indices[2] = LLVMConstInt(int_type, swizzle_in, 0);
-        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
-        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-        atype = TGSI_TYPE_FLOAT;
-      res = bld_base->base.zero;
-      atype = TGSI_TYPE_FLOAT;
-}
 }
 else
 {
