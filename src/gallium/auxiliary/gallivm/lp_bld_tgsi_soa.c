@@ -1716,10 +1716,9 @@ emit_fetch_system_value(
         LLVMValueRef indices[1];
 
         int_type = LLVMInt32TypeInContext(gallivm->context);
-
         indices[0] = LLVMConstInt(int_type, swizzle_in, 0);
-        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
-        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "&gl_SamplePosition[idx]");
+        res = LLVMBuildLoad(builder, vec_ptr, "gl_SamplePosition");
         atype = TGSI_TYPE_FLOAT;
       }
       break;
