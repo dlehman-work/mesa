@@ -3299,6 +3299,8 @@ make_variant_key(struct llvmpipe_context *lp,
       key->depth_clamp = (lp->rasterizer->depth_clip_near == 0) ? 1 : 0;
    }
 
+   key->nr_samples = lp->framebuffer.samples; /* TODO: 0 or 1? */
+
    /* alpha test only applies if render buffer 0 is non-integer (or does not exist) */
    if (!lp->framebuffer.nr_cbufs ||
        !lp->framebuffer.cbufs[0] ||
