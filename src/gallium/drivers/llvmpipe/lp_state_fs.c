@@ -316,6 +316,7 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    LLVMTypeRef int_type;
    LLVMTypeRef arr_vec_type;
    LLVMValueRef load_num_samples;
+   LLVMValueRef load_sample_id;
    LLVMValueRef scalar;
    LLVMValueRef arr_vec;
    LLVMValueRef indices[2];
@@ -348,12 +349,15 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    int_type = LLVMInt32TypeInContext(gallivm->context);
     
    load_num_samples = LLVMBuildMul(builder, LLVMConstInt(int_type, num_samples, 0), LLVMConstInt(int_type, 2, 0), "load_num_samples");
+   load_sample_id = LLVMBuildMul(builder, sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
 
    /* TODO: add state->jit_context->constants[0] // gl_NumSamples
     *       passed in lp_rast_shade_quads_mask to jit_function[]
     *       (always 0th constant?) */
+        /* TODO: shifts instead of multiply? */
+        /* TODO: use helpers (lp_const) */
    indices[0] = LLVMConstInt(int_type, 0, 0);
-   indices[1] = load_num_samples;
+   indices[1] = LLVMBuildAdd(builder, load_num_samples, load_sample_id, "");
    *sample_pos = LLVMBuildGEP(builder, samplepos_global, indices,
                               ARRAY_SIZE(indices), "gl_SamplePosion");
 }

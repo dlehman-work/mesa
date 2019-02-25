@@ -1710,68 +1710,14 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_SAMPLEPOS:
-      if (1)
       {
         LLVMTypeRef int_type;
         LLVMValueRef vec_ptr;
-        LLVMValueRef idoffset;  // offset for sample id
-        LLVMValueRef szoffset;  // offset for swizzle_in
         LLVMValueRef indices[1];
 
         int_type = LLVMInt32TypeInContext(gallivm->context);
-        /* TODO: shifts instead of multiply? */
-        /* TODO: use helpers (lp_const) */
-        idoffset = LLVMBuildMul(builder, bld->system_values.sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
-        szoffset = LLVMConstInt(int_type, swizzle_in, 0);
 
-        //indices[0] = LLVMConstInt(int_type, 0, 0);
-        indices[0] = LLVMBuildAdd(builder, idoffset, szoffset, "");        
-        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
-        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-        atype = TGSI_TYPE_FLOAT;
-      }
-      else
-      {
-        /* TODO: 
-        gl_NumSamples = load *global num_samples
-        gl_SampleID = bld->system_values.sample_id
-        gl_SamplePosition = positions[gl_NumSamples][gl_SampleID]
-        pos = position + gl_NumSamples * 2 + gl_SampleID * 2
-        pos + swizzle_in
-
-        ret = build load bld->system_values->sample_pos [ + 2 * sample_id by caller?] + swizzle_in
-        */
-/*
-    load_num_samples = LLVMBuildLoad(builder, num_samples, "");
-    load_num_samples = LLVMBuildMul(builder, load_num_samples, LLVMConstInt(int_type, 2, 0), "load_num_samples");
-    load_sample_id = LLVMBuildLoad(builder, sample_id, "");
-    load_sample_id = LLVMBuildMul(builder, load_sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
-
-    indices[0] = LLVMConstInt(int_type, 0, 0);
-    indices[1] = LLVMBuildAdd(builder, load_num_samples, load_sample_id, "");
-    sp_gep = LLVMBuildGEP(builder, sample_positions, indices,
-                          ARRAY_SIZE(indices), "gl_SamplePosion");
-
-*/
-printf("%s: system_values->sample_pos %p\n", __FUNCTION__, bld->system_values.sample_pos);
-        LLVMTypeRef int_type;
-        LLVMValueRef vec_ptr;
-        LLVMValueRef offset;    // offset for num samples
-        LLVMValueRef idoffset;  // offset for sample id
-        LLVMValueRef szoffset;  // offset for swizzle_in
-        LLVMValueRef indices[2];
-
-        int_type = LLVMInt32TypeInContext(gallivm->context);
-
-        /* TODO: shifts instead of multiply? */
-        /* TODO: use helpers (lp_const) */
-        offset = LLVMBuildMul(builder, LLVMConstInt(int_type, 2, 0) /* TODO: num_samples */, LLVMConstInt(int_type, 2, 0), "load_num_samples");        
-        idoffset = LLVMBuildMul(builder, bld->system_values.sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
-        szoffset = LLVMConstInt(int_type, swizzle_in, 0);
-
-        indices[0] = LLVMConstInt(int_type, 0, 0);
-        indices[1] = LLVMBuildAdd(builder, offset, idoffset, "");
-        indices[1] = LLVMBuildAdd(builder, indices[1], szoffset, "");        
+        indices[0] = LLVMConstInt(int_type, swizzle_in, 0);
         vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
         atype = TGSI_TYPE_FLOAT;
