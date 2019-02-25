@@ -1710,6 +1710,29 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_SAMPLEPOS:
+      if (1)
+      {
+        LLVMTypeRef int_type;
+        LLVMValueRef vec_ptr;
+        LLVMValueRef idoffset;  // offset for sample id
+        LLVMValueRef szoffset;  // offset for swizzle_in
+        LLVMValueRef indices[1];
+
+        int_type = LLVMInt32TypeInContext(gallivm->context);
+        /* TODO: shifts instead of multiply? */
+        /* TODO: use helpers (lp_const) */
+        idoffset = LLVMBuildMul(builder, bld->system_values.sample_id, LLVMConstInt(int_type, 2, 0), "load_sample_id");
+        szoffset = LLVMConstInt(int_type, swizzle_in, 0);
+
+        //indices[0] = LLVMConstInt(int_type, 0, 0);
+        indices[0] = LLVMBuildAdd(builder, idoffset, szoffset, "");        
+        vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
+        res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
+LLVMDumpValue(res);
+printf("\n"); fflush(stdout); fflush(stderr);
+        atype = TGSI_TYPE_FLOAT;
+      }
+      else
       {
         /* TODO: 
         gl_NumSamples = load *global num_samples

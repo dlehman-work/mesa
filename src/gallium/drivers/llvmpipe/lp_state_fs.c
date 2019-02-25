@@ -295,7 +295,9 @@ lp_build_depth_clamp(struct gallivm_state *gallivm,
 static void
 lp_build_sample_position(struct gallivm_state *gallivm,
                          LLVMBuilderRef builder,
-                         struct lp_bld_tgsi_system_values *system_values)
+                         unsigned num_samples,
+                         LLVMValueRef sample_id,
+                         LLVMValueRef *sample_pos)
 {
     /* TODO: build table here using lp_get_sample_position */
     /*
@@ -311,9 +313,12 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    LLVMValueRef samplepos_global;
    LLVMTypeRef float_type;
    LLVMTypeRef vec_type;
+   LLVMTypeRef int_type;
    LLVMTypeRef arr_vec_type;
+   LLVMValueRef load_num_samples;
    LLVMValueRef scalar;
    LLVMValueRef arr_vec;
+   LLVMValueRef indices[2];
    LLVMValueRef vec[LP_MAX_SAMPLES * 2 * 2];
    
    module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
@@ -340,11 +345,19 @@ lp_build_sample_position(struct gallivm_state *gallivm,
        LLVMSetInitializer(samplepos_global, arr_vec);
    }
 
+   int_type = LLVMInt32TypeInContext(gallivm->context);
+    
+   load_num_samples = LLVMBuildMul(builder, LLVMConstInt(int_type, num_samples, 0), LLVMConstInt(int_type, 2, 0), "load_num_samples");
+
    /* TODO: add state->jit_context->constants[0] // gl_NumSamples
     *       passed in lp_rast_shade_quads_mask to jit_function[]
     *       (always 0th constant?) */
-   system_values->sample_pos = samplepos_global;
-printf("%s: system_values->sample_pos %p\n", __FUNCTION__, system_values->sample_pos);
+   indices[0] = LLVMConstInt(int_type, 0, 0);
+   indices[1] = load_num_samples;
+   *sample_pos = LLVMBuildGEP(builder, samplepos_global, indices,
+                              ARRAY_SIZE(indices), "gl_SamplePosion");
+    LLVMDumpValue(*sample_pos);
+    printf("\n"); fflush(stdout); fflush(stderr);
 }
 
 
@@ -536,9 +549,9 @@ generate_fs_loop(struct gallivm_state *gallivm,
 
    lp_build_interp_soa_update_inputs_dyn(interp, gallivm, loop_state.counter);
 
-   if (sample_id) { /* TODO: does this work? */
+   if (sample_id) { /* TODO: does this work? TODO: nr_samples > 1? */
       system_values.sample_id = sample_id;
-      lp_build_sample_position(gallivm, builder, &system_values);
+      lp_build_sample_position(gallivm, builder, key->nr_samples, sample_id, &system_values.sample_pos);
    }
 
    /* Build the actual shader */
