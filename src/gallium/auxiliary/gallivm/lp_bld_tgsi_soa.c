@@ -1728,8 +1728,6 @@ emit_fetch_system_value(
         indices[0] = LLVMBuildAdd(builder, idoffset, szoffset, "");        
         vec_ptr = LLVMBuildGEP(builder, bld->system_values.sample_pos, indices, ARRAY_SIZE(indices), "vec_ptr"); /* TODO: name */
         res = LLVMBuildLoad(builder, vec_ptr, "vec_ret"); /* TODO: name */
-LLVMDumpValue(res);
-printf("\n"); fflush(stdout); fflush(stderr);
         atype = TGSI_TYPE_FLOAT;
       }
       else

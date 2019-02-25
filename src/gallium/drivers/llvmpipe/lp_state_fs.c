@@ -356,8 +356,6 @@ lp_build_sample_position(struct gallivm_state *gallivm,
    indices[1] = load_num_samples;
    *sample_pos = LLVMBuildGEP(builder, samplepos_global, indices,
                               ARRAY_SIZE(indices), "gl_SamplePosion");
-    LLVMDumpValue(*sample_pos);
-    printf("\n"); fflush(stdout); fflush(stderr);
 }
 
 
