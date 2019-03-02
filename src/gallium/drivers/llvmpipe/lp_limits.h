@@ -94,7 +94,7 @@
 /**
  * Max number of samples supported by multisampling
  */
-#define LP_MAX_SAMPLES 16
+#define LP_MAX_SAMPLES 32
 
 #define LP_MAX_SAMPLES_MASKS 1
 
