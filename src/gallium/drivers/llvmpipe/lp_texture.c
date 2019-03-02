@@ -82,7 +82,6 @@ llvmpipe_resource_create_resolve(struct llvmpipe_screen *screen,
     * (OpenGL spec 4.6 sec 8.8 "Multisample Textures")
     */
    lpr->resolve = screen->base.resource_create(&screen->base, &templ);
-   printf("%s: %d: resolve %p sample %d\n", __FUNCTION__, __LINE__, lpr->resolve, lpr->base.nr_samples); fflush(stdout);
    return !!lpr->resolve;
 }
 
