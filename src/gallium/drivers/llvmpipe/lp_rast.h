@@ -138,8 +138,7 @@ struct lp_rast_triangle {
 #endif
 
    uint32_t sampleid;
-   uint32_t masks[LP_MAX_SAMPLES_MASKS];
-   uint32_t pad[2];
+   uint32_t pad[3];
 
    /* inputs for the shader */
    struct lp_rast_shader_inputs inputs;
