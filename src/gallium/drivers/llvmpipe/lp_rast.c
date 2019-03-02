@@ -317,8 +317,6 @@ unsigned nr_samples;
    }
    variant = state->variant;
 
-printf("%s: %s: %d: samples %u\n", __FILE__, __FUNCTION__, __LINE__, task->scene->fb.samples);
-
 nr_samples = task->scene->fb.samples;
 if (!nr_samples) nr_samples = 1;
 for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
