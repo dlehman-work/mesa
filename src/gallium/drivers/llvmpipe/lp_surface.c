@@ -83,28 +83,15 @@ static void lp_resolve(struct pipe_context *pipe,
     src_map = pipe->transfer_map(pipe, &src->base, 0, LP_TEX_USAGE_READ, &box, &src_transfer);
     dst_map = pipe->transfer_map(pipe, &dst->base, 0, LP_TEX_USAGE_READ_WRITE, &box, &dst_transfer); /* TODO: WRITE_ALL? */
     
-    if (0)
-    {
-        printf("%s: UNIMPLEMENTED %d -> %d map %p -> %p\n", __FUNCTION__,
-                src->base.nr_samples, dst->base.nr_samples,
-                src_map, dst_map);
-        memcpy(dst_map, src_map, box.width * box.height * box.depth * sizeof(uint32_t));
-    }
-    else
-    {
-        printf("%s: partially implemented %d -> %d map %p -> %p\n", __FUNCTION__,
-                src->base.nr_samples, dst->base.nr_samples,
-                src_map, dst_map);
-        for (i = 0; i < src->base.nr_samples; i++)
-            src_maps[i] = src_map + i * stride;
+    for (i = 0; i < src->base.nr_samples; i++)
+        src_maps[i] = src_map + i * stride;
 
-        for (i = 0; i < box.width * box.height * box.depth * sizeof(uint32_t); i++)
-        {
-            pix = 0.0f;
-            for (j = 0; j < src->base.nr_samples; j++)
-                pix += ubyte_to_float(src_maps[j][i]);
-            dst_map[i] = float_to_ubyte(pix / src->base.nr_samples);
-        }
+    for (i = 0; i < box.width * box.height * box.depth * sizeof(uint32_t); i++)
+    {
+        pix = 0.0f;
+        for (j = 0; j < src->base.nr_samples; j++)
+            pix += ubyte_to_float(src_maps[j][i]);
+        dst_map[i] = float_to_ubyte(pix / src->base.nr_samples);
     }
 
     pipe->transfer_unmap(pipe, dst_transfer);
