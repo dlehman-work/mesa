@@ -137,6 +137,7 @@ lp_rast_clear_color(struct lp_rasterizer_task *task,
    unsigned cbuf = arg.clear_rb->cbuf;
    union util_color uc;
    enum pipe_format format;
+   unsigned i;
 
    /* we never bin clear commands for non-existing buffers */
    assert(cbuf < scene->fb.nr_cbufs);
@@ -152,18 +153,20 @@ lp_rast_clear_color(struct lp_rasterizer_task *task,
    LP_DBG(DEBUG_RAST, "%s clear value (target format %d) raw 0x%x,0x%x,0x%x,0x%x\n",
           __FUNCTION__, format, uc.ui[0], uc.ui[1], uc.ui[2], uc.ui[3]);
 
-
-   util_fill_box(scene->cbufs[cbuf].map,
-                 format,
-                 scene->cbufs[cbuf].stride,
-                 scene->cbufs[cbuf].layer_stride,
-                 task->x,
-                 task->y,
-                 0,
-                 task->width,
-                 task->height,
-                 scene->fb_max_layer + 1,
-                 &uc);
+   /* TODO: do all samples here or in caller somehow? (multiple clear cmds?) */
+   for (i = 0; i < scene->fb.samples; i++) {
+       util_fill_box(scene->cbufs[cbuf].map + i * scene->cbufs[cbuf].sample_stride,
+                     format,
+                     scene->cbufs[cbuf].stride,
+                     scene->cbufs[cbuf].layer_stride,
+                     task->x,
+                     task->y,
+                     0,
+                     task->width,
+                     task->height,
+                     scene->fb_max_layer + 1,
+                     &uc);
+    }
 
    /* this will increase for each rb which probably doesn't mean much */
    LP_COUNT(nr_color_tile_clear);
