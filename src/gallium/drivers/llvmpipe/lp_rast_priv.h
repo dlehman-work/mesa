@@ -263,15 +263,6 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
       /* Propagate non-interpolated raster state. */
       task->thread_data.raster_state.viewport_index = inputs->viewport_index;
 
-     /* TODO:
-        if (per-sample)
-            for each sample
-                call jit_function
-        else
-            call jit_function
-            copy to color, depth
-      */
-
       /* run shader on 4x4 block */
       BEGIN_JIT_CALL(state, task);
       variant->jit_function[RAST_WHOLE]( &state->jit_context,
@@ -286,7 +277,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
                                          &task->thread_data,
                                          stride,
                                          depth_stride,
-                                         tri->sampleid);
+                                         task->sample);
       END_JIT_CALL();
    }
 }

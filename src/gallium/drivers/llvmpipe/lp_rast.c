@@ -468,7 +468,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
                                             &task->thread_data,
                                             stride,
                                             depth_stride,
-                                            tri->sampleid);
+                                            task->sample);
       END_JIT_CALL();
    }
 }
