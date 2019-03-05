@@ -146,7 +146,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
 static inline uint8_t *
 lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
                                 unsigned buf, unsigned x, unsigned y,
-                                unsigned layer, unsigned sampleid)
+                                unsigned layer)
 {
    unsigned px, py, pixel_offset;
    uint8_t *color;
@@ -169,11 +169,8 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
 
    pixel_offset = px * task->scene->cbufs[buf].format_bytes +
                   py * task->scene->cbufs[buf].stride;
+   /* Note: color_tiles already accounts for sample_stride */
    color = task->color_tiles[buf] + pixel_offset;
-
-   if (sampleid) {
-      color += sampleid * task->scene->cbufs[buf].sample_stride;
-   }
 
    if (layer) {
       color += layer * task->scene->cbufs[buf].layer_stride;
@@ -190,7 +187,7 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
  */
 static inline uint8_t *
 lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
-                                unsigned x, unsigned y, unsigned layer, unsigned sampleid)
+                                unsigned x, unsigned y, unsigned layer)
 {
    unsigned px, py, pixel_offset;
    uint8_t *depth;
@@ -244,7 +241,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
       if (scene->fb.cbufs[i]) {
          stride[i] = scene->cbufs[i].stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,
-                                                    inputs->layer, tri->sampleid);
+                                                    inputs->layer);
       }
       else {
          stride[i] = 0;
@@ -253,7 +250,7 @@ lp_rast_shade_quads_all( struct lp_rasterizer_task *task,
    }
 
    if (scene->zsbuf.map) {
-      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer, tri->sampleid);
+      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer);
       depth_stride = scene->zsbuf.stride;
    }
 

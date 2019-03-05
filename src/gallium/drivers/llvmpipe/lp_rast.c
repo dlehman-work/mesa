@@ -112,14 +112,14 @@ lp_rast_tile_begin(struct lp_rasterizer_task *task,
    for (i = 0; i < task->scene->fb.nr_cbufs; i++) {
       if (task->scene->fb.cbufs[i]) {
          task->color_tiles[i] = scene->cbufs[i].map +
-// TODO                                scene->cbufs[i].sample_stride * sample +
+                                scene->cbufs[i].sample_stride * sample +
                                 scene->cbufs[i].stride * task->y +
                                 scene->cbufs[i].format_bytes * task->x;
       }
    }
    if (task->scene->fb.zsbuf) {
       task->depth_tile = scene->zsbuf.map +
-//  TODO                       scene->zsbuf.sample_stride * sample +
+                         scene->zsbuf.sample_stride * sample +
                          scene->zsbuf.stride * task->y +
                          scene->zsbuf.format_bytes * task->x;
    }
@@ -319,6 +319,7 @@ unsigned nr_samples;
    }
    variant = state->variant;
 
+/* TODO: remove loop */
 nr_samples = task->scene->fb.samples;
 if (!nr_samples) nr_samples = 1;
 for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
@@ -336,7 +337,7 @@ for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
             if (scene->fb.cbufs[i]) {
                stride[i] = scene->cbufs[i].stride;
                color[i] = lp_rast_get_color_block_pointer(task, i, tile_x + x,
-                                                          tile_y + y, inputs->layer, s /* TODO */);
+                                                          tile_y + y, inputs->layer);
             }
             else {
                stride[i] = 0;
@@ -347,7 +348,7 @@ for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
          /* depth buffer */
          if (scene->zsbuf.map) {
             depth = lp_rast_get_depth_block_pointer(task, tile_x + x,
-                                                    tile_y + y, inputs->layer, s /* TODO */);
+                                                    tile_y + y, inputs->layer);
             depth_stride = scene->zsbuf.stride;
          }
 
@@ -443,7 +444,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
       if (scene->fb.cbufs[i]) {
          stride[i] = scene->cbufs[i].stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,
-                                                    inputs->layer, tri->sampleid);
+                                                    inputs->layer);
       }
       else {
          stride[i] = 0;
@@ -454,7 +455,7 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
    /* depth buffer */
    if (scene->zsbuf.map) {
       depth_stride = scene->zsbuf.stride;
-      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer, tri->sampleid);
+      depth = lp_rast_get_depth_block_pointer(task, x, y, inputs->layer);
    }
 
    assert(lp_check_alignment(state->jit_context.u8_blend_color, 16));
