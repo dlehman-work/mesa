@@ -112,14 +112,14 @@ lp_rast_tile_begin(struct lp_rasterizer_task *task,
    for (i = 0; i < task->scene->fb.nr_cbufs; i++) {
       if (task->scene->fb.cbufs[i]) {
          task->color_tiles[i] = scene->cbufs[i].map +
-                                scene->cbufs[i].sample_stride * sample +
+// TODO                                scene->cbufs[i].sample_stride * sample +
                                 scene->cbufs[i].stride * task->y +
                                 scene->cbufs[i].format_bytes * task->x;
       }
    }
    if (task->scene->fb.zsbuf) {
       task->depth_tile = scene->zsbuf.map +
-                         scene->zsbuf.sample_stride * sample +
+//  TODO                       scene->zsbuf.sample_stride * sample +
                          scene->zsbuf.stride * task->y +
                          scene->zsbuf.format_bytes * task->x;
    }
