@@ -101,13 +101,13 @@ is_blend( const struct lp_rast_state *state,
 
 
 static void
-debug_bin( const struct cmd_bin *bin, int x, int y )
+debug_bin( const struct cmd_bin *bin, int x, int y, int s )
 {
    const struct lp_rast_state *state = NULL;
    const struct cmd_block *head = bin->head;
    int i, j = 0;
 
-   debug_printf("bin %d,%d:\n", x, y);
+   debug_printf("bin %d,%d,%d:\n", x, y, s);
                 
    while (head) {
       for (i = 0; i < head->count; i++, j++) {
@@ -327,9 +327,9 @@ lp_debug_bin( const struct cmd_bin *bin, int i, int j)
 
 /** Return number of bytes used for a single bin */
 static unsigned
-lp_scene_bin_size( const struct lp_scene *scene, unsigned x, unsigned y )
+lp_scene_bin_size( const struct lp_scene *scene, unsigned x, unsigned y, unsigned sample )
 {
-   struct cmd_bin *bin = lp_scene_get_bin((struct lp_scene *) scene, x, y);
+   struct cmd_bin *bin = lp_scene_get_bin((struct lp_scene *) scene, x, y, sample);
    const struct cmd_block *cmd;
    unsigned size = 0;
    for (cmd = bin->head; cmd; cmd = cmd->next) {
@@ -344,49 +344,51 @@ lp_scene_bin_size( const struct lp_scene *scene, unsigned x, unsigned y )
 void
 lp_debug_draw_bins_by_coverage( struct lp_scene *scene )
 {
-   unsigned x, y;
+   unsigned x, y, s;
    unsigned total = 0;
    unsigned possible = 0;
    static uint64_t _total = 0;
    static uint64_t _possible = 0;
 
-   for (x = 0; x < scene->tiles_x; x++)
-      debug_printf("-");
-   debug_printf("\n");
+   for (s = 0; s < scene->fb.samples; s++) {
+      for (x = 0; x < scene->tiles_x; x++)
+         debug_printf("-");
+      debug_printf("\n");
 
-   for (y = 0; y < scene->tiles_y; y++) {
-      for (x = 0; x < scene->tiles_x; x++) {
-         struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
-         const char *bits = "0123456789";
-         struct tile tile;
+      for (y = 0; y < scene->tiles_y; y++) {
+         for (x = 0; x < scene->tiles_x; x++) {
+            struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, s);
+            const char *bits = "0123456789";
+            struct tile tile;
 
-         if (bin->head) {
-            //lp_debug_bin(bin, x, y);
+            if (bin->head) {
+               //lp_debug_bin(bin, x, y);
 
-            do_debug_bin(&tile, bin, x, y, FALSE);
+               do_debug_bin(&tile, bin, x, y, FALSE);
 
-            total += tile.coverage;
-            possible += 64*64;
+               total += tile.coverage;
+               possible += 64*64;
 
-            if (tile.coverage == 64*64)
-               debug_printf("*");
-            else if (tile.coverage) {
-               int bit = tile.coverage/(64.0*64.0)*10;
-               debug_printf("%c", bits[MIN2(bit,10)]);
+               if (tile.coverage == 64*64)
+                  debug_printf("*");
+               else if (tile.coverage) {
+                  int bit = tile.coverage/(64.0*64.0)*10;
+                  debug_printf("%c", bits[MIN2(bit,10)]);
+               }
+               else
+                  debug_printf("?");
             }
-            else
-               debug_printf("?");
+            else {
+               debug_printf(" ");
+            }
          }
-         else {
-            debug_printf(" ");
-         }
+         debug_printf("|\n");
       }
-      debug_printf("|\n");
-   }
 
-   for (x = 0; x < scene->tiles_x; x++)
-      debug_printf("-");
-   debug_printf("\n");
+      for (x = 0; x < scene->tiles_x; x++)
+         debug_printf("-");
+      debug_printf("\n");
+   }
 
    debug_printf("this tile total: %u possible %u: percentage: %f\n",
                 total,
@@ -408,16 +410,18 @@ lp_debug_draw_bins_by_coverage( struct lp_scene *scene )
 void
 lp_debug_draw_bins_by_cmd_length( struct lp_scene *scene )
 {
-   unsigned x, y;
+   unsigned x, y, s;
 
-   for (y = 0; y < scene->tiles_y; y++) {
-      for (x = 0; x < scene->tiles_x; x++) {
-         const char *bits = " ...,-~:;=o+xaw*#XAWWWWWWWWWWWWWWWW";
-         unsigned sz = lp_scene_bin_size(scene, x, y);
-         unsigned sz2 = util_logbase2(sz);
-         debug_printf("%c", bits[MIN2(sz2,32)]);
+   for (s = 0; s < scene->fb.samples; s++) {
+      for (y = 0; y < scene->tiles_y; y++) {
+         for (x = 0; x < scene->tiles_x; x++) {
+            const char *bits = " ...,-~:;=o+xaw*#XAWWWWWWWWWWWWWWWW";
+            unsigned sz = lp_scene_bin_size(scene, x, y, s);
+            unsigned sz2 = util_logbase2(sz);
+            debug_printf("%c", bits[MIN2(sz2,32)]);
+         }
+         debug_printf("\n");
       }
-      debug_printf("\n");
    }
 }
 
@@ -425,13 +429,15 @@ lp_debug_draw_bins_by_cmd_length( struct lp_scene *scene )
 void
 lp_debug_bins( struct lp_scene *scene )
 {
-   unsigned x, y;
+   unsigned x, y, s;
 
-   for (y = 0; y < scene->tiles_y; y++) {
-      for (x = 0; x < scene->tiles_x; x++) {
-         struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
-         if (bin->head) {
-            debug_bin(bin, x, y);
+   for (s = 0; y < scene->fb.samples; s++) {
+      for (y = 0; y < scene->tiles_y; y++) {
+         for (x = 0; x < scene->tiles_x; x++) {
+            struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, s);
+            if (bin->head) {
+               debug_bin(bin, x, y, s);
+            }
          }
       }
    }

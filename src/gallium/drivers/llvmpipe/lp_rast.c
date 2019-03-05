@@ -91,7 +91,7 @@ lp_rast_end( struct lp_rasterizer *rast )
 static void
 lp_rast_tile_begin(struct lp_rasterizer_task *task,
                    const struct cmd_bin *bin,
-                   int x, int y)
+                   int x, int y, int sample)
 {
    unsigned i;
    struct lp_scene *scene = task->scene;
@@ -112,12 +112,14 @@ lp_rast_tile_begin(struct lp_rasterizer_task *task,
    for (i = 0; i < task->scene->fb.nr_cbufs; i++) {
       if (task->scene->fb.cbufs[i]) {
          task->color_tiles[i] = scene->cbufs[i].map +
+                                scene->cbufs[i].sample_stride * sample +
                                 scene->cbufs[i].stride * task->y +
                                 scene->cbufs[i].format_bytes * task->x;
       }
    }
    if (task->scene->fb.zsbuf) {
       task->depth_tile = scene->zsbuf.map +
+                         scene->zsbuf.sample_stride * sample +
                          scene->zsbuf.stride * task->y +
                          scene->zsbuf.format_bytes * task->x;
    }
@@ -639,9 +641,9 @@ do_rasterize_bin(struct lp_rasterizer_task *task,
  */
 static void
 rasterize_bin(struct lp_rasterizer_task *task,
-              const struct cmd_bin *bin, int x, int y )
+              const struct cmd_bin *bin, int x, int y, int sample )
 {
-   lp_rast_tile_begin( task, bin, x, y );
+   lp_rast_tile_begin( task, bin, x, y, sample );
 
    do_rasterize_bin(task, bin, x, y);
 
@@ -698,12 +700,12 @@ rasterize_scene(struct lp_rasterizer_task *task,
       /* loop over scene bins, rasterize each */
       {
          struct cmd_bin *bin;
-         int i, j;
+         int i, j, sample;
 
          assert(scene);
-         while ((bin = lp_scene_bin_iter_next(scene, &i, &j))) {
+         while ((bin = lp_scene_bin_iter_next(scene, &i, &j, &sample))) {
             if (!is_empty_bin( bin ))
-               rasterize_bin(task, bin, i, j);
+               rasterize_bin(task, bin, i, j, sample);
          }
       }
    }

@@ -67,7 +67,7 @@ lp_scene_create( struct pipe_context *pipe )
 #ifdef DEBUG
    /* Do some scene limit sanity checks here */
    {
-      size_t maxBins = TILES_X * TILES_Y;
+      size_t maxBins = LP_MAX_SAMPLES * TILES_X * TILES_Y;
       size_t maxCommandBytes = sizeof(struct cmd_block) * maxBins;
       size_t maxCommandPlusData = maxCommandBytes + DATA_BLOCK_SIZE;
       /* We'll need at least one command block per bin.  Make sure that's
@@ -104,13 +104,15 @@ lp_scene_destroy(struct lp_scene *scene)
 boolean
 lp_scene_is_empty(struct lp_scene *scene )
 {
-   unsigned x, y;
+   unsigned x, y, s;
 
-   for (y = 0; y < TILES_Y; y++) {
-      for (x = 0; x < TILES_X; x++) {
-         const struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
-         if (bin->head) {
-            return FALSE;
+   for (s = 0; s < LP_MAX_SAMPLES; s++) {
+      for (y = 0; y < TILES_Y; y++) {
+         for (x = 0; x < TILES_X; x++) {
+            const struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, s);
+            if (bin->head) {
+               return FALSE;
+            }
          }
       }
    }
@@ -133,9 +135,9 @@ lp_scene_is_oom(struct lp_scene *scene)
  * allocated to the bin, however.
  */
 void
-lp_scene_bin_reset(struct lp_scene *scene, unsigned x, unsigned y)
+lp_scene_bin_reset(struct lp_scene *scene, unsigned x, unsigned y, unsigned sample)
 {
-   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
+   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, sample);
 
    bin->last_state = NULL;
    bin->head = bin->tail;
@@ -212,7 +214,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
 void
 lp_scene_end_rasterization(struct lp_scene *scene )
 {
-   int i, j;
+   int i, j, s;
 
    /* Unmap color buffers */
    for (i = 0; i < scene->fb.nr_cbufs; i++) {
@@ -239,12 +241,14 @@ lp_scene_end_rasterization(struct lp_scene *scene )
 
    /* Reset all command lists:
     */
-   for (i = 0; i < scene->tiles_x; i++) {
-      for (j = 0; j < scene->tiles_y; j++) {
-         struct cmd_bin *bin = lp_scene_get_bin(scene, i, j);
-         bin->head = NULL;
-         bin->tail = NULL;
-         bin->last_state = NULL;
+   for (s = 0; s < scene->nsamples; s++) {
+      for (i = 0; i < scene->tiles_x; i++) {
+         for (j = 0; j < scene->tiles_y; j++) {
+            struct cmd_bin *bin = lp_scene_get_bin(scene, i, j, s);
+            bin->head = NULL;
+            bin->tail = NULL;
+            bin->last_state = NULL;
+         }
       }
    }
 
@@ -453,7 +457,7 @@ lp_scene_is_resource_referenced(const struct lp_scene *scene,
 
 
 
-/** advance curr_x,y to the next bin */
+/** advance curr_x,y,sample to the next bin */
 static boolean
 next_bin(struct lp_scene *scene)
 {
@@ -463,8 +467,13 @@ next_bin(struct lp_scene *scene)
       scene->curr_y++;
    }
    if (scene->curr_y >= scene->tiles_y) {
-      /* no more bins */
-      return FALSE;
+      scene->curr_sample++;
+      if (scene->curr_sample >= scene->nsamples) {
+         /* no more bins */
+         return FALSE;
+      }
+      scene->curr_x = 0;
+      scene->curr_y = 0;
    }
    return TRUE;
 }
@@ -473,7 +482,7 @@ next_bin(struct lp_scene *scene)
 void
 lp_scene_bin_iter_begin( struct lp_scene *scene )
 {
-   scene->curr_x = scene->curr_y = -1;
+   scene->curr_x = scene->curr_y = scene->curr_sample = -1;
 }
 
 
@@ -484,7 +493,7 @@ lp_scene_bin_iter_begin( struct lp_scene *scene )
  * of work (a bin) to work on.
  */
 struct cmd_bin *
-lp_scene_bin_iter_next( struct lp_scene *scene , int *x, int *y)
+lp_scene_bin_iter_next( struct lp_scene *scene , int *x, int *y, int *sample )
 {
    struct cmd_bin *bin = NULL;
 
@@ -494,16 +503,17 @@ lp_scene_bin_iter_next( struct lp_scene *scene , int *x, int *y)
       /* first bin */
       scene->curr_x = 0;
       scene->curr_y = 0;
+      scene->curr_sample = 0;
    }
    else if (!next_bin(scene)) {
       /* no more bins left */
       goto end;
    }
 
-   bin = lp_scene_get_bin(scene, scene->curr_x, scene->curr_y);
+   bin = lp_scene_get_bin(scene, scene->curr_x, scene->curr_y, scene->curr_sample);
    *x = scene->curr_x;
    *y = scene->curr_y;
-
+   *sample = scene->curr_sample;
 end:
    /*printf("return bin %p at %d, %d\n", (void *) bin, *bin_x, *bin_y);*/
    mtx_unlock(&scene->mutex);
@@ -523,6 +533,7 @@ void lp_scene_begin_binning(struct lp_scene *scene,
 
    scene->tiles_x = align(fb->width, TILE_SIZE) / TILE_SIZE;
    scene->tiles_y = align(fb->height, TILE_SIZE) / TILE_SIZE;
+   scene->nsamples = MAX2(1, scene->fb.samples);
    assert(scene->tiles_x <= TILES_X);
    assert(scene->tiles_y <= TILES_Y);
 

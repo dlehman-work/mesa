@@ -60,7 +60,7 @@ struct lp_rast_state;
 
 /* Scene temporary storage is clamped to this size:
  */
-#define LP_SCENE_MAX_SIZE (9*1024*1024)
+#define LP_SCENE_MAX_SIZE (LP_MAX_SAMPLES*9*1024*1024)
 
 /* The maximum amount of texture storage referenced by a scene is
  * clamped to this size:
@@ -171,12 +171,12 @@ struct lp_scene {
     * Number of active tiles in each dimension.
     * This basically the framebuffer size divided by tile size
     */
-   unsigned tiles_x, tiles_y;
+   unsigned tiles_x, tiles_y, nsamples;
 
-   int curr_x, curr_y;  /**< for iterating over bins */
+   int curr_x, curr_y, curr_sample;  /**< for iterating over bins */
    mtx_t mutex;
 
-   struct cmd_bin tile[TILES_X][TILES_Y];
+   struct cmd_bin tile[LP_MAX_SAMPLES][TILES_X][TILES_Y];
    struct data_block_list data;
 };
 
@@ -283,30 +283,31 @@ lp_scene_putback_data( struct lp_scene *scene, unsigned size)
 
 /** Return pointer to a particular tile's bin. */
 static inline struct cmd_bin *
-lp_scene_get_bin(struct lp_scene *scene, unsigned x, unsigned y)
+lp_scene_get_bin(struct lp_scene *scene, unsigned x, unsigned y, unsigned sample)
 {
-   return &scene->tile[x][y];
+   return &scene->tile[sample][x][y];
 }
 
 
 /** Remove all commands from a bin */
 void
-lp_scene_bin_reset(struct lp_scene *scene, unsigned x, unsigned y);
+lp_scene_bin_reset(struct lp_scene *scene, unsigned x, unsigned y, unsigned sample);
 
 
 /* Add a command to bin[x][y].
  */
 static inline boolean
 lp_scene_bin_command( struct lp_scene *scene,
-                      unsigned x, unsigned y,
+                      unsigned x, unsigned y, unsigned s,
                       unsigned cmd,
                       union lp_rast_cmd_arg arg )
 {
-   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
+   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, s);
    struct cmd_block *tail = bin->tail;
 
    assert(x < scene->tiles_x);
    assert(y < scene->tiles_y);
+   assert(s < scene->nsamples);
    assert(cmd < LP_RAST_OP_MAX);
 
    if (tail == NULL || tail->count == CMD_BLOCK_MAX) {
@@ -330,22 +331,22 @@ lp_scene_bin_command( struct lp_scene *scene,
 
 static inline boolean
 lp_scene_bin_cmd_with_state( struct lp_scene *scene,
-                             unsigned x, unsigned y,
+                             unsigned x, unsigned y, unsigned s,
                              const struct lp_rast_state *state,
                              unsigned cmd,
                              union lp_rast_cmd_arg arg )
 {
-   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y);
+   struct cmd_bin *bin = lp_scene_get_bin(scene, x, y, s);
 
    if (state != bin->last_state) {
       bin->last_state = state;
-      if (!lp_scene_bin_command(scene, x, y,
+      if (!lp_scene_bin_command(scene, x, y, s,
                                 LP_RAST_OP_SET_STATE,
                                 lp_rast_arg_state(state)))
          return FALSE;
    }
 
-   if (!lp_scene_bin_command( scene, x, y, cmd, arg ))
+   if (!lp_scene_bin_command( scene, x, y, s, cmd, arg ))
       return FALSE;
 
    return TRUE;
@@ -359,11 +360,13 @@ lp_scene_bin_everywhere( struct lp_scene *scene,
 			 unsigned cmd,
 			 const union lp_rast_cmd_arg arg )
 {
-   unsigned i, j;
-   for (i = 0; i < scene->tiles_x; i++) {
-      for (j = 0; j < scene->tiles_y; j++) {
-         if (!lp_scene_bin_command( scene, i, j, cmd, arg ))
-            return FALSE;
+   unsigned i, j, s;
+   for (s = 0; s < scene->nsamples; s++) {
+      for (i = 0; i < scene->tiles_x; i++) {
+         for (j = 0; j < scene->tiles_y; j++) {
+            if (!lp_scene_bin_command( scene, i, j, s, cmd, arg ))
+               return FALSE;
+         }
       }
    }
 
@@ -382,7 +385,7 @@ void
 lp_scene_bin_iter_begin( struct lp_scene *scene );
 
 struct cmd_bin *
-lp_scene_bin_iter_next( struct lp_scene *scene, int *x, int *y );
+lp_scene_bin_iter_next( struct lp_scene *scene, int *x, int *y, int *sample );
 
 
 

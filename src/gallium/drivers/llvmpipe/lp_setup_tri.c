@@ -227,7 +227,7 @@ lp_rast_32_tri_tab[MAX_PLANES+1] = {
 static boolean
 lp_setup_whole_tile(struct lp_setup_context *setup,
                     const struct lp_rast_shader_inputs *inputs,
-                    int tx, int ty)
+                    int tx, int ty, int sampleid)
 {
    struct lp_scene *scene = setup->scene;
 
@@ -251,17 +251,17 @@ lp_setup_whole_tile(struct lp_setup_context *setup,
          /*
           * All previous rendering will be overwritten so reset the bin.
           */
-         lp_scene_bin_reset( scene, tx, ty );
+         lp_scene_bin_reset( scene, tx, ty, sampleid );
       }
 
       LP_COUNT(nr_shade_opaque_64);
-      return lp_scene_bin_cmd_with_state( scene, tx, ty,
+      return lp_scene_bin_cmd_with_state( scene, tx, ty, sampleid,
                                           setup->fs.stored,
                                           LP_RAST_OP_SHADE_TILE_OPAQUE,
                                           lp_rast_arg_inputs(inputs) );
    } else {
       LP_COUNT(nr_shade_64);
-      return lp_scene_bin_cmd_with_state( scene, tx, ty,
+      return lp_scene_bin_cmd_with_state( scene, tx, ty, sampleid,
                                           setup->fs.stored, 
                                           LP_RAST_OP_SHADE_TILE,
                                           lp_rast_arg_inputs(inputs) );
@@ -826,7 +826,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
              */
             assert(px + 4 <= TILE_SIZE);
             assert(py + 4 <= TILE_SIZE);
-            return lp_scene_bin_cmd_with_state( scene, ix0, iy0,
+            return lp_scene_bin_cmd_with_state( scene, ix0, iy0, tri->sampleid, /* TODO: or pass in sampleid? */
                                                 setup->fs.stored,
                                                 use_32bits ?
                                                 LP_RAST_OP_TRIANGLE_32_3_4 :
@@ -850,7 +850,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
             assert(px + 16 <= TILE_SIZE);
             assert(py + 16 <= TILE_SIZE);
 
-            return lp_scene_bin_cmd_with_state( scene, ix0, iy0,
+            return lp_scene_bin_cmd_with_state( scene, ix0, iy0, tri->sampleid,
                                                 setup->fs.stored,
                                                 use_32bits ?
                                                 LP_RAST_OP_TRIANGLE_32_3_16 :
@@ -866,7 +866,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
          assert(px + 16 <= TILE_SIZE);
          assert(py + 16 <= TILE_SIZE);
 
-         return lp_scene_bin_cmd_with_state(scene, ix0, iy0,
+         return lp_scene_bin_cmd_with_state(scene, ix0, iy0, tri->sampleid,
                                             setup->fs.stored,
                                             use_32bits ?
                                             LP_RAST_OP_TRIANGLE_32_4_16 :
@@ -878,7 +878,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
       /* Triangle is contained in a single tile:
        */
       return lp_scene_bin_cmd_with_state(
-         scene, ix0, iy0, setup->fs.stored,
+         scene, ix0, iy0, tri->sampleid, setup->fs.stored,
          use_32bits ? lp_rast_32_tri_tab[nr_planes] : lp_rast_tri_tab[nr_planes],
          lp_rast_arg_triangle(tri, (1<<nr_planes)-1));
    }
@@ -952,7 +952,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
                int count = util_bitcount(partial);
                in = TRUE;
                
-               if (!lp_scene_bin_cmd_with_state( scene, x, y,
+               if (!lp_scene_bin_cmd_with_state( scene, x, y, tri->sampleid,
                                                  setup->fs.stored,
                                                  use_32bits ?
                                                  lp_rast_32_tri_tab[count] :
@@ -966,7 +966,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
                /* triangle covers the whole tile- shade whole tile */
                LP_COUNT(nr_fully_covered_64);
                in = TRUE;
-               if (!lp_setup_whole_tile(setup, &tri->inputs, x, y))
+               if (!lp_setup_whole_tile(setup, &tri->inputs, x, y, tri->sampleid))
                   goto fail;
             }
 
