@@ -96,7 +96,7 @@ lp_rast_tile_begin(struct lp_rasterizer_task *task,
    unsigned i;
    struct lp_scene *scene = task->scene;
 
-   LP_DBG(DEBUG_RAST, "%s %d,%d\n", __FUNCTION__, x, y);
+   LP_DBG(DEBUG_RAST, "%s %d,%d,%d\n", __FUNCTION__, x, y, sample);
 
    task->bin = bin;
    task->x = x * TILE_SIZE;
