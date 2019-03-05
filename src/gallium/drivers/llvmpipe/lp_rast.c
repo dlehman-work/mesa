@@ -302,9 +302,8 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
    const struct lp_rast_shader_inputs *inputs = arg.shade_tile;
    const struct lp_rast_state *state;
    struct lp_fragment_shader_variant *variant;
-   const unsigned tile_x = task->x, tile_y = task->y;
-   unsigned x, y, s;
-unsigned nr_samples;
+   const unsigned tile_x = task->x, tile_y = task->y, sample = task->sample;
+   unsigned x, y;
 
    if (inputs->disable) {
       /* This command was partially binned and has been disabled */
@@ -320,10 +319,6 @@ unsigned nr_samples;
    }
    variant = state->variant;
 
-/* TODO: remove loop */
-nr_samples = task->scene->fb.samples;
-if (!nr_samples) nr_samples = 1;
-for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
    /* render the whole 64x64 tile in 4x4 chunks */
    for (y = 0; y < task->height; y += 4){
       for (x = 0; x < task->width; x += 4) {
@@ -356,15 +351,6 @@ for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
          /* Propagate non-interpolated raster state. */
          task->thread_data.raster_state.viewport_index = inputs->viewport_index;
 
-         /* TODO:
-            if (per-sample)
-                for each sample
-                    call jit_function
-            else
-                call jit_function
-                copy to color, depth
-          */
-
          /* run shader on 4x4 block */
          BEGIN_JIT_CALL(state, task);
          variant->jit_function[RAST_WHOLE]( &state->jit_context,
@@ -379,11 +365,10 @@ for (s = 0; s < nr_samples; s++) { /* TODO: cleanup */
                                             &task->thread_data,
                                             stride,
                                             depth_stride,
-                                            s /* TODO: sample_id for entire tile */);
+                                            sample);
          END_JIT_CALL();
       }
    }
-} /* sample loop */
 }
 
 
