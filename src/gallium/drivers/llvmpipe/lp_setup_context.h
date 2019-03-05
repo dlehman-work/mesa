@@ -220,6 +220,7 @@ lp_setup_bin_triangle(struct lp_setup_context *setup,
                       const struct u_rect *bboxorig,
                       const struct u_rect *bbox,
                       int nr_planes,
-                      unsigned scissor_index);
+                      unsigned scissor_index,
+                      unsigned sampleid);
 
 #endif

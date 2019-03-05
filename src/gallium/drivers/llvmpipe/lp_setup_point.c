@@ -512,7 +512,7 @@ try_setup_point( struct lp_setup_context *setup,
       plane[3].eo = 0;
    }
 
-   return lp_setup_bin_triangle(setup, point, &bbox, &bbox, nr_planes, viewport_index);
+   return lp_setup_bin_triangle(setup, point, &bbox, &bbox, nr_planes, viewport_index, 0); /* TODO sampleid */
 }
 
 

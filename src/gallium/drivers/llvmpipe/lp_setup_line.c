@@ -754,7 +754,7 @@ try_setup_line( struct lp_setup_context *setup,
       assert(plane_s == &plane[nr_planes]);
    }
 
-   return lp_setup_bin_triangle(setup, line, &bbox, &bboxpos, nr_planes, viewport_index);
+   return lp_setup_bin_triangle(setup, line, &bbox, &bboxpos, nr_planes, viewport_index, 0); /* TODO: sampleid */
 }
 
 
