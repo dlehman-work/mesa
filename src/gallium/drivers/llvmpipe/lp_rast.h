@@ -137,9 +137,6 @@ struct lp_rast_triangle {
    float pad1;
 #endif
 
-   uint32_t sampleid; /* TODO: here or from bin? */
-   uint32_t pad[3];
-
    /* inputs for the shader */
    struct lp_rast_shader_inputs inputs;
    /* planes are also allocated here */

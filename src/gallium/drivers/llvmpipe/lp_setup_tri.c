@@ -395,10 +395,6 @@ do_triangle_ccw(struct lp_setup_context *setup,
                                       GET_DADX(&tri->inputs),
                                       GET_DADY(&tri->inputs));
 
-   tri->sampleid = sampleid;
-   tri->pad[0] = 0;
-   tri->pad[1] = 0;
-   tri->pad[2] = 0;
    tri->inputs.frontfacing = frontfacing;
    tri->inputs.disable = FALSE;
    tri->inputs.opaque = setup->fs.current.variant->opaque;
