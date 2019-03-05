@@ -99,6 +99,7 @@ lp_rast_tile_begin(struct lp_rasterizer_task *task,
    LP_DBG(DEBUG_RAST, "%s %d,%d,%d\n", __FUNCTION__, x, y, sample);
 
    task->bin = bin;
+   task->sample = sample;
    task->x = x * TILE_SIZE;
    task->y = y * TILE_SIZE;
    task->width = TILE_SIZE + x * TILE_SIZE > task->scene->fb.width ?

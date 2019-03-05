@@ -85,6 +85,7 @@ struct lp_rasterizer_task
    const struct lp_rast_state *state;
 
    struct lp_scene *scene;
+   unsigned sample;        /**< Sample ID of current tile */
    unsigned x, y;          /**< Pos of this tile in framebuffer, in pixels */
    unsigned width, height; /**< width, height of current tile, in pixels */
 
