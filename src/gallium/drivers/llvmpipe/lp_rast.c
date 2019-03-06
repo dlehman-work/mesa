@@ -154,7 +154,8 @@ lp_rast_clear_color(struct lp_rasterizer_task *task,
           __FUNCTION__, format, uc.ui[0], uc.ui[1], uc.ui[2], uc.ui[3]);
 
    /* TODO: do all samples here or in caller somehow? (multiple clear cmds?) */
-   for (i = 0; i < scene->fb.samples; i++) {
+   unsigned nr_samples = scene->fb.samples ? scene->fb.samples : 1; /* TODO */
+   for (i = 0; i < nr_samples; i++) {
        util_fill_box(scene->cbufs[cbuf].map + i * scene->cbufs[cbuf].sample_stride,
                      format,
                      scene->cbufs[cbuf].stride,
