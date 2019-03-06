@@ -156,7 +156,7 @@ lp_rast_clear_color(struct lp_rasterizer_task *task,
           __FUNCTION__, format, uc.ui[0], uc.ui[1], uc.ui[2], uc.ui[3]);
 
 
-   util_fill_box(scene->cbufs[cbuf].map,
+   util_fill_box(scene->cbufs[cbuf].map + scene->cbufs[cbuf].sample_stride * task->sample,
                  format,
                  scene->cbufs[cbuf].stride,
                  scene->cbufs[cbuf].layer_stride,
