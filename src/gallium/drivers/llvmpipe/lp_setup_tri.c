@@ -57,6 +57,7 @@ subpixel_snap(float a)
    return util_iround(FIXED_ONE * a);
 }
 
+/* src/gallium/auxiliary/util/u_surface.c: get_sample_count from  */
 static inline unsigned
 lp_num_samples(const struct lp_setup_context *setup)
 {
