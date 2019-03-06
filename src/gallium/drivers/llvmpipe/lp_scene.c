@@ -152,7 +152,7 @@ void
 lp_scene_begin_rasterization(struct lp_scene *scene)
 {
    const struct pipe_framebuffer_state *fb = &scene->fb;
-   int i, j;
+   int i;
 
    //LP_DBG(DEBUG_RAST, "%s\n", __FUNCTION__);
 
