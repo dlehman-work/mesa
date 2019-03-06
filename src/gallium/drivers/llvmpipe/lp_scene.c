@@ -170,6 +170,7 @@ lp_scene_begin_rasterization(struct lp_scene *scene)
                                                            cbuf->u.tex.level);
          scene->cbufs[i].layer_stride = llvmpipe_layer_stride(cbuf->texture,
                                                               cbuf->u.tex.level);
+         /* TODO: just set cbufs[i].map here? so we don't have to add it later? */
          scene->cbufs[i].sample_stride = llvmpipe_sample_stride(cbuf->texture);
          scene->cbufs[i].map = llvmpipe_resource_map(cbuf->texture,
                                                      cbuf->u.tex.level,
