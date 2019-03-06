@@ -60,7 +60,7 @@ struct lp_rast_state;
 
 /* Scene temporary storage is clamped to this size:
  */
-#define LP_SCENE_MAX_SIZE (LP_MAX_SAMPLES*9*1024*1024)
+#define LP_SCENE_MAX_SIZE (LP_MAX_SAMPLES*9*1024*1024) /* TODO: could queue multiple samples to same tile to save memory */
 
 /* The maximum amount of texture storage referenced by a scene is
  * clamped to this size:
@@ -176,7 +176,7 @@ struct lp_scene {
    int curr_x, curr_y, curr_sample;  /**< for iterating over bins */
    mtx_t mutex;
 
-   struct cmd_bin tile[LP_MAX_SAMPLES][TILES_X][TILES_Y];
+   struct cmd_bin tile[LP_MAX_SAMPLES][TILES_X][TILES_Y]; /* TODO: could queue multiple samples to same tile to save memory */
    struct data_block_list data;
 };
 
