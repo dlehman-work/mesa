@@ -611,7 +611,10 @@ llvmpipe_transfer_map( struct pipe_context *pipe,
    pt->box = *box;
    pt->level = level;
    pt->stride = lpr->row_stride[level];
-   pt->layer_stride = lpr->img_stride[level];
+   if (lpr->sample_stride)
+      pt->layer_stride = lpr->sample_stride;
+   else
+      pt->layer_stride = lpr->img_stride[level];
    pt->usage = usage;
    *transfer = pt;
 

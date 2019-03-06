@@ -42,6 +42,8 @@ lp_resource_copy(struct pipe_context *pipe,
                  struct pipe_resource *src, unsigned src_level,
                  const struct pipe_box *src_box)
 {
+   struct pipe_box box = *src_box;
+
    llvmpipe_flush_resource(pipe,
                            dst, dst_level,
                            FALSE, /* read_only */
@@ -56,8 +58,10 @@ lp_resource_copy(struct pipe_context *pipe,
                            FALSE, /* do_not_block */
                            "blit src");
 
+   if (src->nr_samples)
+       box.depth = src->nr_samples; /* for util_copy_box */
    util_resource_copy_region(pipe, dst, dst_level, dstx, dsty, dstz,
-                             src, src_level, src_box);
+                             src, src_level, &box);
 }
 
 static void lp_resolve(struct pipe_context *pipe,
