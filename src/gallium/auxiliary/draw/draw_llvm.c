@@ -124,7 +124,9 @@ create_jit_texture_type(struct gallivm_state *gallivm, const char *struct_name)
    elem_types[DRAW_JIT_TEXTURE_HEIGHT] =
    elem_types[DRAW_JIT_TEXTURE_DEPTH] =
    elem_types[DRAW_JIT_TEXTURE_FIRST_LEVEL] =
-   elem_types[DRAW_JIT_TEXTURE_LAST_LEVEL] = int32_type;
+   elem_types[DRAW_JIT_TEXTURE_LAST_LEVEL] =
+   elem_types[DRAW_JIT_TEXTURE_NR_SAMPLES] =
+   elem_types[DRAW_JIT_TEXTURE_SAMPLE_STRIDE] = int32_type;
    elem_types[DRAW_JIT_TEXTURE_BASE] =
       LLVMPointerType(LLVMInt8TypeInContext(gallivm->context), 0);
    elem_types[DRAW_JIT_TEXTURE_ROW_STRIDE] =
@@ -151,6 +153,12 @@ create_jit_texture_type(struct gallivm_state *gallivm, const char *struct_name)
    LP_CHECK_MEMBER_OFFSET(struct draw_jit_texture, last_level,
                           target, texture_type,
                           DRAW_JIT_TEXTURE_LAST_LEVEL);
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_texture, nr_samples,
+                          target, texture_type,
+                          DRAW_JIT_TEXTURE_NR_SAMPLES);
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_texture, sample_stride,
+                          target, texture_type,
+                          DRAW_JIT_TEXTURE_SAMPLE_STRIDE);
    LP_CHECK_MEMBER_OFFSET(struct draw_jit_texture, base,
                           target, texture_type,
                           DRAW_JIT_TEXTURE_BASE);
@@ -2076,6 +2084,7 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
                              unsigned sview_idx,
                              uint32_t width, uint32_t height, uint32_t depth,
                              uint32_t first_level, uint32_t last_level,
+                             uint32_t nr_samples, uint32_t sample_stride,
                              const void *base_ptr,
                              uint32_t row_stride[PIPE_MAX_TEXTURE_LEVELS],
                              uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS],
@@ -2106,6 +2115,8 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
    jit_tex->first_level = first_level;
    jit_tex->last_level = last_level;
    jit_tex->base = base_ptr;
+   jit_tex->nr_samples = nr_samples;
+   jit_tex->sample_stride = sample_stride;
 
    for (j = first_level; j <= last_level; j++) {
       jit_tex->mip_offsets[j] = mip_offsets[j];

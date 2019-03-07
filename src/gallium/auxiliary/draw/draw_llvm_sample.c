@@ -191,6 +191,8 @@ DRAW_LLVM_TEXTURE_MEMBER(height,     DRAW_JIT_TEXTURE_HEIGHT, TRUE)
 DRAW_LLVM_TEXTURE_MEMBER(depth,      DRAW_JIT_TEXTURE_DEPTH, TRUE)
 DRAW_LLVM_TEXTURE_MEMBER(first_level,DRAW_JIT_TEXTURE_FIRST_LEVEL, TRUE)
 DRAW_LLVM_TEXTURE_MEMBER(last_level, DRAW_JIT_TEXTURE_LAST_LEVEL, TRUE)
+DRAW_LLVM_TEXTURE_MEMBER(nr_samples, DRAW_JIT_TEXTURE_NR_SAMPLES, TRUE)
+DRAW_LLVM_TEXTURE_MEMBER(sample_stride, DRAW_JIT_TEXTURE_SAMPLE_STRIDE, TRUE)
 DRAW_LLVM_TEXTURE_MEMBER(base_ptr,   DRAW_JIT_TEXTURE_BASE, TRUE)
 DRAW_LLVM_TEXTURE_MEMBER(row_stride, DRAW_JIT_TEXTURE_ROW_STRIDE, FALSE)
 DRAW_LLVM_TEXTURE_MEMBER(img_stride, DRAW_JIT_TEXTURE_IMG_STRIDE, FALSE)
@@ -280,6 +282,8 @@ draw_llvm_sampler_soa_create(const struct draw_sampler_static_state *static_stat
    sampler->dynamic_state.base.depth = draw_llvm_texture_depth;
    sampler->dynamic_state.base.first_level = draw_llvm_texture_first_level;
    sampler->dynamic_state.base.last_level = draw_llvm_texture_last_level;
+   sampler->dynamic_state.base.nr_samples = draw_llvm_texture_nr_samples;
+   sampler->dynamic_state.base.sample_stride = draw_llvm_texture_sample_stride;
    sampler->dynamic_state.base.row_stride = draw_llvm_texture_row_stride;
    sampler->dynamic_state.base.img_stride = draw_llvm_texture_img_stride;
    sampler->dynamic_state.base.base_ptr = draw_llvm_texture_base_ptr;

@@ -51,6 +51,8 @@ struct draw_jit_texture
    uint32_t depth;
    uint32_t first_level;
    uint32_t last_level;
+   uint32_t nr_samples; /* TODO: does this need to match lp_jit_texture in llvmpipe/lp_jit.h? */
+   uint32_t sample_stride;
    const void *base;
    uint32_t row_stride[PIPE_MAX_TEXTURE_LEVELS];
    uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS];
@@ -85,6 +87,8 @@ enum {
    DRAW_JIT_TEXTURE_DEPTH,
    DRAW_JIT_TEXTURE_FIRST_LEVEL,
    DRAW_JIT_TEXTURE_LAST_LEVEL,
+   DRAW_JIT_TEXTURE_NR_SAMPLES,
+   DRAW_JIT_TEXTURE_SAMPLE_STRIDE,
    DRAW_JIT_TEXTURE_BASE,
    DRAW_JIT_TEXTURE_ROW_STRIDE,
    DRAW_JIT_TEXTURE_IMG_STRIDE,
@@ -517,6 +521,7 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
                              unsigned sview_idx,
                              uint32_t width, uint32_t height, uint32_t depth,
                              uint32_t first_level, uint32_t last_level,
+                             uint32_t nr_samples, uint32_t sample_stride,
                              const void *base_ptr,
                              uint32_t row_stride[PIPE_MAX_TEXTURE_LEVELS],
                              uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS],

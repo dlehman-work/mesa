@@ -431,7 +431,7 @@ i915_prepare_vertex_sampling(struct i915_context *i915)
                                  PIPE_SHADER_VERTEX,
                                  i,
                                  tex->width0, tex->height0, tex->depth0,
-                                 view->u.tex.first_level, tex->last_level,
+                                 view->u.tex.first_level, tex->last_level, 0, 0, /* TODO */
                                  addr,
                                  row_stride, img_stride, mip_offsets);
       } else
