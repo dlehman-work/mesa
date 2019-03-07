@@ -325,7 +325,8 @@ prepare_shader_sampling(
                                  shader_type,
                                  i,
                                  width0, tex->height0, num_layers,
-                                 first_level, last_level, 0, 0, /* TODO */
+                                 first_level, last_level,
+                                 lp_tex->base.nr_samples, lp_tex->sample_stride,
                                  addr,
                                  row_stride, img_stride, mip_offsets);
       }
