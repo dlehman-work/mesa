@@ -646,6 +646,11 @@ try_setup_line( struct lp_setup_context *setup,
    info.dady = GET_DADY(&line->inputs);
    info.frontfacing = line->inputs.frontfacing;
    setup_line_coefficients(setup, &info); 
+   
+   line->sampleid = 0; /* TODO */
+   line->pad[0] = 0;
+   line->pad[1] = 0;
+   line->pad[2] = 0;
 
    line->inputs.disable = FALSE;
    line->inputs.opaque = FALSE;

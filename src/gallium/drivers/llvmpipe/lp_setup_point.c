@@ -483,6 +483,11 @@ try_setup_point( struct lp_setup_context *setup,
     */
    setup_point_coefficients(setup, &info);
 
+   point->sampleid = 0; /* TODO */
+   point->pad[0] = 0;
+   point->pad[1] = 0;
+   point->pad[2] = 0;
+
    point->inputs.disable = FALSE;
    point->inputs.opaque = FALSE;
    point->inputs.layer = layer;
