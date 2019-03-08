@@ -2551,7 +2551,10 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    case TGSI_TEXTURE_3D:
       dims = 3;
       break;
-   case TGSI_TEXTURE_2D_ARRAY_MSAA: /* TODO */
+   case TGSI_TEXTURE_2D_ARRAY_MSAA:
+      dims = 3;
+      layer_coord = 3; /* TODO */
+      break;
    default:
       assert(0);
       return;
@@ -2573,13 +2576,20 @@ emit_fetch_texels( struct lp_build_tgsi_soa_context *bld,
    for (i = dims; i < 5; i++) {
       coords[i] = coord_undef;
    }
-   if (target == TGSI_TEXTURE_2D_MSAA) {
+   if (target == TGSI_TEXTURE_2D_MSAA ||
+       target == TGSI_TEXTURE_2D_ARRAY_MSAA) {
       sample_key |= LP_SAMPLER_MSAA;
       if (is_samplei)
          sample = lp_build_emit_fetch(&bld->bld_base, inst, 2, 0); /* TODO: ?? */
       else
          sample = lp_build_emit_fetch(&bld->bld_base, inst, 0, 3);
-      coords[2] = sample; /* TODO: shouldn't be needed */
+      if (layer_coord)
+      {
+printf("%s: dims %d layer %d\n", __FUNCTION__, dims, layer_coord); fflush(stdout);
+         coords[3] = sample;
+         coords[4] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
+      } else
+         coords[2] = sample; /* TODO: shouldn't be needed */
    }
    else if (layer_coord)
       coords[2] = lp_build_emit_fetch(&bld->bld_base, inst, 0, layer_coord);
