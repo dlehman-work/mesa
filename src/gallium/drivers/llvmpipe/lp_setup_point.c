@@ -540,15 +540,54 @@ lp_setup_point(struct lp_setup_context *setup,
    }
 }
 
+/* TODO: duplicate in lp_setup_tri.c */
+/* src/gallium/auxiliary/util/u_surface.c: get_sample_count from  */
+static inline unsigned
+lp_num_samples(const struct lp_setup_context *setup)
+{
+    const struct pipe_framebuffer_state *fb = &setup->fb;
+
+    /* TODO; how to choose? */
+    /* setup->fs->current_tex[0]->nr_samples == 4 */
+    if (!fb->nr_cbufs)
+        return fb->samples;
+
+    if (fb->cbufs[0]) /* TODO 0th? */
+        return fb->cbufs[0]->texture->nr_samples;
+
+    if (fb->zsbuf)
+        return fb->zsbuf->texture->nr_samples;
+
+    assert(0);
+    return 0;
+}
+
+static void
+lp_setup_point_ms(struct lp_setup_context *setup,
+                  const float (*v0)[4])
+{
+   unsigned nr_samples = lp_num_samples(setup);
+   printf("%s nr %u\n", __FUNCTION__, nr_samples);
+   if (!try_setup_point(setup, v0)) {
+      if (!lp_setup_flush_and_restart(setup))
+         return;
+
+      if (!try_setup_point(setup, v0))
+         return;
+   }
+}
 
 void 
 lp_setup_choose_point(struct lp_setup_context *setup)
 {
+printf("%s discard %d samples %u\n", __FUNCTION__, setup->rasterizer_discard, lp_num_samples(setup));
+fflush(stdout);
    if (setup->rasterizer_discard) {
       setup->point = lp_setup_point_discard;
-   } else {
+   } else if (lp_num_samples(setup) <= 1) {
       setup->point = lp_setup_point;
-   }
+   } else
+      setup->point = lp_setup_point_ms;
 }
 
 
