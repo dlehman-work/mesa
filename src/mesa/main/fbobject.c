@@ -497,7 +497,7 @@ set_texture_attachment(struct gl_context *ctx,
                        struct gl_framebuffer *fb,
                        struct gl_renderbuffer_attachment *att,
                        struct gl_texture_object *texObj,
-                       GLenum texTarget, GLuint level, GLsizei samples,
+                       GLenum texTarget, GLuint level, GLsizei samples, /* TODO: if 0 samples, use currently attached? */
                        GLuint layer, GLboolean layered)
 {
    struct gl_renderbuffer *rb = att->Renderbuffer;
