@@ -3681,6 +3681,9 @@ void GLAPIENTRY
 _mesa_FramebufferTexture2D(GLenum target, GLenum attachment,
                            GLenum textarget, GLuint texture, GLint level)
 {
+   /* TODO: if textarget == GL_TEXTURE_2D_MULTISAMPLE && texture is multisample
+    *       then pass texObj->Image[0][0]->NumSamples instead of 0
+    *       or do this in callee */
    framebuffer_texture_with_dims(2, target, attachment, textarget, texture,
                                  level, 0, 0, "glFramebufferTexture2D");
 }
