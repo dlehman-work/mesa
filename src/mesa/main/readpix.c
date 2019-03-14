@@ -618,14 +618,16 @@ read_rgba_pixels( struct gl_context *ctx,
    free(rgba);
 
 done_swap:
-
-printf("%s: src %p src[%d x %d] 0x%08x  \n", __FUNCTION__, src, x, y, ((unsigned char*)src)[y * src_stride + x * 4]);
-
-((unsigned *)dst)[0] = 0x3f800000;
-((unsigned *)dst)[1] = 0x3f800000;
-((unsigned *)dst)[2] = 0x3f800000;
-((unsigned *)dst)[3] = 0x3f800000;
-printf("%s: dst %p dst[0] 0x%08x\n", __FUNCTION__, dst, ((unsigned *)dst)[0]);
+if (1)
+{
+    static times = 0;
+    printf("%s: src %p src[%d x %d] 0x%08x times %d \n", __FUNCTION__, src, x, y, ((unsigned char*)src)[y * src_stride + x * 4], times);
+    ((unsigned *)dst)[0] = 0;
+    ((unsigned *)dst)[1] = 0;
+    ((unsigned *)dst)[2] = 0;
+    ((float *)dst)[3] = 0.25f * times++;
+    printf("%s: dst %p dst[0] 0x%08x\n", __FUNCTION__, dst, ((unsigned *)dst)[0]);
+}
    /* Handle byte swapping if required */
    if (packing->SwapBytes) {
       _mesa_swap_bytes_2d_image(format, type, packing,
