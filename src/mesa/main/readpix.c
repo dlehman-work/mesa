@@ -620,13 +620,16 @@ read_rgba_pixels( struct gl_context *ctx,
 done_swap:
 if (1)
 {
-    static times = 0;
-    printf("%s: src %p src[%d x %d] 0x%08x times %d \n", __FUNCTION__, src, x, y, ((unsigned char*)src)[y * src_stride + x * 4], times);
+    static int times = 0;
+    int i;
+   
+    for (i = 0; i < 4; i++)
+        printf("%s: src %p src[%d x %d + %d] 0x%08x times %d \n", __FUNCTION__, src, x, y, i, ((unsigned char*)src)[y * src_stride + (x + i) * 4], times);
     ((unsigned *)dst)[0] = 0;
     ((unsigned *)dst)[1] = 0;
     ((unsigned *)dst)[2] = 0;
     ((float *)dst)[3] = 0.25f * times++;
-    printf("%s: dst %p dst[0] 0x%08x\n", __FUNCTION__, dst, ((unsigned *)dst)[0]);
+    printf("%s: dst %p dst[3] 0x%08x\n", __FUNCTION__, dst, ((unsigned *)dst)[3]);
 }
    /* Handle byte swapping if required */
    if (packing->SwapBytes) {
