@@ -58,6 +58,7 @@ subpixel_snap(float a)
 }
 
 /* src/gallium/auxiliary/util/u_surface.c: get_sample_count from  */
+/* TODO: see also util_framebuffer_get_num_samples */
 static inline unsigned
 lp_num_samples(const struct lp_setup_context *setup)
 {
