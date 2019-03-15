@@ -1195,6 +1195,7 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
    }
 
    nr_samples = util_framebuffer_get_num_samples(&setup->fb);
+printf("%s: nr_samples %d pipe %p\n", __FUNCTION__, nr_samples, setup->pipe);
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets);
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
@@ -1258,6 +1259,7 @@ static void triangle_ccw_ms(struct lp_setup_context *setup,
    }
 
    nr_samples = util_framebuffer_get_num_samples(&setup->fb);
+printf("%s: nr_samples %d pipe %p\n", __FUNCTION__, nr_samples, setup->pipe);
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets); /* TODO */
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
@@ -1329,6 +1331,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    /* TODO: area is probably always the same, so are d[xy][01|20] */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    nr_samples = util_framebuffer_get_num_samples(&setup->fb);
+printf("%s: nr_samples %d pipe %p\n", __FUNCTION__, nr_samples, setup->pipe);
    for (i = 0; i < nr_samples; i++) {
        lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);

@@ -579,6 +579,7 @@ if (1)
     // ((unsigned *)src)[0] = 0xff1a1a1a;
     // ((unsigned char *)src)[3] = 0xff;
     ((unsigned char *)src)[3] = (times++ * 0.25) * 0xff;
+printf("%s: map %p\n", __FUNCTION__, map);
 }
 
 

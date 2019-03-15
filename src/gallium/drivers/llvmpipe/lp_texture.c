@@ -569,6 +569,9 @@ llvmpipe_transfer_map( struct pipe_context *pipe,
    assert(resource);
    assert(level <= resource->last_level);
 
+unsigned nr_samples = util_framebuffer_get_num_samples(&llvmpipe->framebuffer);
+printf("%s: pipe %p res %p x %d y %d z %d width %d height %d depth %d nr_samples %d\n", __FUNCTION__,
+    pipe, resource, box->x, box->y, box->z, box->width, box->height, box->depth, nr_samples);
    /*
     * Transfers, like other pipe operations, must happen in order, so flush the
     * context if necessary.
@@ -648,6 +651,7 @@ llvmpipe_transfer_map( struct pipe_context *pipe,
                                box->z,
                                tex_usage);
 
+printf("%s: pipe %p map %p\n", __FUNCTION__, pipe, map);
 
    /* May want to do different things here depending on read/write nature
     * of the map:
@@ -661,6 +665,7 @@ llvmpipe_transfer_map( struct pipe_context *pipe,
    map +=
       box->y / util_format_get_blockheight(format) * pt->stride +
       box->x / util_format_get_blockwidth(format) * util_format_get_blocksize(format);
+printf("%s: pipe %p map %p x %d y %d\n", __FUNCTION__, pipe, map, box->x, box->y);
 
    return map;
 }
