@@ -573,6 +573,15 @@ read_rgba_pixels( struct gl_context *ctx,
       src_stride = rb_stride;
    }
 
+if (1)
+{
+    static int times;
+    // ((unsigned *)src)[0] = 0xff1a1a1a;
+    // ((unsigned char *)src)[3] = 0xff;
+    ((unsigned char *)src)[3] = (times++ * 0.25) * 0xff;
+}
+
+
    /* Do the conversion.
     *
     * If the dst format is Luminance, we need to do the conversion by computing
@@ -618,13 +627,18 @@ read_rgba_pixels( struct gl_context *ctx,
    free(rgba);
 
 done_swap:
-if (1)
+if (0)
 {
     static int times = 0;
     int i;
-   
+
+    printf("%s: width %d height %d src_stride %d\n", __FUNCTION__, width, height, src_stride);
+//    for (i = 0; i < src_stride; i++)
+//      printf("%s: src %p src[%d] 0x%08x\n", __FUNCTION__, src, i, ((unsigned char*)src)[i]);
+
     for (i = 0; i < 4; i++)
-        printf("%s: src %p src[%d x %d + %d] 0x%08x times %d \n", __FUNCTION__, src, x, y, i, ((unsigned char*)src)[y * src_stride + (x + i) * 4], times);
+        printf("%s: before: dst %p dst[%d] 0x%08x\n", __FUNCTION__, dst, i, ((unsigned *)dst)[i]);
+
     ((unsigned *)dst)[0] = 0;
     ((unsigned *)dst)[1] = 0;
     ((unsigned *)dst)[2] = 0;
