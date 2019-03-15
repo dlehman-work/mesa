@@ -57,25 +57,6 @@ subpixel_snap(float a)
    return util_iround(FIXED_ONE * a);
 }
 
-/* src/gallium/auxiliary/util/u_surface.c: get_sample_count from  */
-/* TODO: see also util_framebuffer_get_num_samples */
-static inline unsigned
-lp_num_samples(const struct lp_setup_context *setup)
-{
-    const struct pipe_framebuffer_state *fb = &setup->fb;
-    if (!fb->nr_cbufs)
-        return fb->samples;
-
-    if (fb->cbufs[0]) /* TODO 0th? */
-        return fb->cbufs[0]->texture->nr_samples;
-
-    if (fb->zsbuf)
-        return fb->zsbuf->texture->nr_samples;
-
-    assert(0);
-    return 0;
-}
-
 /* Position and area in fixed point coordinates */
 struct fixed_position {
    int32_t x[4];
@@ -1206,16 +1187,14 @@ static void triangle_cw_ms(struct lp_setup_context *setup,
    float offsets[2];
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
-   unsigned i, nr_samples = lp_num_samples(setup);
+   unsigned i, nr_samples;
 
    STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
 
-   if (!nr_samples)
-      nr_samples = 1;
-
+   nr_samples = util_framebuffer_get_num_samples(&setup->fb);
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets);
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
@@ -1271,16 +1250,14 @@ static void triangle_ccw_ms(struct lp_setup_context *setup,
    float offsets[2];
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
-   unsigned i, nr_samples = lp_num_samples(setup);
+   unsigned i, nr_samples;
 
    STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
       lp_context->pipeline_statistics.c_primitives++;
    }
 
-   if (!nr_samples)
-      nr_samples = 1;
-
+   nr_samples = util_framebuffer_get_num_samples(&setup->fb);
    lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, 0, offsets); /* TODO */
    calc_fixed_position_offset(setup, &positions[0], offsets, v0, v1, v2);
 
@@ -1342,7 +1319,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    float offsets[2];
    PIPE_ALIGN_VAR(16) struct fixed_position positions[LP_MAX_SAMPLES];
    struct llvmpipe_context *lp_context = (struct llvmpipe_context *)setup->pipe;
-   unsigned i, nr_samples = lp_num_samples(setup);
+   unsigned i, nr_samples;
 
    STATIC_ASSERT(sizeof(struct fixed_position) % 16 == 0);
    if (lp_context->active_statistics_queries) {
@@ -1351,10 +1328,7 @@ static void triangle_both_ms(struct lp_setup_context *setup,
 
    /* TODO: area is probably always the same, so are d[xy][01|20] */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
-   /* TODO: make sure to handle nr_samples == 0 !! */
-   if (!nr_samples)
-      nr_samples = 1;
-
+   nr_samples = util_framebuffer_get_num_samples(&setup->fb);
    for (i = 0; i < nr_samples; i++) {
        lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);
