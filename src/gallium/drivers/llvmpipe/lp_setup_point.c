@@ -563,8 +563,9 @@ lp_setup_choose_point(struct lp_setup_context *setup)
    unsigned nr_samples;
 
    nr_samples = util_framebuffer_get_num_samples(&setup->fb);
-printf("%s discard %d samples %u\n", __FUNCTION__, setup->rasterizer_discard, nr_samples);
-fflush(stdout);
+printf("%s: nr_samples %d pipe %p nr cbufs %d cbufs[0] %p texture %p texture samples %d fb samples %d\n",
+    __FUNCTION__, nr_samples, setup->pipe, setup->fb.nr_cbufs, setup->fb.cbufs[0], setup->fb.cbufs[0]->texture,
+    setup->fb.cbufs[0]->texture->nr_samples, setup->fb.cbufs[0]->nr_samples);
    if (setup->rasterizer_discard) {
       setup->point = lp_setup_point_discard;
    } else if (nr_samples == 1) {

@@ -1331,7 +1331,9 @@ static void triangle_both_ms(struct lp_setup_context *setup,
    /* TODO: area is probably always the same, so are d[xy][01|20] */
    /* TODO: do first one, figure out cw vs ccw, then figure out rest */
    nr_samples = util_framebuffer_get_num_samples(&setup->fb);
-printf("%s: nr_samples %d pipe %p\n", __FUNCTION__, nr_samples, setup->pipe);
+printf("%s: nr_samples %d pipe %p nr cbufs %d cbufs[0] %p texture %p texture samples %d fb samples %d\n",
+    __FUNCTION__, nr_samples, setup->pipe, setup->fb.nr_cbufs, setup->fb.cbufs[0], setup->fb.cbufs[0]->texture,
+    setup->fb.cbufs[0]->texture->nr_samples, setup->fb.cbufs[0]->nr_samples);
    for (i = 0; i < nr_samples; i++) {
        lp_context->pipe.get_sample_position(&lp_context->pipe, nr_samples, i, offsets); /* TODO */
        calc_fixed_position_offset(setup, &positions[i], offsets, v0, v1, v2);

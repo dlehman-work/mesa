@@ -189,7 +189,7 @@ llvmpipe_create_surface(struct pipe_context *pipe,
       ps->context = pipe;
       ps->format = surf_tmpl->format;
       // TODO ps->nr_samples = //util_framebuffer_get_num_samples(&setup->fb);
-printf("%s: nr_samples %d\n", __FUNCTION__, pt->nr_samples);
+printf("%s: pipe %p nr_samples %d\n", __FUNCTION__, pipe, pt->nr_samples);
       ps->nr_samples = pt->nr_samples; /* TODO other checks? ps->texture->nr_samples? */
       if (llvmpipe_resource_is_texture(pt)) {
          assert(surf_tmpl->u.tex.level <= pt->last_level);
