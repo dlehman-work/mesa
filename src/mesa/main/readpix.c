@@ -573,7 +573,7 @@ read_rgba_pixels( struct gl_context *ctx,
       src_stride = rb_stride;
    }
 
-if (1)
+if (0)
 {
     static int times;
     // ((unsigned *)src)[0] = 0xff1a1a1a;
