@@ -817,6 +817,7 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
           */
          pipe_resource_reference(&setup->fs.current_tex[i], res);
 
+printf("%s: [%d/%d] lp_tex %p base %p\n", __FUNCTION__, i, max_tex_num, lp_tex, lp_tex->tex_data);
          if (!lp_tex->dt) {
             /* regular texture - setup array of mipmap level offsets */
             int j;
