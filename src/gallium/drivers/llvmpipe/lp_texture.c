@@ -570,8 +570,8 @@ llvmpipe_transfer_map( struct pipe_context *pipe,
    assert(level <= resource->last_level);
 
 unsigned nr_samples = util_framebuffer_get_num_samples(&llvmpipe->framebuffer);
-printf("%s: pipe %p res %p x %d y %d z %d width %d height %d depth %d nr_samples %d\n", __FUNCTION__,
-    pipe, resource, box->x, box->y, box->z, box->width, box->height, box->depth, nr_samples);
+printf("%s: pipe %p res %p x %d y %d z %d width %d height %d depth %d nr_samples %d resource %d sample stride %d\n", __FUNCTION__,
+    pipe, resource, box->x, box->y, box->z, box->width, box->height, box->depth, nr_samples, resource->nr_samples, lpr->sample_stride);
    /*
     * Transfers, like other pipe operations, must happen in order, so flush the
     * context if necessary.

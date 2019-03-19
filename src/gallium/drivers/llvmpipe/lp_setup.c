@@ -817,6 +817,7 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
           */
          pipe_resource_reference(&setup->fs.current_tex[i], res);
 
+if (0)
 {
 void *map;
 struct pipe_box box;
