@@ -817,7 +817,20 @@ lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
           */
          pipe_resource_reference(&setup->fs.current_tex[i], res);
 
-printf("%s: [%d/%d] lp_tex %p base %p\n", __FUNCTION__, i, max_tex_num, lp_tex, lp_tex->tex_data);
+{
+void *map;
+struct pipe_box box;
+struct pipe_transfer *transfer = NULL;
+box.x = 0;
+box.y = 0; 
+box.z = 0;
+box.width = 1;
+box.height = 1;
+box.depth = 1;
+map = setup->pipe->transfer_map(setup->pipe, res, 0, PIPE_TRANSFER_READ, &box, &transfer);
+printf("%s: [%d/%d] res %p lp_tex %p base %p map %p\n", __FUNCTION__, i, max_tex_num, res, lp_tex, lp_tex->tex_data, map);
+setup->pipe->transfer_unmap(setup->pipe, transfer);
+}
          if (!lp_tex->dt) {
             /* regular texture - setup array of mipmap level offsets */
             int j;
