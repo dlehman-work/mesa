@@ -103,6 +103,7 @@ lp_llvm_texture_member(const struct lp_sampler_dynamic_state *base,
 
    assert(texture_unit < PIPE_MAX_SHADER_SAMPLER_VIEWS);
 
+printf("%s: texture_unit %d\n", __FUNCTION__, texture_unit);
    /* context[0] */
    indices[0] = lp_build_const_int32(gallivm, 0);
    /* context[0].textures */

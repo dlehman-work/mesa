@@ -3314,7 +3314,9 @@ make_variant_key(struct llvmpipe_context *lp,
       key->depth_clamp = (lp->rasterizer->depth_clip_near == 0) ? 1 : 0;
    }
 
+unsigned nr_samples = util_framebuffer_get_num_samples(&lp->framebuffer);
    key->nr_samples = lp->framebuffer.samples; /* TODO: 0 or 1? */
+printf("%s: %d: setting key->nr_samples %u nr_samples %u\n", __FUNCTION__, __LINE__, key->nr_samples, nr_samples);
 
    /* alpha test only applies if render buffer 0 is non-integer (or does not exist) */
    if (!lp->framebuffer.nr_cbufs ||
