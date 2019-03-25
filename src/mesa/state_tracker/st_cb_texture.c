@@ -3286,6 +3286,13 @@ st_MakeImageHandleResident(struct gl_context *ctx, GLuint64 handle,
 }
 
 
+static
+void st_BindTexture( struct gl_context *ctx, GLuint texUnit,
+                     GLenum target, struct gl_texture_object *tObj )
+{
+    printf("%s: %d: ctx %p unit %d enum %x obj %p\n", __FUNCTION__, __LINE__, ctx, texUnit, target, tObj);
+}
+
 void
 st_init_texture_functions(struct dd_function_table *functions)
 {
@@ -3301,6 +3308,8 @@ st_init_texture_functions(struct dd_function_table *functions)
 
    /* compressed texture functions */
    functions->CompressedTexImage = st_CompressedTexImage;
+
+   functions->BindTexture = st_BindTexture;
 
    functions->NewTextureObject = st_NewTextureObject;
    functions->NewTextureImage = st_NewTextureImage;
