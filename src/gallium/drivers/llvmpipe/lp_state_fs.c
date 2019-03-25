@@ -3106,6 +3106,7 @@ llvmpipe_bind_fs_state(struct pipe_context *pipe, void *fs)
 {
    struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
 
+   printf("%s: %d: old fs %p new fs %p\n", __FUNCTION__, __LINE__, llvmpipe->fs, fs);
    if (llvmpipe->fs == fs)
       return;
 
@@ -3229,6 +3230,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
    }
    else {
       llvmpipe->dirty |= LP_NEW_FS_CONSTANTS;
+printf("%s: %d: LP_NEW_FS_CONSTANTS\n", __FUNCTION__, __LINE__);
    }
 
    if (cb && cb->user_buffer) {

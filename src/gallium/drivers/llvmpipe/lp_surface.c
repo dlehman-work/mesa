@@ -44,6 +44,7 @@ lp_resource_copy(struct pipe_context *pipe,
 {
    struct pipe_box box = *src_box;
 
+   printf("%s: %d\n", __FUNCTION__, __LINE__);
    llvmpipe_flush_resource(pipe,
                            dst, dst_level,
                            FALSE, /* read_only */
@@ -108,6 +109,7 @@ static void lp_blit(struct pipe_context *pipe,
    struct llvmpipe_context *lp = llvmpipe_context(pipe);
    struct pipe_blit_info info = *blit_info;
 
+   printf("%s: %d\n", __FUNCTION__, __LINE__);
    if (blit_info->render_condition_enable && !llvmpipe_check_render_cond(lp))
       return;
 
@@ -162,6 +164,7 @@ static void lp_blit(struct pipe_context *pipe,
 static void
 lp_flush_resource(struct pipe_context *ctx, struct pipe_resource *resource)
 {
+    printf("%s: %d: \n", __FUNCTION__, __LINE__);
 }
 
 

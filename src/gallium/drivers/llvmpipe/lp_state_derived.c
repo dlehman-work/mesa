@@ -184,6 +184,7 @@ void llvmpipe_update_derived( struct llvmpipe_context *llvmpipe )
 {
    struct llvmpipe_screen *lp_screen = llvmpipe_screen(llvmpipe->pipe.screen);
 
+   printf("%s: %d: dirty %x NEW_FRAMEBUFFER %x\n", __FUNCTION__, __LINE__, llvmpipe->dirty, LP_NEW_FRAMEBUFFER);
    /* Check for updated textures.
     */
    if (llvmpipe->tex_timestamp != lp_screen->timestamp) {

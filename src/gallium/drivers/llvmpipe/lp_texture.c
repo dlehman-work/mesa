@@ -600,6 +600,7 @@ unsigned nr_samples = util_framebuffer_get_num_samples(&llvmpipe->framebuffer);
       for (i = 0; i < ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_FRAGMENT]); ++i) {
          if (resource == llvmpipe->constants[PIPE_SHADER_FRAGMENT][i].buffer) {
             /* constants may have changed */
+printf("%s: %d: LP_NEW_FS_CONSTANTS\n", __FUNCTION__, __LINE__);
             llvmpipe->dirty |= LP_NEW_FS_CONSTANTS;
             break;
          }

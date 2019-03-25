@@ -585,6 +585,7 @@ llvmpipe_flush_frontbuffer(struct pipe_screen *_screen,
    struct sw_winsys *winsys = screen->winsys;
    struct llvmpipe_resource *texture = llvmpipe_resource(resource);
 
+   printf("%s: %d\n", __FUNCTION__, __LINE__);
    assert(texture->dt);
    if (texture->dt)
       winsys->displaytarget_display(winsys, texture->dt, context_private, sub_box);
