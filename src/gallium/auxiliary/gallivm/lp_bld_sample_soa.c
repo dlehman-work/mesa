@@ -2629,7 +2629,8 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
                                &row_stride_vec, &img_stride_vec);
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
-   if (sample) {
+   /* TODO: swr doesn't have nr_samples, sample_stride */
+   if (sample && bld->dynamic_state->nr_samples &&  bld->dynamic_state->sample_stride) {
       nr_samples = bld->dynamic_state->nr_samples(bld->dynamic_state, bld->gallivm,
                                                   bld->context_ptr, texture_unit);
       sample_stride = bld->dynamic_state->sample_stride(bld->dynamic_state, bld->gallivm,
