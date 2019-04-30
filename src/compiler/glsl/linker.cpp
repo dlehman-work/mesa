@@ -4901,6 +4901,11 @@ link_shaders(struct gl_context *ctx, struct gl_shader_program *prog)
    prog->data->LinkStatus = LINKING_SUCCESS; /* All error paths will set this to false */
    prog->data->Validated = false;
 
+{
+static int times;
+printf("%s: %d: times %d\n", __FUNCTION__, __LINE__, ++times); fflush(stdout);
+}
+
    /* Section 7.3 (Program Objects) of the OpenGL 4.5 Core Profile spec says:
     *
     *     "Linking can fail for a variety of reasons as specified in the
