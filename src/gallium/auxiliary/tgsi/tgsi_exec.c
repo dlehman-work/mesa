@@ -74,6 +74,8 @@
 #define TILE_BOTTOM_LEFT  2
 #define TILE_BOTTOM_RIGHT 3
 
+static struct tgsi_exec_machine *g_bug;
+
 union tgsi_double_channel {
    double d[TGSI_QUAD_SIZE];
    unsigned u[TGSI_QUAD_SIZE][2];
@@ -1040,6 +1042,10 @@ tgsi_exec_set_constant_buffers(struct tgsi_exec_machine *mach,
    unsigned i;
 
    for (i = 0; i < num_bufs; i++) {
+if (g_bug == mach && bufs[i])
+{
+    printf("%s: %d: %p [%d / %d] = %p (%u)\n", __FUNCTION__, __LINE__, mach, i, num_bufs, bufs[i], buf_sizes[i]); fflush(stdout);
+}
       mach->Consts[i] = bufs[i];
       mach->ConstsSize[i] = buf_sizes[i];
    }
@@ -1312,7 +1318,12 @@ tgsi_exec_machine_create(enum pipe_shader_type shader_type)
       goto fail;
 
    memset(mach, 0, sizeof(*mach));
-
+{
+static int times;
+printf("%s: %d: mach %p type %d times %d\n", __FUNCTION__, __LINE__, mach, shader_type, ++times); fflush(stdout);
+if (times == 8)
+    g_bug = mach;
+}
    mach->ShaderType = shader_type;
    mach->Addrs = &mach->Temps[TGSI_EXEC_TEMP_ADDR];
    mach->MaxGeometryShaderOutputs = TGSI_MAX_TOTAL_VERTICES;
@@ -1367,6 +1378,7 @@ void
 tgsi_exec_machine_destroy(struct tgsi_exec_machine *mach)
 {
    if (mach) {
+printf("%s: %d: mach %p\n", __FUNCTION__, __LINE__, mach);
       FREE(mach->Instructions);
       FREE(mach->Declarations);
       FREE(mach->Imms);
@@ -1524,6 +1536,13 @@ fetch_src_file_channel(const struct tgsi_exec_machine *mach,
    switch (file) {
    case TGSI_FILE_CONSTANT:
       for (i = 0; i < TGSI_QUAD_SIZE; i++) {
+if (!mach->Consts[index2D->i[i]])
+{
+    printf("%s: %d: mach %p index2D->i[%d] = %d\n", __FUNCTION__, __LINE__, mach, i, index2D->i[i]);
+    printf("%s: %d: waiting\n", __FUNCTION__, __LINE__);
+    fflush(stdout);
+    getchar();
+}
          assert(index2D->i[i] >= 0 && index2D->i[i] < PIPE_MAX_CONSTANT_BUFFERS);
          assert(mach->Consts[index2D->i[i]]);
 

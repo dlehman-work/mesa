@@ -1801,6 +1801,12 @@ _mesa_LinkProgram(GLuint programObj)
 
    struct gl_shader_program *shProg =
       _mesa_lookup_shader_program_err(ctx, programObj, "glLinkProgram");
+printf("%s: %d: program %u\n", __FUNCTION__, __LINE__, programObj); fflush(stdout);
+if (programObj == 102)
+{
+    printf("%s: %d: waiting\n", __FUNCTION__, __LINE__); fflush(stdout);
+    getchar();
+}
    link_program_error(ctx, shProg);
 }
 
@@ -2039,6 +2045,7 @@ use_program(GLuint program, bool no_error)
    GET_CURRENT_CONTEXT(ctx);
    struct gl_shader_program *shProg = NULL;
 
+printf("%s: %d: program %u\n", __FUNCTION__, __LINE__, program); fflush(stdout);
    if (MESA_VERBOSE & VERBOSE_API)
       _mesa_debug(ctx, "glUseProgram %u\n", program);
 

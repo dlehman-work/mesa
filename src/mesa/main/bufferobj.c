@@ -1347,6 +1347,7 @@ bind_uniform_buffer(struct gl_context *ctx,
                bufObj, offset, size, autoSize,
                ctx->DriverFlags.NewUniformBuffer,
                USAGE_UNIFORM_BUFFER);
+printf("%s: %d: ctx %p index %d size %lu\n", __FUNCTION__, __LINE__, ctx, index, size); fflush(stdout);
 }
 
 /**
