@@ -1251,6 +1251,7 @@ interstage_cross_validate_uniform_blocks(struct gl_shader_program *prog,
             return false;
          }
 
+printf("%s: %d: InterfaceBlockStageIndex[%d][%d / %d] = %d\n", __FUNCTION__, __LINE__, i, index, sh_num_blocks, j);
          InterfaceBlockStageIndex[i][index] = j;
       }
    }

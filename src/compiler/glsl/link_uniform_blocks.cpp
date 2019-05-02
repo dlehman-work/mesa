@@ -446,6 +446,8 @@ link_uniform_blocks(void *mem_ctx,
       block_size.process(b->type->without_array(), "",
                          ctx->Const.UseSTD430AsDefaultPacking);
 
+printf("%s: %d: block_size.num_active_uniforms %u\n", __FUNCTION__, __LINE__, block_size.num_active_uniforms);
+
       if (b->array != NULL) {
          unsigned aoa_size = b->type->arrays_of_arrays_size();
          if (b->is_shader_storage) {
