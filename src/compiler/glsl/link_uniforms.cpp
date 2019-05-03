@@ -331,7 +331,7 @@ private:
    virtual void visit_field(const glsl_type *type, const char *name,
                             bool /* row_major */,
                             const glsl_type * /* record_type */,
-                            const enum glsl_interface_packing packing,
+                            const enum glsl_interface_packing,
                             bool /* last_field */)
    {
       assert(!type->without_array()->is_struct());
@@ -389,7 +389,6 @@ private:
        * uniforms.
        */
       this->num_active_uniforms++;
-printf("%s: %d: name %s packing %d num_active_uniforms %u\n", __FUNCTION__, __LINE__, name, packing, num_active_uniforms);
 
       if(!is_gl_identifier(name) && !is_shader_storage && !is_buffer_block)
          this->num_values += values;
@@ -1518,7 +1517,6 @@ link_assign_uniform_locations(struct gl_shader_program *prog,
 
    prog->data->NumUniformStorage = uniform_size.num_active_uniforms;
    prog->data->NumHiddenUniforms = uniform_size.num_hidden_uniforms;
-printf("%s: %d: num_active_uniforms %u num_hidden_uniforms %u\n", __FUNCTION__, __LINE__, uniform_size.num_active_uniforms, uniform_size.num_hidden_uniforms);
 
    /* assign hidden uniforms a slot id */
    hiddenUniforms->iterate(assign_hidden_uniform_slot_id, &uniform_size);
