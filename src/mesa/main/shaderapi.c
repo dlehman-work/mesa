@@ -2046,6 +2046,11 @@ use_program(GLuint program, bool no_error)
    struct gl_shader_program *shProg = NULL;
 
 printf("%s: %d: program %u\n", __FUNCTION__, __LINE__, program); fflush(stdout);
+if (program == 102)
+{
+    printf("%s: %d: waiting \n", __FUNCTION__, __LINE__); fflush(stdout);
+    getchar();
+}
    if (MESA_VERBOSE & VERBOSE_API)
       _mesa_debug(ctx, "glUseProgram %u\n", program);
 

@@ -1539,6 +1539,7 @@ fetch_src_file_channel(const struct tgsi_exec_machine *mach,
 if (!mach->Consts[index2D->i[i]])
 {
     printf("%s: %d: mach %p index2D->i[%d] = %d\n", __FUNCTION__, __LINE__, mach, i, index2D->i[i]);
+    printf("%s: %d: mach %p index->i[%d] = %d\n", __FUNCTION__, __LINE__, mach, i, index->i[i]);
     printf("%s: %d: waiting\n", __FUNCTION__, __LINE__);
     fflush(stdout);
     getchar();
