@@ -214,7 +214,6 @@ st_bind_ubos(struct st_context *st, struct gl_program *prog,
 
       cb.buffer = st_obj->buffer;
 
-printf("%s: %d: st %p ctx %p [%d/%d] = %p\n", __FUNCTION__, __LINE__, st, st->ctx, i, prog->info.num_ubos, cb.buffer); fflush(stdout);
       if (cb.buffer) {
          cb.buffer_offset = binding->Offset;
          cb.buffer_size = cb.buffer->width0 - binding->Offset;
@@ -240,7 +239,6 @@ st_bind_vs_ubos(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX];
 
-printf("%s: %d: st %p\n", __FUNCTION__, __LINE__, st); fflush(stdout);
    st_bind_ubos(st, prog, PIPE_SHADER_VERTEX);
 }
 
