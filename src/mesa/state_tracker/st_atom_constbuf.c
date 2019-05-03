@@ -119,7 +119,6 @@ st_upload_constants(struct st_context *st, struct gl_program *prog)
       cso_set_constant_buffer(st->cso_context, shader_type, 0, &cb);
       pipe_resource_reference(&cb.buffer, NULL);
 
-printf("%s: %d: shader %d %p (size %u)\n", __FUNCTION__, __LINE__, shader_type, params->ParameterValues, paramBytes);
       st->state.constants[shader_type].ptr = params->ParameterValues;
       st->state.constants[shader_type].size = paramBytes;
    }
