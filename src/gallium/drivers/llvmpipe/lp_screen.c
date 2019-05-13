@@ -214,7 +214,7 @@ llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_QUADS_FOLLOW_PROVOKING_VERTEX_CONVENTION:
       return 0;
    case PIPE_CAP_COMPUTE:
-      return 0;
+      return 1;
    case PIPE_CAP_USER_VERTEX_BUFFERS:
       return 1;
    case PIPE_CAP_VERTEX_BUFFER_OFFSET_4BYTE_ALIGNED_ONLY:
@@ -403,6 +403,7 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
       }
    case PIPE_SHADER_VERTEX:
    case PIPE_SHADER_GEOMETRY:
+   case PIPE_SHADER_COMPUTE:
       switch (param) {
       case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
          /* At this time, the draw module and llvmpipe driver only
@@ -420,6 +421,8 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
             return 0;
       case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
          return 16;
+      case PIPE_SHADER_CAP_SUPPORTED_IRS:
+         return 1 << PIPE_SHADER_IR_TGSI;
       default:
          return draw_get_shader_param(shader, param);
       }
@@ -654,6 +657,59 @@ llvmpipe_get_timestamp(struct pipe_screen *_screen)
    return os_time_get_nano();
 }
 
+static int
+llvmpipe_get_compute_param(struct pipe_screen *_screen,
+                           enum pipe_shader_ir ir_type,
+                           enum pipe_compute_cap param,
+                           void *ret)
+{
+   switch (param) {
+   case PIPE_COMPUTE_CAP_IR_TARGET:
+      return 0;
+   case PIPE_COMPUTE_CAP_MAX_GRID_SIZE:
+      if (ret) {
+         uint64_t *grid_size = ret;
+         grid_size[0] = 65535;
+         grid_size[1] = 65535;
+         grid_size[2] = 65535;
+      }
+      return 3 * sizeof(uint64_t) ;
+   case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
+      if (ret) {
+         uint64_t *block_size = ret;
+         block_size[0] = 1024;
+         block_size[1] = 1024;
+         block_size[2] = 1024;
+      }
+      return 3 * sizeof(uint64_t);
+   case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
+      if (ret) {
+         uint64_t *max_threads_per_block = ret;
+         *max_threads_per_block = 1024;
+      }
+      return sizeof(uint64_t);
+   case PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE:
+      if (ret) {
+         uint64_t *max_local_size = ret;
+         *max_local_size = 32768;
+      }
+      return sizeof(uint64_t);
+   case PIPE_COMPUTE_CAP_GRID_DIMENSION:
+   case PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE:
+   case PIPE_COMPUTE_CAP_MAX_PRIVATE_SIZE:
+   case PIPE_COMPUTE_CAP_MAX_INPUT_SIZE:
+   case PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE:
+   case PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY:
+   case PIPE_COMPUTE_CAP_MAX_COMPUTE_UNITS:
+   case PIPE_COMPUTE_CAP_IMAGES_SUPPORTED:
+   case PIPE_COMPUTE_CAP_SUBGROUP_SIZE:
+   case PIPE_COMPUTE_CAP_ADDRESS_BITS:
+   case PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK:
+      break;
+   }
+   return 0;
+}
+
 /**
  * Create a new pipe_screen object
  * Note: we're not presently subclassing pipe_screen (no llvmpipe_screen).
@@ -698,6 +754,8 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->base.fence_finish = llvmpipe_fence_finish;
 
    screen->base.get_timestamp = llvmpipe_get_timestamp;
+
+   screen->base.get_compute_param = llvmpipe_get_compute_param;
 
    llvmpipe_init_screen_resource_funcs(&screen->base);
 
