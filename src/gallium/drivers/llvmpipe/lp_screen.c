@@ -422,6 +422,8 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
          return 4096;
       case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
          return 16;
+      case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
+         return 16;
       default:
          return draw_get_shader_param(shader, param);
       }
