@@ -398,6 +398,8 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
    {
    case PIPE_SHADER_FRAGMENT:
       switch (param) {
+      case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
+         return PIPE_MAX_SHADER_BUFFERS;
       default:
          return gallivm_get_shader_param(param);
       }
@@ -423,6 +425,8 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
          return 16;
       case PIPE_SHADER_CAP_SUPPORTED_IRS:
          return 1 << PIPE_SHADER_IR_TGSI;
+      case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
+         return PIPE_MAX_SHADER_BUFFERS;
       default:
          return draw_get_shader_param(shader, param);
       }
