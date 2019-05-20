@@ -3356,6 +3356,16 @@ lod_emit(
                FALSE, LP_SAMPLER_OP_LODQ, emit_data->output);
 }
 
+static void
+load_emit(
+   const struct lp_build_tgsi_action * action,
+   struct lp_build_tgsi_context * bld_base,
+   struct lp_build_emit_data * emit_data)
+{
+   struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
+   printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+}
+
 static LLVMValueRef
 mask_vec(struct lp_build_tgsi_context *bld_base)
 {
@@ -3968,6 +3978,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.bld_base.op_actions[TGSI_OPCODE_SVIEWINFO].emit = sviewinfo_emit;
    bld.bld_base.op_actions[TGSI_OPCODE_LOD].emit = lod_emit;
 
+   bld.bld_base.op_actions[TGSI_OPCODE_LOAD].emit = load_emit;
 
    if (gs_iface) {
       /* There's no specific value for this because it should always
