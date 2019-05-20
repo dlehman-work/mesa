@@ -139,8 +139,25 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
                             const struct pipe_shader_buffer *buffers,
                             unsigned writable_bitmask)
 {
+   struct llvmpipe_context *llvmpipe = llvmpipe_context( pipe );
+   unsigned i;
+   assert(shader < PIPE_SHADER_TYPES);
+   assert(start + num <= ARRAY_SIZE(llvmpipe->buffers[shader]));
+
    printf("%s: %d: stub (%d, %d, %d, 0x%x)\n", __FUNCTION__, __LINE__,
          shader, start, num, writable_bitmask);
+   for (i = 0; i < num; i++) {
+      int idx = start + i;
+
+      if (buffers) {
+         pipe_resource_reference(&llvmpipe->buffers[shader][idx].buffer, buffers[i].buffer);
+         llvmpipe->buffers[shader][idx] = buffers[i];
+      }
+      else {
+         pipe_resource_reference(&llvmpipe->buffers[shader][idx].buffer, NULL);
+         memset(&llvmpipe->buffers[shader][idx], 0, sizeof(struct pipe_shader_buffer));
+      }
+   }
 }
 
 struct pipe_context *
