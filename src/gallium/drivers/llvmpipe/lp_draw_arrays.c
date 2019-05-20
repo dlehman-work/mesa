@@ -56,7 +56,7 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info)
    struct llvmpipe_context *lp = llvmpipe_context(pipe);
    struct draw_context *draw = lp->draw;
    const void *mapped_indices = NULL;
-   unsigned i;
+   unsigned i, j;
 
    if (!llvmpipe_check_render_cond(lp))
       return;
@@ -97,6 +97,16 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info)
       draw_set_indexes(draw,
                        (ubyte *) mapped_indices,
                        info->index_size, available_space);
+   }
+
+   /* Shader storage buffer objects */
+   for (i = 0; i < PIPE_MAX_SHADER_BUFFERS; i++) {
+      if (lp->buffers[PIPE_SHADER_VERTEX][i].buffer) {
+         draw_set_ssbo(draw, PIPE_SHADER_VERTEX, i,
+                       llvmpipe_resource_data(lp->buffers[PIPE_SHADER_VERTEX][i].buffer),
+                       lp->buffers[PIPE_SHADER_VERTEX][i].buffer_offset,
+                       lp->buffers[PIPE_SHADER_VERTEX][i].buffer_size);
+      }
    }
 
    llvmpipe_prepare_vertex_sampling(lp,

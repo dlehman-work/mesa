@@ -226,6 +226,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
                   const struct lp_bld_tgsi_system_values *system_values,
                   const LLVMValueRef (*inputs)[4],
                   LLVMValueRef (*outputs)[4],
+                  LLVMValueRef ssbo_ptr,
                   LLVMValueRef context_ptr,
                   LLVMValueRef thread_data_ptr,
                   const struct lp_build_sampler_soa *sampler,
@@ -459,6 +460,7 @@ struct lp_build_tgsi_soa_context
    LLVMValueRef immediates[LP_MAX_INLINED_IMMEDIATES][TGSI_NUM_CHANNELS];
    LLVMValueRef temps[LP_MAX_INLINED_TEMPS][TGSI_NUM_CHANNELS];
    LLVMValueRef addr[LP_MAX_TGSI_ADDRS][TGSI_NUM_CHANNELS];
+   LLVMValueRef buffers[LP_MAX_TGSI_SHADER_BUFFERS];
 
    /* We allocate/use this array of temps if (1 << TGSI_FILE_TEMPORARY) is
     * set in the indirect_files field.
@@ -483,6 +485,7 @@ struct lp_build_tgsi_soa_context
     */
    LLVMValueRef imms_array;
 
+   LLVMValueRef ssbo_array;
 
    struct lp_bld_tgsi_system_values system_values;
 

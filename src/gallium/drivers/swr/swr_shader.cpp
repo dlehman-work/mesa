@@ -689,6 +689,7 @@ BuilderSWR::CompileGS(struct swr_context *ctx, swr_jit_gs_key &key)
                      &system_values,
                      inputs,
                      outputs,
+                     NULL,
                      wrap(hPrivateData), // (sampler context)
                      NULL, // thread data
                      sampler,
@@ -840,6 +841,7 @@ BuilderSWR::CompileVS(struct swr_context *ctx, swr_jit_vs_key &key)
                      &system_values,
                      inputs,
                      outputs,
+                     NULL,
                      wrap(hPrivateData), // (sampler context)
                      NULL, // thread data
                      sampler, // sampler
@@ -1330,6 +1332,7 @@ BuilderSWR::CompileFS(struct swr_context *ctx, swr_jit_fs_key &key)
                      &system_values,
                      inputs,
                      outputs,
+                     NULL,
                      wrap(hPrivateData),
                      NULL, // thread data
                      sampler, // sampler

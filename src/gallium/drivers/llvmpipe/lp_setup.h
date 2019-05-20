@@ -126,6 +126,11 @@ lp_setup_set_viewports(struct lp_setup_context *setup,
                        const struct pipe_viewport_state *viewports);
 
 void
+lp_setup_set_fragment_shader_buffers(struct lp_setup_context *setup,
+                                     unsigned num_buffers,
+                                     struct pipe_shader_buffer *buffers);
+
+void
 lp_setup_set_fragment_sampler_views(struct lp_setup_context *setup,
                                     unsigned num,
                                     struct pipe_sampler_view **views);

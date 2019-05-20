@@ -707,7 +707,7 @@ u2f_emit(
    struct lp_build_emit_data * emit_data)
 {
    emit_data->output[emit_data->chan] =
-      LLVMBuildUIToFP(bld_base->base.gallivm->builder,
+        LLVMBuildUIToFP(bld_base->base.gallivm->builder,
                       emit_data->args[0],
                       bld_base->base.vec_type, "");
 }

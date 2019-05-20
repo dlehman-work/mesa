@@ -66,6 +66,7 @@
 #include "lp_bld_printf.h"
 #include "lp_bld_sample.h"
 #include "lp_bld_struct.h"
+#include "lp_bld_misc.h"
 
 /* SM 4.0 says that subroutines can nest 32 deep and 
  * we need one more for our main function */
@@ -1724,6 +1725,24 @@ emit_fetch_system_value(
    return res;
 }
 
+static LLVMValueRef
+emit_fetch_buffer(
+   struct lp_build_tgsi_context * bld_base,
+   const struct tgsi_full_src_register * reg,
+   enum tgsi_opcode_type stype,
+   unsigned swizzle_in)
+{
+   struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
+   struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   const struct tgsi_shader_info *info = bld->bld_base.info;
+   LLVMBuilderRef builder = gallivm->builder;
+
+   printf("%s: %d (STUB): [%d] %p buffers %p\n", __FUNCTION__, __LINE__, reg->Register.Index,
+          bld->buffers[reg->Register.Index], bld->buffers[0]); fflush(stdout);
+   /* TODO: LLVMBuildGEP [LLVMBuildBitCast] */
+   return bld->bld_base.uint_bld.undef;
+}
+
 /**
  * Register fetch with derivatives.
  */
@@ -3356,6 +3375,164 @@ lod_emit(
                FALSE, LP_SAMPLER_OP_LODQ, emit_data->output);
 }
 
+static void
+load_emit(
+   const struct lp_build_tgsi_action * action,
+   struct lp_build_tgsi_context * bld_base,
+   struct lp_build_emit_data * emit_data)
+{
+   struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
+   struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   LLVMBuilderRef builder = gallivm->builder;
+
+   if (emit_data->inst->Texture.Texture != TGSI_TEXTURE_BUFFER) {
+      /* TODO: assert(0 && "LOAD doesn't support textures\n"); */
+      return;
+   }
+
+   /* TODO: null ssbo_array means none declared for this stage */
+   if (!bld->ssbo_array) {
+      /* TODO: assert(0 && "LOAD for non-existent ssbo\n"); */
+      return;
+   }
+
+   /* TODO: use i32 instead of i8 for base type? */
+   /* TODO: check for NULL base, check bounds, PIPE_MAX_SHADER_BUFFERS */
+
+   LLVMValueRef bufidxv = lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
+                                                emit_data->inst->Src[0].Register.Index);
+   LLVMValueRef valid = lp_build_cmp(&bld_base->uint_bld, PIPE_FUNC_LESS, bufidxv,
+                                     lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
+                                                            PIPE_MAX_SHADER_BUFFERS));
+   valid = lp_build_any_true_range(&bld_base->uint_bld, bld_base->uint_bld.type.length, valid);
+
+   unsigned i, nchan = util_last_bit(emit_data->inst->Dst[0].Register.WriteMask);
+   LLVMValueRef nchanval = lp_build_const_int32(gallivm, nchan);
+   LLVMValueRef temp = lp_build_array_alloca(gallivm, bld_base->uint_bld.vec_type, nchanval, "");
+
+   struct lp_build_if_state if_ctx;
+   lp_build_if(&if_ctx, gallivm, valid);
+   {
+      LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
+      LLVMValueRef bufidx = LLVMBuildExtractElement(builder, bufidxv, zero, "");
+      LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
+      
+      LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+      LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+      LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+
+      /* TODO: also check coord <= size */
+      LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
+                                    LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");
+      LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
+      ssbo_valid = LLVMBuildAnd(builder, ssbo_valid, ssbo_off_valid, "");
+   
+      LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                                 emit_data->inst->Src[1].Register.SwizzleX);
+      coord = LLVMBuildExtractElement(builder, coord, zero, ""); /* TODO: ensure unsigned so that -1 gets skipped */      
+      LLVMValueRef coord_valid;
+      // LLVMValueRef coord_valid = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned) * nchan), "");
+      coord_valid = LLVMBuildICmp(builder, LLVMIntULT, coord, ssbo_size, "");
+      ssbo_valid =  LLVMBuildAnd(builder, ssbo_valid, coord_valid, "");
+      coord_valid = LLVMBuildICmp(builder, LLVMIntSGE, coord, zero, "");
+      ssbo_valid =  LLVMBuildAnd(builder, ssbo_valid, coord_valid, "");
+
+      LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+
+      struct lp_build_if_state if_valid;
+      lp_build_if(&if_valid, gallivm, ssbo_valid);
+      {
+         coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
+         for (i = 0; i < nchan; i++)
+         {
+            LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+            LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+
+            LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
+            LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
+            LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
+            LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
+
+            LLVMBuildStore(builder, ssbo_vec, ptr);
+            coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
+         }
+      }
+      lp_build_else(&if_valid);
+          for (i = 0; i < nchan; i++)
+          {
+             LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+             LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+             LLVMBuildStore(builder, bld_base->uint_bld.zero, ptr);
+          }
+      lp_build_endif(&if_valid);
+   }
+   lp_build_else(&if_ctx);
+      for (i = 0; i < nchan; i++)
+      {
+         LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+         LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+         LLVMBuildStore(builder, bld_base->uint_bld.zero, ptr);
+      }
+   lp_build_endif(&if_ctx);
+
+   for (i = 0; i < nchan; i++)
+   {
+      // TODO: lp_build_array_get(gallivm, temp, lp_build_const_int32(gallivm, i)); ??? 
+      // TODO: cast to <8 x float> * ???
+      LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+      LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+      emit_data->output[i] = LLVMBuildLoad(builder, ptr, "");
+   }
+}
+
+static void
+store_emit(
+   const struct lp_build_tgsi_action * action,
+   struct lp_build_tgsi_context * bld_base,
+   struct lp_build_emit_data * emit_data)
+{
+   struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
+   struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   LLVMBuilderRef builder = gallivm->builder;
+
+   if (emit_data->inst->Texture.Texture != TGSI_TEXTURE_BUFFER) {
+      /* TODO: assert(0 && "LOAD doesn't support textures\n"); */
+      return;
+   }
+
+   /* TODO: null ssbo_array means none declared for this stage */
+   if (!bld->ssbo_array) {
+      /* TODO: assert(0 && "STORE for non-existent ssbo\n"); */
+      return;
+   }
+   printf("%s: chan %d nchannels %u src[0] %d src[1] %d\n", __FUNCTION__,
+      emit_data->chan,
+      util_last_bit(emit_data->inst->Dst[0].Register.WriteMask),
+      emit_data->inst->Src[0].Register.Index,
+      emit_data->inst->Src[1].Register.Index);
+
+   /* TODO: null base check, size check */
+   LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Dst[0].Register.Index);
+   LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
+   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+
+   LLVMValueRef addr_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 0,
+                                               emit_data->inst->Src[0].Register.SwizzleX);
+   LLVMValueRef addr = LLVMBuildExtractElement(builder, addr_vec, lp_build_const_int32(gallivm, 0), "addr");
+
+   LLVMValueRef val_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                                              emit_data->inst->Src[1].Register.SwizzleX);
+   LLVMValueRef val = LLVMBuildExtractElement(builder, val_vec, lp_build_const_int32(gallivm, 0), "val");
+
+   LLVMTypeRef i32t = LLVMIntTypeInContext(gallivm->context, 32);
+   LLVMTypeRef i32ptr = LLVMPointerType(i32t, 0); /* 4B granularity */
+   ssbo_off = LLVMBuildAdd(builder, ssbo_off, addr, "");
+   LLVMValueRef out_ptr = LLVMBuildGEP(builder, ssbo_base, &ssbo_off, 1, "out");
+   LLVMValueRef out32_ptr = LLVMBuildBitCast(builder, out_ptr, i32ptr, "out32");
+   LLVMBuildStore(builder, val, out32_ptr);
+}
+
 static LLVMValueRef
 mask_vec(struct lp_build_tgsi_context *bld_base)
 {
@@ -3834,6 +4011,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
                   const struct lp_bld_tgsi_system_values *system_values,
                   const LLVMValueRef (*inputs)[TGSI_NUM_CHANNELS],
                   LLVMValueRef (*outputs)[TGSI_NUM_CHANNELS],
+                  LLVMValueRef ssbo_ptr,
                   LLVMValueRef context_ptr,
                   LLVMValueRef thread_data_ptr,
                   const struct lp_build_sampler_soa *sampler,
@@ -3884,6 +4062,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.indirect_files = info->indirect_files;
    bld.context_ptr = context_ptr;
    bld.thread_data_ptr = thread_data_ptr;
+   bld.ssbo_array = ssbo_ptr;
 
    /*
     * If the number of temporaries is rather large then we just
@@ -3912,6 +4091,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_INPUT] = emit_fetch_input;
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_TEMPORARY] = emit_fetch_temporary;
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_SYSTEM_VALUE] = emit_fetch_system_value;
+   bld.bld_base.emit_fetch_funcs[TGSI_FILE_BUFFER] = emit_fetch_buffer;
    bld.bld_base.emit_store = emit_store;
 
    bld.bld_base.emit_declaration = lp_emit_declaration_soa;
@@ -3968,6 +4148,8 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.bld_base.op_actions[TGSI_OPCODE_SVIEWINFO].emit = sviewinfo_emit;
    bld.bld_base.op_actions[TGSI_OPCODE_LOD].emit = lod_emit;
 
+   bld.bld_base.op_actions[TGSI_OPCODE_LOAD].emit = load_emit;
+   bld.bld_base.op_actions[TGSI_OPCODE_STORE].emit = store_emit;
 
    if (gs_iface) {
       /* There's no specific value for this because it should always

@@ -79,6 +79,14 @@ struct draw_jit_sampler
 };
 
 
+struct draw_jit_buffer
+{
+   void *base;
+   uint32_t offset;
+   uint32_t size;
+};
+
+
 enum {
    DRAW_JIT_TEXTURE_WIDTH = 0,
    DRAW_JIT_TEXTURE_HEIGHT,
@@ -103,10 +111,19 @@ enum {
 
 
 enum {
+   DRAW_JIT_BUFFER_BASE = 0,
+   DRAW_JIT_BUFFER_OFFSET,
+   DRAW_JIT_BUFFER_SIZE,
+   DRAW_JIT_BUFFER_NUM_FIELDS
+};
+
+
+enum {
    DRAW_JIT_VERTEX_VERTEX_ID = 0,
    DRAW_JIT_VERTEX_CLIP_POS,
    DRAW_JIT_VERTEX_DATA
 };
+
 
 /**
  * This structure is passed directly to the generated vertex shader.
@@ -128,6 +145,7 @@ struct draw_jit_context
 
    struct draw_jit_texture textures[PIPE_MAX_SHADER_SAMPLER_VIEWS];
    struct draw_jit_sampler samplers[PIPE_MAX_SAMPLERS];
+   struct draw_jit_buffer shader_buffers[PIPE_MAX_SHADER_BUFFERS];
 };
 
 enum {
@@ -137,6 +155,7 @@ enum {
    DRAW_JIT_CTX_VIEWPORT             = 3,
    DRAW_JIT_CTX_TEXTURES             = 4,
    DRAW_JIT_CTX_SAMPLERS             = 5,
+   DRAW_JIT_CTX_SHADER_BUFFERS       = 6,
    DRAW_JIT_CTX_NUM_FIELDS
 };
 
@@ -157,6 +176,18 @@ enum {
 
 #define draw_jit_context_samplers(_gallivm, _ptr) \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_CTX_SAMPLERS, "samplers")
+
+#define draw_jit_context_shader_buffers(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_CTX_SHADER_BUFFERS, "shader_buffers")
+
+#define draw_jit_buffer_base(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_BASE, "base")
+
+#define draw_jit_buffer_offset(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_OFFSET, "offset")
+
+#define draw_jit_buffer_size(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_SIZE, "size")
 
 #define draw_jit_header_id(_gallivm, _ptr)              \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_VERTEX_VERTEX_ID, "id")
@@ -521,5 +552,12 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
                              uint32_t row_stride[PIPE_MAX_TEXTURE_LEVELS],
                              uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS],
                              uint32_t mip_offsets[PIPE_MAX_TEXTURE_LEVELS]);
+
+void
+draw_llvm_set_ssbo(struct draw_context *draw,
+                   enum pipe_shader_type shader_stage,
+                   unsigned index,
+                   void *base,
+                   uint32_t offset, uint32_t size);
 
 #endif

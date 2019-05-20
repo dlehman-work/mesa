@@ -97,6 +97,7 @@
 
 #include "lp_bld_misc.h"
 #include "lp_bld_debug.h"
+#include "lp_bld_const.h"
 
 namespace {
 
@@ -803,4 +804,25 @@ lp_is_function(LLVMValueRef v)
 #else
 	return llvm::isa<llvm::Function>(llvm::unwrap(v));
 #endif
+}
+
+extern "C" LLVMValueRef
+lp_build_hang(struct gallivm_state *gallivm)
+{
+   LLVMBuilderRef builder = gallivm->builder;
+   LLVMContextRef context = gallivm->context;
+   LLVMValueRef func_select;
+   LLVMValueRef args[5];
+   LLVMTypeRef select_type;
+
+   select_type = LLVMFunctionType(LLVMInt32TypeInContext(context), NULL, 0, 1);
+   func_select = lp_build_const_int_pointer(gallivm, func_to_pointer((func_pointer)select));
+   func_select = LLVMBuildBitCast(builder, func_select, LLVMPointerType(select_type, 0), "select");
+
+   args[0] = lp_build_const_int32(gallivm, 0);
+   args[1] =
+   args[2] =
+   args[3] =
+   args[4] = LLVMConstPointerNull(LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 8), 0));
+   return LLVMBuildCall(builder, func_select, args, ARRAY_SIZE(args), "");
 }

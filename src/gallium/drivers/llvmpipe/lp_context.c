@@ -131,6 +131,33 @@ llvmpipe_render_condition(struct pipe_context *pipe,
    llvmpipe->render_cond_cond = condition;
 }
 
+static void
+llvmpipe_set_shader_buffers(struct pipe_context *pipe,
+                            enum pipe_shader_type shader,
+                            unsigned start,
+                            unsigned num,
+                            const struct pipe_shader_buffer *buffers,
+                            unsigned writable_bitmask)
+{
+   struct llvmpipe_context *llvmpipe = llvmpipe_context( pipe );
+   unsigned i;
+   assert(shader < PIPE_SHADER_TYPES);
+   assert(start + num <= ARRAY_SIZE(llvmpipe->buffers[shader]));
+
+   for (i = 0; i < num; i++) {
+      int idx = start + i;
+
+      if (buffers && buffers[i].buffer) {
+         pipe_resource_reference(&llvmpipe->buffers[shader][idx].buffer, buffers[i].buffer);
+         llvmpipe->buffers[shader][idx] = buffers[i];
+      }
+      else {
+         pipe_resource_reference(&llvmpipe->buffers[shader][idx].buffer, NULL);
+         memset(&llvmpipe->buffers[shader][idx], 0, sizeof(struct pipe_shader_buffer));
+      }
+   }
+}
+
 struct pipe_context *
 llvmpipe_create_context(struct pipe_screen *screen, void *priv,
                         unsigned flags)
@@ -160,6 +187,7 @@ llvmpipe_create_context(struct pipe_screen *screen, void *priv,
    llvmpipe->pipe.flush = do_flush;
 
    llvmpipe->pipe.render_condition = llvmpipe_render_condition;
+   llvmpipe->pipe.set_shader_buffers = llvmpipe_set_shader_buffers;
 
    llvmpipe_init_blend_funcs(llvmpipe);
    llvmpipe_init_clip_funcs(llvmpipe);
