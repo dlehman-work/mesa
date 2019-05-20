@@ -131,6 +131,18 @@ llvmpipe_render_condition(struct pipe_context *pipe,
    llvmpipe->render_cond_cond = condition;
 }
 
+static void
+llvmpipe_set_shader_buffers(struct pipe_context *pipe,
+                            enum pipe_shader_type shader,
+                            unsigned start,
+                            unsigned num,
+                            const struct pipe_shader_buffer *buffers,
+                            unsigned writable_bitmask)
+{
+   printf("%s: %d: stub (%d, %d, %d, 0x%x)\n", __FUNCTION__, __LINE__,
+         shader, start, num, writable_bitmask);
+}
+
 struct pipe_context *
 llvmpipe_create_context(struct pipe_screen *screen, void *priv,
                         unsigned flags)
@@ -160,6 +172,7 @@ llvmpipe_create_context(struct pipe_screen *screen, void *priv,
    llvmpipe->pipe.flush = do_flush;
 
    llvmpipe->pipe.render_condition = llvmpipe_render_condition;
+   llvmpipe->pipe.set_shader_buffers = llvmpipe_set_shader_buffers;
 
    llvmpipe_init_blend_funcs(llvmpipe);
    llvmpipe_init_clip_funcs(llvmpipe);
