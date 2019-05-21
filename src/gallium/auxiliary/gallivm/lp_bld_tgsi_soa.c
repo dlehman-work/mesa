@@ -1724,6 +1724,22 @@ emit_fetch_system_value(
    return res;
 }
 
+static LLVMValueRef
+emit_fetch_buffer(
+   struct lp_build_tgsi_context * bld_base,
+   const struct tgsi_full_src_register * reg,
+   enum tgsi_opcode_type stype,
+   unsigned swizzle_in)
+{
+   struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
+   struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   const struct tgsi_shader_info *info = bld->bld_base.info;
+   LLVMBuilderRef builder = gallivm->builder;
+
+   printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   return bld->bld_base.uint_bld.undef;
+}
+
 /**
  * Register fetch with derivatives.
  */
@@ -3940,6 +3956,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_INPUT] = emit_fetch_input;
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_TEMPORARY] = emit_fetch_temporary;
    bld.bld_base.emit_fetch_funcs[TGSI_FILE_SYSTEM_VALUE] = emit_fetch_system_value;
+   bld.bld_base.emit_fetch_funcs[TGSI_FILE_BUFFER] = emit_fetch_buffer;
    bld.bld_base.emit_store = emit_store;
 
    bld.bld_base.emit_declaration = lp_emit_declaration_soa;
