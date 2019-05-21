@@ -326,7 +326,6 @@ llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
    case PIPE_CAP_MULTI_DRAW_INDIRECT_PARAMS:
    case PIPE_CAP_TGSI_FS_POSITION_IS_SYSVAL:
    case PIPE_CAP_TGSI_FS_FACE_IS_INTEGER_SYSVAL:
-   case PIPE_CAP_SHADER_BUFFER_OFFSET_ALIGNMENT:
    case PIPE_CAP_INVALIDATE_BUFFER:
    case PIPE_CAP_GENERATE_MIPMAP:
    case PIPE_CAP_STRING_MARKER:
@@ -383,6 +382,8 @@ llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
       return 32;
    case PIPE_CAP_MAX_SHADER_BUFFER_SIZE:
       return 1 << 27;
+   case PIPE_CAP_SHADER_BUFFER_OFFSET_ALIGNMENT:
+      return sizeof(void*);
 
    default:
       return u_pipe_screen_get_param_defaults(screen, param);
