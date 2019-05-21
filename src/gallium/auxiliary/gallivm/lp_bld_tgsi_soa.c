@@ -3364,6 +3364,24 @@ load_emit(
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
    printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   /* Syntax: LOAD dst, resource, address
+    * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]
+    *
+    * using provided integer address, LOAD fetches data from the specified buffer or texturing
+    * without any filtering
+    *
+    * the address is specified as a vector of unsigned integers.  if the address is out of range
+    * the result is unspecified
+    *
+    * only the first mipmap level of a resource can be read from using this instruction
+    *
+    * for 1d or 2d texture arrays, the array index is provided as an unsigned integer in address.y or
+    * address.z, respectively.  address.yz are ignored for buffers and 1d textures.  address.z is ignored 
+    * for 1d texture arrays and 2d textures.  address.w is always ignored
+    *
+    * a swizzle suffix may be added to the resource argument which will cause the resource data to be 
+    * swizzled accordingly
+    */
 }
 
 static LLVMValueRef
