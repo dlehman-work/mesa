@@ -79,6 +79,14 @@ struct draw_jit_sampler
 };
 
 
+struct draw_jit_buffer
+{
+   void *base;
+   uint32_t offset;
+   uint32_t size;
+};
+
+
 enum {
    DRAW_JIT_TEXTURE_WIDTH = 0,
    DRAW_JIT_TEXTURE_HEIGHT,
@@ -103,10 +111,19 @@ enum {
 
 
 enum {
+   DRAW_JIT_BUFFER_BUFFER = 0,
+   DRAW_JIT_BUFFER_OFFSET,
+   DRAW_JIT_BUFFER_SIZE,
+   DRAW_JIT_BUFFER_NUM_FIELDS
+};
+
+
+enum {
    DRAW_JIT_VERTEX_VERTEX_ID = 0,
    DRAW_JIT_VERTEX_CLIP_POS,
    DRAW_JIT_VERTEX_DATA
 };
+
 
 /**
  * This structure is passed directly to the generated vertex shader.
@@ -157,6 +174,15 @@ enum {
 
 #define draw_jit_context_samplers(_gallivm, _ptr) \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_CTX_SAMPLERS, "samplers")
+
+#define draw_jit_buffer_base(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_BASE, "base")
+
+#define draw_jit_buffer_offset(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_OFFSET, "offset")
+
+#define draw_jit_buffer_size(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_SIZE, "size")
 
 #define draw_jit_header_id(_gallivm, _ptr)              \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_VERTEX_VERTEX_ID, "id")
