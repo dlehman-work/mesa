@@ -1737,6 +1737,7 @@ emit_fetch_buffer(
    LLVMBuilderRef builder = gallivm->builder;
 
    printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   /* TODO: LLVMBuildGEP [LLVMBuildBitCast] */
    return bld->bld_base.uint_bld.undef;
 }
 
@@ -3380,6 +3381,7 @@ load_emit(
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
    printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   /* TODO: LLVMBuildLoad */
    /* Syntax: LOAD dst, resource, address
     * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]
     *
