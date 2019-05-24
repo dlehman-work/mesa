@@ -1736,7 +1736,8 @@ emit_fetch_buffer(
    const struct tgsi_shader_info *info = bld->bld_base.info;
    LLVMBuilderRef builder = gallivm->builder;
 
-   printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   printf("%s: %d (STUB): [%d] %p\n", __FUNCTION__, __LINE__, reg->Register.Index,
+          bld->buffers[reg->Register.Index]); fflush(stdout);
    /* TODO: LLVMBuildGEP [LLVMBuildBitCast] */
    return bld->bld_base.uint_bld.undef;
 }
@@ -3381,6 +3382,7 @@ load_emit(
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
    printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
+   lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
    /* TODO: LLVMBuildLoad */
    /* Syntax: LOAD dst, resource, address
     * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]

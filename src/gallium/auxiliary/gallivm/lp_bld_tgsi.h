@@ -459,6 +459,7 @@ struct lp_build_tgsi_soa_context
    LLVMValueRef immediates[LP_MAX_INLINED_IMMEDIATES][TGSI_NUM_CHANNELS];
    LLVMValueRef temps[LP_MAX_INLINED_TEMPS][TGSI_NUM_CHANNELS];
    LLVMValueRef addr[LP_MAX_TGSI_ADDRS][TGSI_NUM_CHANNELS];
+   LLVMValueRef buffers[LP_MAX_TGSI_SHADER_BUFFERS];
 
    /* We allocate/use this array of temps if (1 << TGSI_FILE_TEMPORARY) is
     * set in the indirect_files field.
