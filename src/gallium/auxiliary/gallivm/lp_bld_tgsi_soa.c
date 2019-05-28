@@ -1736,8 +1736,8 @@ emit_fetch_buffer(
    const struct tgsi_shader_info *info = bld->bld_base.info;
    LLVMBuilderRef builder = gallivm->builder;
 
-   printf("%s: %d (STUB): [%d] %p\n", __FUNCTION__, __LINE__, reg->Register.Index,
-          bld->buffers[reg->Register.Index]); fflush(stdout);
+   printf("%s: %d (STUB): [%d] %p buffers %p\n", __FUNCTION__, __LINE__, reg->Register.Index,
+          bld->buffers[reg->Register.Index], bld->buffers[0]); fflush(stdout);
    /* TODO: LLVMBuildGEP [LLVMBuildBitCast] */
    return bld->bld_base.uint_bld.undef;
 }
@@ -2980,6 +2980,14 @@ lp_emit_declaration_soa(
    }
       break;
 
+   case TGSI_FILE_BUFFER:
+   {
+      printf("%s: %d\n", __FUNCTION__, __LINE__);
+      // for (idx = first; idx <= last; ++idx) {
+      // lp_build_array_get(gallivm, bld->const_sizes_ptr, index2D);
+      bld->buffers[0] = (LLVMValueRef)0xdeadbeef;
+   }  break;
+
    default:
       /* don't need to declare other vars */
       break;
@@ -3381,8 +3389,17 @@ load_emit(
    struct lp_build_emit_data * emit_data)
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
-   printf("%s: %d (STUB)\n", __FUNCTION__, __LINE__); fflush(stdout);
-   lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
+   printf("%s: %d (STUB) buffer %p\n", __FUNCTION__, __LINE__,  bld->buffers[0]); fflush(stdout);
+   //lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
+   //DST: emit_data->inst->Dst.Register.File = 4
+   //DST: emit_data->inst->Dst.Register.Index = 6
+   //SRC0: emit_data->inst->Src[0].Regiser.File = 11
+   //SRC0: emit_data->inst->Src[0].Regiser.Index = 16
+   //SRC1: emit_data->inst->Src[1].Register.File = 4
+   //SRC1: emit_data->inst->Src[1].Register.Index = 6
+   //SRC1: emit_data->inst->Src[1].Register.Swizzle* = 0
+   // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
+
    /* TODO: LLVMBuildLoad */
    /* Syntax: LOAD dst, resource, address
     * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]
