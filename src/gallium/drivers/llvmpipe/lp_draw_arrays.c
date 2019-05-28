@@ -99,9 +99,11 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info)
                        info->index_size, available_space);
    }
 
+printf("%s: %d: lp %p\n", __FUNCTION__, __LINE__, lp); fflush(stdout);
    /* Shader storage buffer objects */
    for (i = 0; i < PIPE_MAX_SHADER_BUFFERS; i++) {
       if (lp->buffers[PIPE_SHADER_VERTEX][i].buffer) {
+printf("%s: %d: [%i]\n", __FUNCTION__, __LINE__, i); fflush(stdout);
          /* TODO: draw_set_ssbo(draw, PIPE_SHADER_VERTEX, base,
           *    lp->buffers[PIPE_SHADER_VERTEX][i].offset
           *    lp->buffers[PIPE_SHADER_VERTEX][i].size);
