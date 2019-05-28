@@ -187,6 +187,12 @@ draw_set_mapped_texture(struct draw_context *draw,
                         uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS],
                         uint32_t mip_offsets[PIPE_MAX_TEXTURE_LEVELS]);
 
+void
+draw_set_ssbo(struct draw_context *draw,
+              enum pipe_shader_type shader_stage,
+              void *base,
+              uint32_t offset,
+              uint32_t size);
 
 /*
  * Vertex shader functions

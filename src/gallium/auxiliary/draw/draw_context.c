@@ -1029,6 +1029,19 @@ draw_set_mapped_texture(struct draw_context *draw,
 #endif
 }
 
+void
+draw_set_ssbo(struct draw_context *draw,
+              enum pipe_shader_type shader_stage,
+              void *base,
+              uint32_t offset,
+              uint32_t size)
+{
+#ifdef HAVE_LLVM
+   if (draw->llvm)
+      draw_llvm_set_ssbo(draw, shader_stage, base, offset, size);
+#endif
+}
+
 /**
  * XXX: Results for PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS because there are two
  * different ways of setting textures, and drivers typically only support one.

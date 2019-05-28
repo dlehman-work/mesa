@@ -2156,6 +2156,16 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
 
 
 void
+draw_llvm_set_ssbo(struct draw_context *draw,
+                   enum pipe_shader_type shader_stage,
+                   void *base,
+                   uint32_t offset, uint32_t size)
+{
+    printf("%s: %d: stage %d base %p offset %u size %u\n", __FUNCTION__, __LINE__,
+        shader_stage, base, offset, size);
+}
+
+void
 draw_llvm_set_sampler_state(struct draw_context *draw, 
                             enum pipe_shader_type shader_type)
 {
