@@ -208,13 +208,47 @@ create_jit_sampler_type(struct gallivm_state *gallivm, const char *struct_name)
    return sampler_type;
 }
 
+/**
+ * Create LLVM type for struct draw_jit_buffer
+ */
+static LLVMTypeRef
+create_jit_shader_buffer_type(struct gallivm_state *gallivm, const char *struct_name)
+{
+   LLVMTargetDataRef target = gallivm->target;
+   LLVMTypeRef buffer_type;
+   LLVMTypeRef elem_types[DRAW_JIT_BUFFER_NUM_FIELDS];
+   LLVMTypeRef int32_type = LLVMInt32TypeInContext(gallivm->context);
+
+   elem_types[DRAW_JIT_BUFFER_BASE] =
+      LLVMPointerType(LLVMInt8TypeInContext(gallivm->context), 0);
+   elem_types[DRAW_JIT_BUFFER_OFFSET]  =
+   elem_types[DRAW_JIT_BUFFER_SIZE] = int32_type;
+
+   buffer_type = LLVMStructTypeInContext(gallivm->context, elem_types,
+                                         ARRAY_SIZE(elem_types), 0);
+
+   (void) target; /* silence unused var warning for non-debug build */
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_buffer, base,
+                          target, buffer_type,
+                          DRAW_JIT_BUFFER_BASE);
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_buffer, offset,
+                          target, buffer_type,
+                          DRAW_JIT_BUFFER_OFFSET);
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_buffer, size,
+                          target, buffer_type,
+                          DRAW_JIT_BUFFER_SIZE);
+
+   LP_CHECK_STRUCT_SIZE(struct draw_jit_buffer, target, buffer_type);
+
+   return buffer_type;
+}
 
 /**
  * Create LLVM type for struct draw_jit_context
  */
 static LLVMTypeRef
 create_jit_context_type(struct gallivm_state *gallivm,
-                        LLVMTypeRef texture_type, LLVMTypeRef sampler_type,
+                        LLVMTypeRef texture_type, LLVMTypeRef sampler_type, LLVMTypeRef shader_buffer_type,
                         const char *struct_name)
 {
    LLVMTargetDataRef target = gallivm->target;
@@ -234,6 +268,8 @@ create_jit_context_type(struct gallivm_state *gallivm,
                                  PIPE_MAX_SHADER_SAMPLER_VIEWS); /* textures */
    elem_types[5] = LLVMArrayType(sampler_type,
                                  PIPE_MAX_SAMPLERS); /* samplers */
+   elem_types[6] = LLVMArrayType(shader_buffer_type,
+                                 PIPE_MAX_SHADER_BUFFERS); /* shader buffers */
    context_type = LLVMStructTypeInContext(gallivm->context, elem_types,
                                           ARRAY_SIZE(elem_types), 0);
 
@@ -252,6 +288,9 @@ create_jit_context_type(struct gallivm_state *gallivm,
    LP_CHECK_MEMBER_OFFSET(struct draw_jit_context, samplers,
                           target, context_type,
                           DRAW_JIT_CTX_SAMPLERS);
+   LP_CHECK_MEMBER_OFFSET(struct draw_jit_context, shader_buffers,
+                          target, context_type,
+                          DRAW_JIT_CTX_SHADER_BUFFERS);
    LP_CHECK_STRUCT_SIZE(struct draw_jit_context,
                         target, context_type);
 
@@ -432,13 +471,14 @@ static void
 create_jit_types(struct draw_llvm_variant *variant)
 {
    struct gallivm_state *gallivm = variant->gallivm;
-   LLVMTypeRef texture_type, sampler_type, context_type, buffer_type,
+   LLVMTypeRef texture_type, sampler_type, shader_buffer_type, context_type, buffer_type,
       vb_type;
 
    texture_type = create_jit_texture_type(gallivm, "texture");
    sampler_type = create_jit_sampler_type(gallivm, "sampler");
+   shader_buffer_type = create_jit_shader_buffer_type(gallivm, "shader_buffer");
 
-   context_type = create_jit_context_type(gallivm, texture_type, sampler_type,
+   context_type = create_jit_context_type(gallivm, texture_type, sampler_type, shader_buffer_type,
                                           "draw_jit_context");
    variant->context_ptr_type = LLVMPointerType(context_type, 0);
 
