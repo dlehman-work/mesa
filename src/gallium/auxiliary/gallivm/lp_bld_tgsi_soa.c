@@ -3390,7 +3390,15 @@ load_emit(
    struct lp_build_emit_data * emit_data)
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
-   printf("%s: %d (STUB) buffer %p\n", __FUNCTION__, __LINE__,  bld->buffers[emit_data->inst->Src[0].Register.Index]); fflush(stdout);
+   struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   unsigned idx;
+
+   idx = emit_data->inst->Src[0].Register.Index;
+   LLVMValueRef index = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+   printf("%s: %d (STUB) [%u] %p index %p (%s)\n", __FUNCTION__, __LINE__,
+            idx, bld->buffers[idx],
+            index, LLVMPrintValueToString(index)); fflush(stdout);
+   // store val -> Dst
    //lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
    //DST: emit_data->inst->Dst.Register.File = 4
    //DST: emit_data->inst->Dst.Register.Index = 6
