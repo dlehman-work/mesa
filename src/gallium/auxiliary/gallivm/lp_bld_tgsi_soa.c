@@ -2982,10 +2982,11 @@ lp_emit_declaration_soa(
 
    case TGSI_FILE_BUFFER:
    {
-      printf("%s: %d\n", __FUNCTION__, __LINE__);
-      // for (idx = first; idx <= last; ++idx) {
-      // lp_build_array_get(gallivm, bld->const_sizes_ptr, index2D);
-      bld->buffers[0] = (LLVMValueRef)0xdeadbeef;
+      for (idx = first; idx <= last; ++idx) {
+         bld->buffers[idx] = (LLVMValueRef)0xdeadbeef;
+         printf("%s: %d: [%d]\n", __FUNCTION__, __LINE__, idx);
+         // bld->buffers[idx] = lp_build_pointer_get(gallivm->builder, bld->
+      }
    }  break;
 
    default:
@@ -3389,7 +3390,7 @@ load_emit(
    struct lp_build_emit_data * emit_data)
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
-   printf("%s: %d (STUB) buffer %p\n", __FUNCTION__, __LINE__,  bld->buffers[0]); fflush(stdout);
+   printf("%s: %d (STUB) buffer %p\n", __FUNCTION__, __LINE__,  bld->buffers[emit_data->inst->Src[0].Register.Index]); fflush(stdout);
    //lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
    //DST: emit_data->inst->Dst.Register.File = 4
    //DST: emit_data->inst->Dst.Register.Index = 6
