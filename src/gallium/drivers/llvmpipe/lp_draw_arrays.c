@@ -99,6 +99,16 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info)
                        info->index_size, available_space);
    }
 
+   /* Shader storage buffer objects */
+   for (i = 0; i < PIPE_MAX_SHADER_BUFFERS; i++) {
+      if (lp->buffers[PIPE_SHADER_VERTEX][i].buffer) {
+         /* TODO: draw_set_ssbo(draw, PIPE_SHADER_VERTEX, base,
+          *    lp->buffers[PIPE_SHADER_VERTEX][i].offset
+          *    lp->buffers[PIPE_SHADER_VERTEX][i].size);
+          */
+      }
+   }
+
    llvmpipe_prepare_vertex_sampling(lp,
                                     lp->num_sampler_views[PIPE_SHADER_VERTEX],
                                     lp->sampler_views[PIPE_SHADER_VERTEX]);
