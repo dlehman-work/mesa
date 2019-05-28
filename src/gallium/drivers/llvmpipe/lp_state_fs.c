@@ -478,7 +478,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
    lp_build_tgsi_soa(gallivm, tokens, type, &mask,
                      consts_ptr, num_consts_ptr, &system_values,
                      interp->inputs,
-                     outputs, context_ptr, thread_data_ptr,
+                     outputs, NULL, context_ptr, thread_data_ptr,
                      sampler, &shader->info.base, NULL);
 
    /* Alpha test */

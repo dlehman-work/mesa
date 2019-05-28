@@ -655,6 +655,8 @@ generate_vs(struct draw_llvm_variant *variant,
       draw_jit_context_vs_constants(variant->gallivm, context_ptr);
    LLVMValueRef num_consts_ptr =
       draw_jit_context_num_vs_constants(variant->gallivm, context_ptr);
+   LLVMValueRef ssbo_ptr =
+      draw_jit_context_shader_buffers(variant->gallivm, context_ptr);
 
    lp_build_tgsi_soa(variant->gallivm,
                      tokens,
@@ -665,6 +667,7 @@ generate_vs(struct draw_llvm_variant *variant,
                      system_values,
                      inputs,
                      outputs,
+                     ssbo_ptr,
                      context_ptr,
                      NULL,
                      draw_sampler,
@@ -2402,6 +2405,7 @@ draw_gs_llvm_generate(struct draw_llvm *llvm,
                      &system_values,
                      NULL,
                      outputs,
+                     NULL,
                      context_ptr,
                      NULL,
                      sampler,
