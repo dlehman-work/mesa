@@ -145,6 +145,7 @@ struct draw_jit_context
 
    struct draw_jit_texture textures[PIPE_MAX_SHADER_SAMPLER_VIEWS];
    struct draw_jit_sampler samplers[PIPE_MAX_SAMPLERS];
+   struct draw_jit_buffer shader_buffers[PIPE_MAX_SHADER_BUFFERS];
 };
 
 enum {
@@ -154,6 +155,7 @@ enum {
    DRAW_JIT_CTX_VIEWPORT             = 3,
    DRAW_JIT_CTX_TEXTURES             = 4,
    DRAW_JIT_CTX_SAMPLERS             = 5,
+   DRAW_JIT_CTX_SHADER_BUFFERS       = 6,
    DRAW_JIT_CTX_NUM_FIELDS
 };
 
@@ -174,6 +176,9 @@ enum {
 
 #define draw_jit_context_samplers(_gallivm, _ptr) \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_CTX_SAMPLERS, "samplers")
+
+#define draw_jit_context_shader_buffers(_gallivm, _ptr) \
+   lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_CTX_SHADER_BUFFERS, "shader_buffers")
 
 #define draw_jit_buffer_base(_gallivm, _ptr) \
    lp_build_struct_get_ptr(_gallivm, _ptr, DRAW_JIT_BUFFER_BASE, "base")
