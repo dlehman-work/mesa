@@ -3394,7 +3394,10 @@ load_emit(
    unsigned idx;
 
    idx = emit_data->inst->Src[0].Register.Index;
+   //emit_data->inst->Texture.Texture == TGSI_TEXTURE_BUFFER
+   //addr = pipe_context->transfer_map
    LLVMValueRef index = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+
    printf("%s: %d (STUB) [%u] %p index %p (%s)\n", __FUNCTION__, __LINE__,
             idx, bld->buffers[idx],
             index, LLVMPrintValueToString(index)); fflush(stdout);
@@ -3427,6 +3430,25 @@ load_emit(
     *
     * a swizzle suffix may be added to the resource argument which will cause the resource data to be 
     * swizzled accordingly
+    */
+   /*
+    * from softpipe (is this correct for textures?)
+
+    get format_desc for R32_UINT
+    write all zeroes if unit exceeds max shader buffers
+    get the pipe_resource from the pipe_shader_buffer
+    write all zeroes on failure
+
+    get the dimentions
+    for each of quad pixel
+        fill zero if masked off
+        fill zero if coord exceeds buffer size
+        write zero to rgba and continue if (fill zero)
+
+        ptr = resource ptr + offset + coord
+        for 0 to 4
+            fetch rgba uint using format desc from ptr
+            ptr += 4 // sizeof(r32_uint)
     */
 }
 
