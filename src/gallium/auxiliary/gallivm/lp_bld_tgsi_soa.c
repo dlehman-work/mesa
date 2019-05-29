@@ -3959,6 +3959,7 @@ lp_build_tgsi_soa(struct gallivm_state *gallivm,
    bld.indirect_files = info->indirect_files;
    bld.context_ptr = context_ptr;
    bld.thread_data_ptr = thread_data_ptr;
+   bld.ssbo_array = ssbo_ptr;
 
    /*
     * If the number of temporaries is rather large then we just

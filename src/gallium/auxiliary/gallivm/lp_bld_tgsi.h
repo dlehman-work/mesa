@@ -485,6 +485,7 @@ struct lp_build_tgsi_soa_context
     */
    LLVMValueRef imms_array;
 
+   LLVMValueRef ssbo_array;
 
    struct lp_bld_tgsi_system_values system_values;
 
