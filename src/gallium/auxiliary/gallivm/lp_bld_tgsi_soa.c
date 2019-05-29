@@ -3384,6 +3384,11 @@ load_emit(
    struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
    unsigned idx;
 
+   if (!bld->ssbo_array) {
+      /* assert(0 && "LOAD for non-existent ssbo\n"); */
+      return;
+   }
+
    idx = emit_data->inst->Src[0].Register.Index;
    //emit_data->inst->Texture.Texture == TGSI_TEXTURE_BUFFER
    //addr = pipe_context->transfer_map
