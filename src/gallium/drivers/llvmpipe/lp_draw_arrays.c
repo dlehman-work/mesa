@@ -105,10 +105,8 @@ printf("%s: %d: lp %p\n", __FUNCTION__, __LINE__, lp); fflush(stdout);
       for (j = 0; j < PIPE_MAX_SHADER_BUFFERS; j++) {
          if (lp->buffers[i][j].buffer) {
 printf("%s: %d: [%d][%d]\n", __FUNCTION__, __LINE__, i, j); fflush(stdout);
-            draw_set_ssbo(draw, PIPE_SHADER_VERTEX,
-                          llvmpipe_resource_data(lp->buffers[i][j].buffer),
-                          lp->buffers[i][j].buffer_offset,
-                          lp->buffers[i][j].buffer_size);
+            draw_set_ssbo(draw, i, llvmpipe_resource_data(lp->buffers[i][j].buffer),
+                          lp->buffers[i][j].buffer_offset, lp->buffers[i][j].buffer_size);
          }
       }
    }
