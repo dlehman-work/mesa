@@ -2980,15 +2980,6 @@ lp_emit_declaration_soa(
    }
       break;
 
-   case TGSI_FILE_BUFFER:
-   {
-      for (idx = first; idx <= last; ++idx) {
-         bld->buffers[idx] = (LLVMValueRef)0xdeadbeef;
-         printf("%s: %d: [%d]\n", __FUNCTION__, __LINE__, idx);
-         // bld->buffers[idx] = lp_build_pointer_get(gallivm->builder, bld->
-      }
-   }  break;
-
    default:
       /* don't need to declare other vars */
       break;
@@ -3398,8 +3389,8 @@ load_emit(
    //addr = pipe_context->transfer_map
    LLVMValueRef index = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
 
-   printf("%s: %d (STUB) [%u] %p index %p (%s)\n", __FUNCTION__, __LINE__,
-            idx, bld->buffers[idx],
+   printf("%s: %d (STUB) [%u] %p ssbo_array %p index %p (%s)\n", __FUNCTION__, __LINE__,
+            idx, bld->buffers[idx], bld->ssbo_array,
             index, LLVMPrintValueToString(index)); fflush(stdout);
    // store val -> Dst
    //lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
