@@ -3382,33 +3382,32 @@ load_emit(
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
    struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
-   unsigned idx;
 
-   if (!bld->ssbo_array) {
-      /* assert(0 && "LOAD for non-existent ssbo\n"); */
+   if (emit_data->inst->Texture.Texture != TGSI_TEXTURE_BUFFER) {
+      /* TODO: assert(0 && "LOAD doesn't support textures\n"); */
       return;
    }
 
-   idx = emit_data->inst->Src[0].Register.Index;
-   //emit_data->inst->Texture.Texture == TGSI_TEXTURE_BUFFER
-   //addr = pipe_context->transfer_map
-   LLVMValueRef index = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+/* TODO: non-null just means we're in the VERTEX shader
+ *       not necessarily that any buffers are set */
+   if (!bld->ssbo_array) {
+      /* TODO: assert(0 && "LOAD for non-existent ssbo\n"); */
+      return;
+   }
 
-   printf("%s: %d (STUB) [%u] %p ssbo_array %p index %p (%s)\n", __FUNCTION__, __LINE__,
-            idx, bld->buffers[idx], bld->ssbo_array,
-            index, LLVMPrintValueToString(index)); fflush(stdout);
+   LLVMValueRef index = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
+   LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+   LLVMValueRef indices[2];
+   indices[0] = lp_build_const_int32(gallivm, 0);
+   indices[1] = index;
+   //indices[2] = coord;
+   LLVMValueRef ssbo_ptr = LLVMBuildGEP(gallivm->builder, bld->ssbo_array, indices, ARRAY_SIZE(indices), "");
+   LLVMValueRef ssbo = LLVMBuildLoad(gallivm->builder, ssbo_ptr, "ssbo");
+   printf("%s: %d: ssbo %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo));
+
    // store val -> Dst
-   //lp_build_emit_fetch(bld_base, emit_data->inst, 0, 0);
-   //DST: emit_data->inst->Dst.Register.File = 4
-   //DST: emit_data->inst->Dst.Register.Index = 6
-   //SRC0: emit_data->inst->Src[0].Regiser.File = 11
-   //SRC0: emit_data->inst->Src[0].Regiser.Index = 16
-   //SRC1: emit_data->inst->Src[1].Register.File = 4
-   //SRC1: emit_data->inst->Src[1].Register.Index = 6
-   //SRC1: emit_data->inst->Src[1].Register.Swizzle* = 0
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
 
-   /* TODO: LLVMBuildLoad */
    /* Syntax: LOAD dst, resource, address
     * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]
     *
