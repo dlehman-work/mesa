@@ -1032,13 +1032,14 @@ draw_set_mapped_texture(struct draw_context *draw,
 void
 draw_set_ssbo(struct draw_context *draw,
               enum pipe_shader_type shader_stage,
+              unsigned index,
               void *base,
               uint32_t offset,
               uint32_t size)
 {
 #ifdef HAVE_LLVM
    if (draw->llvm)
-      draw_llvm_set_ssbo(draw, shader_stage, base, offset, size);
+      draw_llvm_set_ssbo(draw, shader_stage, index, base, offset, size);
 #endif
 }
 

@@ -556,6 +556,7 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
 void
 draw_llvm_set_ssbo(struct draw_context *draw,
                    enum pipe_shader_type shader_stage,
+                   unsigned index,
                    void *base,
                    uint32_t offset, uint32_t size);
 

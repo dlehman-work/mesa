@@ -2161,11 +2161,18 @@ draw_llvm_set_mapped_texture(struct draw_context *draw,
 void
 draw_llvm_set_ssbo(struct draw_context *draw,
                    enum pipe_shader_type shader_stage,
+                   unsigned index,
                    void *base,
                    uint32_t offset, uint32_t size)
 {
+    struct draw_jit_buffer *jit_ssbo;
     printf("%s: %d: stage %d base %p offset %u size %u\n", __FUNCTION__, __LINE__,
         shader_stage, base, offset, size);
+
+    jit_ssbo = &draw->llvm->jit_context.shader_buffers[index];
+    jit_ssbo->base = base;
+    jit_ssbo->offset = offset;
+    jit_ssbo->size = size;
 }
 
 void
