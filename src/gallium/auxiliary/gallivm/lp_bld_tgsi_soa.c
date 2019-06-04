@@ -3395,15 +3395,21 @@ load_emit(
       return;
    }
 
+   /* TODO: see src/gallium/drivers/radeonsi/si_shader_tgsi_mem.c: load_emit -> ac_build_buffer_load */
+
    LLVMValueRef index = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
    LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+
    LLVMValueRef indices[2];
    indices[0] = lp_build_const_int32(gallivm, 0);
    indices[1] = index;
    //indices[2] = coord;
    LLVMValueRef ssbo_ptr = LLVMBuildGEP(gallivm->builder, bld->ssbo_array, indices, ARRAY_SIZE(indices), "");
    LLVMValueRef ssbo = LLVMBuildLoad(gallivm->builder, ssbo_ptr, "ssbo");
-   printf("%s: %d: ssbo %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo));
+   printf("%s: %d: ssbo %s #channels %d coord %s\n", __FUNCTION__, __LINE__,
+            LLVMPrintValueToString(ssbo),   
+            util_last_bit(emit_data->inst->Dst[0].Register.WriteMask),
+            LLVMPrintValueToString(coord));
 
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
