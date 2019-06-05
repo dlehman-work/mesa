@@ -3382,34 +3382,44 @@ load_emit(
 {
    struct lp_build_tgsi_soa_context * bld = lp_soa_context(bld_base);
    struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
+   LLVMBuilderRef builder = gallivm->builder;
 
    if (emit_data->inst->Texture.Texture != TGSI_TEXTURE_BUFFER) {
       /* TODO: assert(0 && "LOAD doesn't support textures\n"); */
       return;
    }
 
-/* TODO: non-null just means we're in the VERTEX shader
- *       not necessarily that any buffers are set */
+   /* TODO: null ssbo_array means none declared for this stage */
    if (!bld->ssbo_array) {
       /* TODO: assert(0 && "LOAD for non-existent ssbo\n"); */
       return;
    }
 
-   /* TODO: see src/gallium/drivers/radeonsi/si_shader_tgsi_mem.c: load_emit -> ac_build_buffer_load */
+   LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
+   LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
 
-   LLVMValueRef index = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
+   LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
    LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+   coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
-   LLVMValueRef indices[2];
-   indices[0] = lp_build_const_int32(gallivm, 0);
-   indices[1] = index;
-   //indices[2] = coord;
-   LLVMValueRef ssbo_ptr = LLVMBuildGEP(gallivm->builder, bld->ssbo_array, indices, ARRAY_SIZE(indices), "");
-   LLVMValueRef ssbo = LLVMBuildLoad(gallivm->builder, ssbo_ptr, "ssbo");
-   printf("%s: %d: ssbo %s #channels %d coord %s\n", __FUNCTION__, __LINE__,
-            LLVMPrintValueToString(ssbo),   
-            util_last_bit(emit_data->inst->Dst[0].Register.WriteMask),
-            LLVMPrintValueToString(coord));
+   /* TODO: clip to size */
+   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+   coord = LLVMBuildAdd(builder, coord, ssbo_off, "ssbo.offset+coord");
+   LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[offset+coord]");
+   LLVMTypeRef val_type = LLVMTypeOf(emit_data->output[emit_data->chan]);
+   LLVMTypeRef val_ptr_type = LLVMPointerType(val_type, 0);
+   LLVMValueRef val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
+   LLVMValueRef val = LLVMBuildLoad(builder, val_ptr, "ssbo-val");
+   //emit_data->output[emit_data->chan] = val;
+
+   printf("%s: %d: coord     %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(coord));
+   printf("%s: %d: ssbo      %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo));
+   printf("%s: %d: ssbo_base %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo_base));
+   printf("%s: %d: ssbo_off  %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo_off));
+   printf("%s: %d: ptr       %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ptr));
+   printf("%s: %d: val[%d]   %s\n", __FUNCTION__, __LINE__, emit_data->chan, LLVMPrintValueToString(val_ptr));
+
 
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
