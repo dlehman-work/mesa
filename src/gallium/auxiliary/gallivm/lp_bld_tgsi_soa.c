@@ -3416,6 +3416,7 @@ load_emit(
    }
    else if (1)
    {
+//lp_build_vec_type(gallivm, lp_float32_vec4_type());
 //coord = zero; // TODO: avoids crash
       LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
       LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
@@ -3424,7 +3425,14 @@ load_emit(
       lp_build_print_value(gallivm, "ssbo_size", ssbo_size);
       lp_build_print_value(gallivm, "coord", coord);
 coord = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, 8), ""); // TODO: vector width
-      lp_build_print_value(gallivm, "coord", coord);
+      lp_build_print_value(gallivm, "coord (shifted)", coord);
+
+struct lp_build_context i32_bld;
+struct lp_type i32_type = lp_type_int(32);
+lp_build_context_init(&i32_bld, gallivm, i32_type);
+/* TODO: clamp or return zero? */
+coord = lp_build_clamp(&i32_bld, coord, zero, ssbo_size);
+      lp_build_print_value(gallivm, "coord (clamped)", coord);
 
       LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
       lp_build_print_value(gallivm, "ptr", ptr);
