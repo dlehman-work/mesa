@@ -3402,55 +3402,27 @@ load_emit(
    LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
-   /* TODO: clip to size */
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef val_ptr;
    LLVMTypeRef val_type = LLVMTypeOf(emit_data->output[emit_data->chan]);
    LLVMTypeRef val_ptr_type = LLVMPointerType(val_type, 0);
-   if (0)
-   {
-       LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
-       coord = LLVMBuildAdd(builder, coord, ssbo_off, "ssbo.offset+coord");
-       LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[offset+coord]");
-       LLVMValueRef val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
-   }
-   else if (1)
-   {
-//lp_build_vec_type(gallivm, lp_float32_vec4_type());
-//coord = zero; // TODO: avoids crash
-      LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
-      LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
-      lp_build_print_value(gallivm, "ssbo_base", ssbo_base);
-      lp_build_print_value(gallivm, "ssbo_off", ssbo_off);
-      lp_build_print_value(gallivm, "ssbo_size", ssbo_size);
-      lp_build_print_value(gallivm, "coord", coord);
-coord = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, 8), ""); // TODO: vector width
-      lp_build_print_value(gallivm, "coord (shifted)", coord);
 
-struct lp_build_context i32_bld;
-struct lp_type i32_type = lp_type_int(32);
-lp_build_context_init(&i32_bld, gallivm, i32_type);
-/* TODO: clamp or return zero? */
-coord = lp_build_clamp(&i32_bld, coord, zero, ssbo_size);
-      lp_build_print_value(gallivm, "coord (clamped)", coord);
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+   LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+   coord = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, 8), ""); // TODO: vector width
 
-      LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
-      lp_build_print_value(gallivm, "ptr", ptr);
-      val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
+   struct lp_build_context i32_bld;
+   struct lp_type i32_type = lp_type_int(32);
+   lp_build_context_init(&i32_bld, gallivm, i32_type);
+   /* TODO: clamp or return zero? */
+   coord = lp_build_clamp(&i32_bld, coord, zero, ssbo_size);
+   //lp_build_print_value(gallivm, "coord (clamped)", coord);
 
-printf("%s: %d: ssbo_base %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo_base));
-printf("%s: %d: coord     %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(coord));
-printf("%s: %d: val_ptr   %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(val_ptr));
-printf("%s: %d: ptr       %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ptr));
-   }
-   else
-        val_ptr = LLVMBuildBitCast(builder, ssbo_base, val_ptr_type, "");
+   LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
+   val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
+
    LLVMValueRef val = LLVMBuildLoad(builder, val_ptr, "ssbo-val");
    emit_data->output[emit_data->chan] = val;
-
-   // emit_data->output[emit_data->chan] = bld_base->base.zero;
-//   printf("%s: %d: val[%d] %s\n", __FUNCTION__, __LINE__, emit_data->chan, LLVMPrintValueToString(val));
-//   printf("%s: %d: zero    %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(bld_base->base.zero));
 
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
