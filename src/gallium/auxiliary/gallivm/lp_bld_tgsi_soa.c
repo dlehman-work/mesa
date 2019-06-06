@@ -3417,8 +3417,17 @@ load_emit(
    else if (1)
    {
 //coord = zero; // TODO: avoids crash
+      LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+      LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+      lp_build_print_value(gallivm, "ssbo_base", ssbo_base);
+      lp_build_print_value(gallivm, "ssbo_off", ssbo_off);
+      lp_build_print_value(gallivm, "ssbo_size", ssbo_size);
       lp_build_print_value(gallivm, "coord", coord);
+coord = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, 8), ""); // TODO: vector width
+      lp_build_print_value(gallivm, "coord", coord);
+
       LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
+      lp_build_print_value(gallivm, "ptr", ptr);
       val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
 
 printf("%s: %d: ssbo_base %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo_base));
