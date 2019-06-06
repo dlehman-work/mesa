@@ -3414,14 +3414,26 @@ load_emit(
        LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[offset+coord]");
        LLVMValueRef val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
    }
+   else if (1)
+   {
+//coord = zero; // TODO: avoids crash
+      lp_build_print_value(gallivm, "coord", coord);
+      LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
+      val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
+
+printf("%s: %d: ssbo_base %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ssbo_base));
+printf("%s: %d: coord     %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(coord));
+printf("%s: %d: val_ptr   %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(val_ptr));
+printf("%s: %d: ptr       %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(ptr));
+   }
    else
         val_ptr = LLVMBuildBitCast(builder, ssbo_base, val_ptr_type, "");
    LLVMValueRef val = LLVMBuildLoad(builder, val_ptr, "ssbo-val");
    emit_data->output[emit_data->chan] = val;
 
    // emit_data->output[emit_data->chan] = bld_base->base.zero;
-   printf("%s: %d: val[%d] %s\n", __FUNCTION__, __LINE__, emit_data->chan, LLVMPrintValueToString(val));
-   printf("%s: %d: zero    %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(bld_base->base.zero));
+//   printf("%s: %d: val[%d] %s\n", __FUNCTION__, __LINE__, emit_data->chan, LLVMPrintValueToString(val));
+//   printf("%s: %d: zero    %s\n", __FUNCTION__, __LINE__, LLVMPrintValueToString(bld_base->base.zero));
 
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
