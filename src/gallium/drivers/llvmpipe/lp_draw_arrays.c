@@ -101,13 +101,13 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info)
 
 printf("%s: %d: lp %p\n", __FUNCTION__, __LINE__, lp); fflush(stdout);
    /* Shader storage buffer objects */
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
-      for (j = 0; j < PIPE_MAX_SHADER_BUFFERS; j++) {
-         if (lp->buffers[i][j].buffer) {
-printf("%s: %d: [%d][%d]\n", __FUNCTION__, __LINE__, i, j); fflush(stdout);
-            draw_set_ssbo(draw, i, j, llvmpipe_resource_data(lp->buffers[i][j].buffer),
-                          lp->buffers[i][j].buffer_offset, lp->buffers[i][j].buffer_size);
-         }
+   for (i = 0; i < PIPE_MAX_SHADER_BUFFERS; i++) {
+      if (lp->buffers[PIPE_SHADER_VERTEX][i].buffer) {
+printf("%s: %d: [%d][%d]\n", __FUNCTION__, __LINE__, PIPE_SHADER_VERTEX, i); fflush(stdout);
+         draw_set_ssbo(draw, PIPE_SHADER_VERTEX, i,
+                       llvmpipe_resource_data(lp->buffers[PIPE_SHADER_VERTEX][i].buffer),
+                       lp->buffers[PIPE_SHADER_VERTEX][i].buffer_offset,
+                       lp->buffers[PIPE_SHADER_VERTEX][i].buffer_size);
       }
    }
 

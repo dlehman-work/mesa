@@ -277,6 +277,9 @@ void llvmpipe_update_derived( struct llvmpipe_context *llvmpipe )
                              llvmpipe->viewports);
    }
 
+   lp_setup_set_fragment_shader_buffers(llvmpipe->setup,
+                                        PIPE_MAX_SHADER_BUFFERS, /* TODO: num? */
+                                        llvmpipe->buffers[PIPE_SHADER_FRAGMENT]);
    llvmpipe->dirty = 0;
 }
 

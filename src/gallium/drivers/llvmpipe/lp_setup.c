@@ -789,6 +789,34 @@ lp_setup_set_viewports(struct lp_setup_context *setup,
 }
 
 
+void
+lp_setup_set_fragment_shader_buffers(struct lp_setup_context *setup,
+                                     unsigned num_buffers,
+                                     struct pipe_shader_buffer *buffers)
+{
+   /* TODO: struct llvmpipe_context *lp = llvmpipe_context(setup->pipe); */
+   unsigned i;
+
+   LP_DBG(DEBUG_SETUP, "%s\n", __FUNCTION__);
+
+   assert(num_buffers <= PIPE_MAX_SHADER_BUFFERS);
+   assert(buffers);
+
+   /* Shader storage buffer objects */
+   for (i = 0; i < num_buffers; i++) {
+      if (buffers[i].buffer) {
+         struct lp_jit_buffer *jit_ssbo;
+
+         jit_ssbo = &setup->fs.current.jit_context.shader_buffers[i];
+         jit_ssbo->base = llvmpipe_resource_data(buffers[i].buffer);
+         jit_ssbo->offset = buffers[i].buffer_offset;
+         jit_ssbo->size = buffers[i].buffer_size;
+      }
+   }
+   /* TODO: dirty? */
+}
+
+
 /**
  * Called during state validation when LP_NEW_SAMPLER_VIEW is set.
  */
