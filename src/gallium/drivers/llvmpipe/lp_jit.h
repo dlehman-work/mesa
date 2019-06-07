@@ -78,6 +78,14 @@ struct lp_jit_viewport
 };
 
 
+struct lp_jit_buffer
+{
+   void *base;
+   uint32_t offset;
+   uint32_t size;
+};
+
+
 enum {
    LP_JIT_TEXTURE_WIDTH = 0,
    LP_JIT_TEXTURE_HEIGHT,
@@ -108,6 +116,14 @@ enum {
 };
 
 
+enum {
+   LP_JIT_BUFFER_BASE,
+   LP_JIT_BUFFER_OFFSET,
+   LP_JIT_BUFFER_size,
+   LP_JIT_BUFFER_NUM_FIELDS /* number of fields above */
+};
+
+
 /**
  * This structure is passed directly to the generated fragment shader.
  *
@@ -135,6 +151,7 @@ struct lp_jit_context
 
    struct lp_jit_texture textures[PIPE_MAX_SHADER_SAMPLER_VIEWS];
    struct lp_jit_sampler samplers[PIPE_MAX_SAMPLERS];
+   struct lp_jit_buffer  shader_buffers[PIPE_MAX_SHADER_BUFFERS];
 };
 
 
@@ -153,6 +170,7 @@ enum {
    LP_JIT_CTX_VIEWPORTS,
    LP_JIT_CTX_TEXTURES,
    LP_JIT_CTX_SAMPLERS,
+   LP_JIT_CTX_SHADER_BUFFERS,
    LP_JIT_CTX_COUNT
 };
 
@@ -187,6 +205,8 @@ enum {
 #define lp_jit_context_samplers(_gallivm, _ptr) \
    lp_build_struct_get_ptr(_gallivm, _ptr, LP_JIT_CTX_SAMPLERS, "samplers")
 
+#define lp_jit_context_shader_buffers(_gallivm, _ptr) \
+   lp_build_struct_get(_gallivm, _ptr, LP_JIT_CTX_SHADER_BUFFERS, "shader_buffers")
 
 struct lp_jit_thread_data
 {
