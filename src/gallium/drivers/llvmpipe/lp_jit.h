@@ -119,7 +119,7 @@ enum {
 enum {
    LP_JIT_BUFFER_BASE,
    LP_JIT_BUFFER_OFFSET,
-   LP_JIT_BUFFER_size,
+   LP_JIT_BUFFER_SIZE,
    LP_JIT_BUFFER_NUM_FIELDS /* number of fields above */
 };
 

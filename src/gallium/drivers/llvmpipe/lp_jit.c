@@ -46,7 +46,7 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
 {
    struct gallivm_state *gallivm = lp->gallivm;
    LLVMContextRef lc = gallivm->context;
-   LLVMTypeRef viewport_type, texture_type, sampler_type;
+   LLVMTypeRef viewport_type, buffer_type, texture_type, sampler_type;
 
    /* struct lp_jit_viewport */
    {
@@ -66,6 +66,30 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
                              LP_JIT_VIEWPORT_MAX_DEPTH);
       LP_CHECK_STRUCT_SIZE(struct lp_jit_viewport,
                            gallivm->target, viewport_type);
+   }
+
+   /* struct lp_jit_buffer */
+   {
+      LLVMTypeRef elem_types[LP_JIT_BUFFER_NUM_FIELDS];
+
+      elem_types[LP_JIT_BUFFER_BASE] = LLVMPointerType(LLVMInt8TypeInContext(lc), 0);
+      elem_types[LP_JIT_BUFFER_OFFSET] =
+      elem_types[LP_JIT_BUFFER_SIZE] = LLVMInt32TypeInContext(lc);
+
+      buffer_type = LLVMStructTypeInContext(lc, elem_types,
+                                            ARRAY_SIZE(elem_types), 0);
+
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_buffer, base,
+                             gallivm->target, buffer_type,
+                             LP_JIT_BUFFER_BASE);
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_buffer, offset,
+                             gallivm->target, buffer_type,
+                             LP_JIT_BUFFER_OFFSET);
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_buffer, size,
+                             gallivm->target, buffer_type,
+                             LP_JIT_BUFFER_SIZE);
+      LP_CHECK_STRUCT_SIZE(struct lp_jit_buffer,
+                           gallivm->target, buffer_type);
    }
 
    /* struct lp_jit_texture */
@@ -164,6 +188,8 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
                                                       PIPE_MAX_SHADER_SAMPLER_VIEWS);
       elem_types[LP_JIT_CTX_SAMPLERS] = LLVMArrayType(sampler_type,
                                                       PIPE_MAX_SAMPLERS);
+      elem_types[LP_JIT_CTX_SHADER_BUFFERS] = LLVMArrayType(buffer_type,
+                                                            PIPE_MAX_SHADER_BUFFERS);
 
       context_type = LLVMStructTypeInContext(lc, elem_types,
                                              ARRAY_SIZE(elem_types), 0);
@@ -198,6 +224,9 @@ lp_jit_create_types(struct lp_fragment_shader_variant *lp)
       LP_CHECK_MEMBER_OFFSET(struct lp_jit_context, samplers,
                              gallivm->target, context_type,
                              LP_JIT_CTX_SAMPLERS);
+      LP_CHECK_MEMBER_OFFSET(struct lp_jit_context, shader_buffers,
+                             gallivm->target, context_type,
+                             LP_JIT_CTX_SHADER_BUFFERS);
       LP_CHECK_STRUCT_SIZE(struct lp_jit_context,
                            gallivm->target, context_type);
 
