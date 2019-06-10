@@ -3411,6 +3411,7 @@ load_emit(
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
    coord = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, 8), ""); // TODO: vector width
 
+   /* TODO: check for NULL base? */
    struct lp_build_context i32_bld;
    struct lp_type i32_type = lp_type_int(32);
    lp_build_context_init(&i32_bld, gallivm, i32_type);
