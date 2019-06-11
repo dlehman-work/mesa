@@ -3404,6 +3404,28 @@ load_emit(
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMTypeRef float_vec = LLVMVectorType(LLVMFloatTypeInContext(gallivm->context), 4);
+   LLVMTypeRef float_vec_ptr = LLVMPointerType(float_vec, 0);
+   LLVMValueRef ssbo_cast = LLVMBuildBitCast(builder, ssbo_base, float_vec_ptr, "");
+   LLVMValueRef ssbo_deref = LLVMBuildLoad(builder, ssbo_cast, "");
+   LLVMTypeRef i32t = LLVMInt32TypeInContext(gallivm->context);
+   LLVMValueRef shuffles[8]; /* TODO */
+   int i;
+   for (i = 0; i < ARRAY_SIZE(shuffles); i++)
+      shuffles[i] = LLVMConstInt(i32t, i % 4, 0); /* TODO: ?? */
+   LLVMValueRef ssbo_exp = LLVMBuildShuffleVector(builder, ssbo_deref, ssbo_deref,
+                              LLVMConstVector(shuffles, ARRAY_SIZE(shuffles)), "");
+                            
+LLVMDumpValue(ssbo_exp);
+printf("\n"); fflush(stdout);  
+
+/*
+    %expanded = shufflevector <4 x float> %val, <4 x float> %val,
+                    <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 0, i32 1, i32 2, i32 3>
+    ret <8 x float> %expanded
+*/
+
+return;   
    LLVMValueRef val_ptr;
    LLVMTypeRef val_type = LLVMTypeOf(emit_data->output[emit_data->chan]);
    LLVMTypeRef val_ptr_type = LLVMPointerType(val_type, 0);
