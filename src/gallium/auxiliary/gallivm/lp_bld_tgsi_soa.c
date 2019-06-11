@@ -3419,6 +3419,8 @@ load_emit(
 LLVMDumpValue(ssbo_exp);
 printf("\n"); fflush(stdout);  
 
+    printf("%s: channels %d\n", __FUNCTION__, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
+
 /*
     %expanded = shufflevector <4 x float> %val, <4 x float> %val,
                     <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 0, i32 1, i32 2, i32 3>
