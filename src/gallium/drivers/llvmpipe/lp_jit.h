@@ -206,7 +206,7 @@ enum {
    lp_build_struct_get_ptr(_gallivm, _ptr, LP_JIT_CTX_SAMPLERS, "samplers")
 
 #define lp_jit_context_shader_buffers(_gallivm, _ptr) \
-   lp_build_struct_get(_gallivm, _ptr, LP_JIT_CTX_SHADER_BUFFERS, "shader_buffers")
+   lp_build_struct_get_ptr(_gallivm, _ptr, LP_JIT_CTX_SHADER_BUFFERS, "shader_buffers")
 
 struct lp_jit_thread_data
 {
