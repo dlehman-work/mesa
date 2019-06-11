@@ -3399,7 +3399,8 @@ load_emit(
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
 
    LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
-   LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1, 0 /* TODO: swizzle */);
+   LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                            emit_data->inst->Src[1].Register.SwizzleX);
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
