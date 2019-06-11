@@ -3416,14 +3416,6 @@ lp_build_print_value(gallivm, "base", ssbo_base);
 lp_build_print_value(gallivm, "offset", ssbo_off);
 lp_build_print_value(gallivm, "size", ssbo_size);
 
-   /* TODO: check for NULL base? */
-   //struct lp_build_context i32_bld;
-   //struct lp_type i32_type = lp_type_int(32);
-   //lp_build_context_init(&i32_bld, gallivm, i32_type);
-   /* TODO: clamp or return zero? */
-   //coord = lp_build_clamp(&i32_bld, coord, zero, ssbo_size);
-   //lp_build_print_value(gallivm, "coord (clamped)", coord);
-
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
 lp_build_print_value(gallivm, "coord (final)", coord);
    LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
