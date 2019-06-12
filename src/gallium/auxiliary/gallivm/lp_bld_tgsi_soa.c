@@ -3395,6 +3395,7 @@ load_emit(
       return;
    }
 
+   /* TODO: check for NULL base, check bounds */
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
 
@@ -3407,10 +3408,8 @@ load_emit(
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
-   //LLVMTypeRef i32ptr = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0); /* 4B granularity */
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
-    
       LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
       LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
       LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
