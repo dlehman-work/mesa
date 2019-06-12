@@ -3470,6 +3470,73 @@ store_emit(
    struct gallivm_state *gallivm = bld->bld_base.base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
+   if (emit_data->inst->Texture.Texture != TGSI_TEXTURE_BUFFER) {
+      /* TODO: assert(0 && "LOAD doesn't support textures\n"); */
+      return;
+   }
+
+   /* TODO: null ssbo_array means none declared for this stage */
+   if (!bld->ssbo_array) {
+      /* TODO: assert(0 && "STORE for non-existent ssbo\n"); */
+      return;
+   }
+   printf("%s: nchannels %u src[0] %d src[1] %d\n", __FUNCTION__,
+      util_last_bit(emit_data->inst->Dst[0].Register.WriteMask),
+      emit_data->inst->Src[0].Register.Index,
+      emit_data->inst->Src[1].Register.Index);
+{
+   LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Dst[0].Register.Index);
+
+   LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
+   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+
+   LLVMValueRef addr_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 0,
+                                               emit_data->inst->Src[0].Register.SwizzleX);
+   LLVMValueRef addr = LLVMBuildExtractElement(builder, addr_vec, lp_build_const_int32(gallivm, 0), "addr");
+
+   LLVMValueRef val_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                                              emit_data->inst->Src[1].Register.SwizzleX);
+   LLVMValueRef val = LLVMBuildExtractElement(builder, val_vec, lp_build_const_int32(gallivm, 0), "val");
+
+   LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+   ssbo_off = LLVMBuildAdd(builder, ssbo_off, addr, "");
+   LLVMValueRef out_ptr = LLVMBuildGEP(builder, ssbo_base, &ssbo_off, 1, "out");
+   LLVMValueRef out32_ptr = LLVMBuildBitCast(builder, out_ptr, i32ptr, "out32");
+   val = lp_build_const_int32(gallivm, 42);
+   LLVMValueRef out = LLVMBuildStore(builder, val, out32_ptr);
+   //out = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, out);
+   emit_data->output[emit_data->chan] = out;
+
+return;
+
+   fprintf(stderr, "addr "); LLVMDumpValue(addr); fprintf(stderr, "\n");
+   fprintf(stderr, "val  "); LLVMDumpValue(val); fprintf(stderr, "\n");
+lp_build_print_value(gallivm, "addr", addr);
+lp_build_print_value(gallivm, "val", val);
+
+}
+return;
+   LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Dst[0].Register.Index);
+   LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
+
+   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+   LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                            emit_data->inst->Src[1].Register.SwizzleX);
+   coord = LLVMBuildExtractElement(builder, coord, lp_build_const_int32(gallivm, 0), "");
+   coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
+   LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+   LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
+   LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
+
+   LLVMValueRef val_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 0,
+                                             emit_data->inst->Src[0].Register.SwizzleX); /* TODO? */
+   LLVMValueRef val = LLVMBuildExtractValue(builder, val_vec, 0, "val");
+   LLVMValueRef ssbo_val = LLVMBuildStore(builder, val, ssbo_i32);
+   emit_data->output[0] = ssbo_val;
+
+   LLVMDumpValue(ssbo); printf("\n");
    printf("%s: (stub) \n",  __FUNCTION__); fflush(stdout);
 }
 

@@ -271,6 +271,7 @@ tgsi_opcode_infer_src_type(enum tgsi_opcode opcode, uint src_idx)
    case TGSI_OPCODE_MEMBAR:
    case TGSI_OPCODE_UMSB:
    case TGSI_OPCODE_LOAD:
+   case TGSI_OPCODE_STORE:
       return TGSI_TYPE_UNSIGNED;
    case TGSI_OPCODE_IMUL_HI:
    case TGSI_OPCODE_I2F:
