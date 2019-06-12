@@ -3402,13 +3402,33 @@ load_emit(
    LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
                             emit_data->inst->Src[1].Register.SwizzleX);
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
-
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+   LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+   LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+   //LLVMTypeRef i32ptr = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0); /* 4B granularity */
+   LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_base, i32ptr, "");
+   LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
+   LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
+   emit_data->output[0] = ssbo_vec;
+LLVMDumpValue(ssbo_vec);
+printf("\n");
+
+   coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
+lp_build_print_value(gallivm, "ssbo_vec", ssbo_vec);
+   //LLVMValueRef ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "ssbo.base[coord]");
+   //val_ptr = LLVMBuildBitCast(builder, ptr, val_ptr_type, "");
+   //LLVMValueRef val = LLVMBuildLoad(builder, val_ptr, "ssbo-val");
+
+printf("%s: channels %d\n", __FUNCTION__, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
+return;
+if (0)
+{
+   LLVMTypeRef i32t = LLVMInt32TypeInContext(gallivm->context);
    LLVMTypeRef float_vec = LLVMVectorType(LLVMFloatTypeInContext(gallivm->context), 4);
    LLVMTypeRef float_vec_ptr = LLVMPointerType(float_vec, 0);
    LLVMValueRef ssbo_cast = LLVMBuildBitCast(builder, ssbo_base, float_vec_ptr, "");
    LLVMValueRef ssbo_deref = LLVMBuildLoad(builder, ssbo_cast, "");
-   LLVMTypeRef i32t = LLVMInt32TypeInContext(gallivm->context);
    LLVMValueRef shuffles[8]; /* TODO */
    int i;
    for (i = 0; i < ARRAY_SIZE(shuffles); i++)
@@ -3420,7 +3440,7 @@ LLVMDumpValue(ssbo_exp);
 printf("\n"); fflush(stdout);  
 
     printf("%s: channels %d\n", __FUNCTION__, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
-
+}
 /*
     %expanded = shufflevector <4 x float> %val, <4 x float> %val,
                     <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 0, i32 1, i32 2, i32 3>
@@ -3428,6 +3448,8 @@ printf("\n"); fflush(stdout);
 */
 
 return;   
+if (0)
+{
    LLVMValueRef val_ptr;
    LLVMTypeRef val_type = LLVMTypeOf(emit_data->output[emit_data->chan]);
    LLVMTypeRef val_ptr_type = LLVMPointerType(val_type, 0);
@@ -3448,7 +3470,7 @@ lp_build_print_value(gallivm, "coord (final)", coord);
    LLVMValueRef val = LLVMBuildLoad(builder, val_ptr, "ssbo-val");
    emit_data->output[emit_data->chan] = val;
 lp_build_print_value(gallivm, "val", val);
-
+}
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
 
