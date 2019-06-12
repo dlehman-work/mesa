@@ -305,7 +305,8 @@ analyse_instruction(struct analysis_context *ctx,
       } else if (dst->File == TGSI_FILE_OUTPUT) {
          regs = info->output;
          max_regs = ARRAY_SIZE(info->output);
-      } else if (dst->File == TGSI_FILE_ADDRESS) {
+      } else if (dst->File == TGSI_FILE_ADDRESS ||
+                 dst->File == TGSI_FILE_BUFFER) {
          continue;
       } else {
          assert(0);
