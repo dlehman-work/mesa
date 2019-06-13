@@ -76,6 +76,9 @@ lp_get_called_value(LLVMValueRef call);
 extern bool
 lp_is_function(LLVMValueRef v);
 
+extern LLVMValueRef
+lp_build_hang(struct gallivm_state *gallivm);
+
 #ifdef __cplusplus
 }
 #endif
