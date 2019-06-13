@@ -144,13 +144,10 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
    assert(shader < PIPE_SHADER_TYPES);
    assert(start + num <= ARRAY_SIZE(llvmpipe->buffers[shader]));
 
-   printf("%s: %d: lp %p stub (%d, %d, %d, 0x%x)\n", __FUNCTION__, __LINE__, llvmpipe,
-         shader, start, num, writable_bitmask);
    for (i = 0; i < num; i++) {
       int idx = start + i;
 
       if (buffers && buffers[i].buffer) {
-printf("%s: %d: [%i] %p\n", __FUNCTION__, __LINE__, i, buffers[i].buffer);
          pipe_resource_reference(&llvmpipe->buffers[shader][idx].buffer, buffers[i].buffer);
          llvmpipe->buffers[shader][idx] = buffers[i];
       }

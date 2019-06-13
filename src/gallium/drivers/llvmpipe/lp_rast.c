@@ -348,7 +348,6 @@ lp_rast_shade_tile(struct lp_rasterizer_task *task,
          /* Propagate non-interpolated raster state. */
          task->thread_data.raster_state.viewport_index = inputs->viewport_index;
 
-printf("%s: WHOLE %p\n", __FUNCTION__, variant->jit_function[RAST_WHOLE]); fflush(stdout);
          /* run shader on 4x4 block */
          BEGIN_JIT_CALL(state, task);
          variant->jit_function[RAST_WHOLE]( &state->jit_context,
@@ -450,7 +449,6 @@ lp_rast_shade_quads_mask(struct lp_rasterizer_task *task,
       /* Propagate non-interpolated raster state. */
       task->thread_data.raster_state.viewport_index = inputs->viewport_index;
 
-printf("%s: EDGE %p\n", __FUNCTION__, variant->jit_function[RAST_EDGE_TEST]); fflush(stdout);
       /* run shader on 4x4 block */
       BEGIN_JIT_CALL(state, task);
       variant->jit_function[RAST_EDGE_TEST](&state->jit_context,

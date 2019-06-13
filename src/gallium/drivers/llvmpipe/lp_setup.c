@@ -810,7 +810,6 @@ lp_setup_set_fragment_shader_buffers(struct lp_setup_context *setup,
          jit_ssbo->base = llvmpipe_resource_data(buffers[i].buffer);
          jit_ssbo->offset = buffers[i].buffer_offset;
          jit_ssbo->size = buffers[i].buffer_size;
-printf("%s: %d: lp %p [%d] %p\n", __FUNCTION__, __LINE__, setup->pipe, i, jit_ssbo->base);
       }
    }
    /* TODO: dirty? */
