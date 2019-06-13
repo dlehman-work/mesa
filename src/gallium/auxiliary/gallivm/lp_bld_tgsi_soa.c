@@ -66,6 +66,7 @@
 #include "lp_bld_printf.h"
 #include "lp_bld_sample.h"
 #include "lp_bld_struct.h"
+#include "lp_bld_misc.h"
 
 /* SM 4.0 says that subroutines can nest 32 deep and 
  * we need one more for our main function */
@@ -3403,6 +3404,21 @@ load_emit(
    LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
                             emit_data->inst->Src[1].Register.SwizzleX);
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
+
+struct lp_build_context bldi8;
+struct lp_build_if_state if_ctx;
+LLVMValueRef coord_oob;
+
+lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
+
+coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, zero);
+coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
+
+lp_build_if(&if_ctx, gallivm, coord_oob);
+    lp_build_print_value(gallivm, "coord", coord);
+    lp_build_hang(gallivm);
+lp_build_endif(&if_ctx);
+
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
