@@ -3412,6 +3412,7 @@ load_emit(
 struct lp_build_context bldi8;
 struct lp_build_if_state if_ctx;
 LLVMValueRef coord_oob;
+char buffer[32];
 
 lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
 coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, ssbo_size);
@@ -3419,21 +3420,38 @@ coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
 
 lp_build_if(&if_ctx, gallivm, coord_oob);
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+   LLVMTypeRef fptr = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
       LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
-      LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
-      LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
-      LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
+      LLVMValueRef ssbo_vec;
+      if (0)
+      {
+         LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
+         LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
+         ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
+      }
+      else
+      {
+         LLVMValueRef ssbo_f = LLVMBuildBitCast(builder, ssbo_ptr, fptr, "");
+         LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_f, "");
+         ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.base, ssbo_val);
+      }
       emit_data->output[i] = ssbo_vec;
       coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
+      
+      sprintf(buffer, "[%d/%d] GOOD", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
+      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
 lp_build_else(&if_ctx);
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
       LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, zero);
       emit_data->output[i] = ssbo_vec;
+    
+      sprintf(buffer, "[%d/%d] BAD ", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
+      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
 lp_build_endif(&if_ctx);
 }
