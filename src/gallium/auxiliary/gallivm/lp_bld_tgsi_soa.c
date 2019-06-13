@@ -3405,23 +3405,24 @@ load_emit(
                             emit_data->inst->Src[1].Register.SwizzleX);
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
+   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+   LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+
 struct lp_build_context bldi8;
 struct lp_build_if_state if_ctx;
 LLVMValueRef coord_oob;
 
 lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
 
-coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, zero);
+coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_GEQUAL, coord, ssbo_size);
 coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
 
+lp_build_print_value(gallivm, "coord", coord);
 lp_build_if(&if_ctx, gallivm, coord_oob);
     lp_build_print_value(gallivm, "coord", coord);
     lp_build_hang(gallivm);
 lp_build_endif(&if_ctx);
-
-   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
-   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
-   LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
