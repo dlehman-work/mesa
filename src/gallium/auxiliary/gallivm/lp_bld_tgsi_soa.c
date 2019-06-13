@@ -3486,8 +3486,8 @@ store_emit(
       emit_data->inst->Src[0].Register.Index,
       emit_data->inst->Src[1].Register.Index);
 
+   /* TODO: null base check, size check */
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Dst[0].Register.Index);
-lp_build_print_value(gallivm, "bufidx", bufidx);
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
@@ -3504,43 +3504,8 @@ lp_build_print_value(gallivm, "bufidx", bufidx);
    LLVMTypeRef i32ptr = LLVMPointerType(i32t, 0); /* 4B granularity */
    ssbo_off = LLVMBuildAdd(builder, ssbo_off, addr, "");
    LLVMValueRef out_ptr = LLVMBuildGEP(builder, ssbo_base, &ssbo_off, 1, "out");
-lp_build_print_value(gallivm, "ssbo_off", ssbo_off);
-lp_build_print_value(gallivm, "ssbo_base", ssbo_base);
-lp_build_print_value(gallivm, "out_ptr", out_ptr);
    LLVMValueRef out32_ptr = LLVMBuildBitCast(builder, out_ptr, i32ptr, "out32");
-  LLVMValueRef out = LLVMBuildStore(builder, val, out32_ptr);
-  return;
-
-if (0)
-{
-   //val = lp_build_const_int32(gallivm, 42);
-LLVMValueRef out = LLVMBuildMemSet(builder, ssbo_base, 
-                LLVMConstInt(LLVMIntTypeInContext(gallivm->context, 8), 0xff, 0),
-                LLVMConstInt(LLVMIntTypeInContext(gallivm->context, 32), 32, 0), 1);
-   emit_data->output[emit_data->chan] = out;
-
-}
-//lp_build_print_value(gallivm, "val", val);
-//  LLVMValueRef out = LLVMBuildStore(builder, val, out32_ptr);
-//   out = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, out);
-//LLVMDumpValue(emit_data->output[emit_data->chan]);
-//lp_build_print_value(gallivm, "emit_data->output[emit_data->chan]", emit_data->output[emit_data->chan]);
-//   emit_data->output[emit_data->chan] = val_vec;
-if (0)
-{
-   LLVMTypeRef val_vec_t = LLVMTypeOf(val_vec);
-   LLVMTypeRef val_vec_ptr_t = LLVMPointerType(val_vec_t, 0);
-   LLVMValueRef out32_vec_ptr = LLVMBuildBitCast(builder, out_ptr, val_vec_ptr_t, "");
-    LLVMValueRef out = LLVMBuildStore(builder, val_vec, out32_vec_ptr);
-   //emit_data->output[emit_data->chan] = out;
-}
-
-    if (0)
-    {
-    LLVMTypeRef fptr = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0);
-    LLVMValueRef float_ptr = LLVMBuildBitCast(builder, out_ptr, fptr, "f32");
-
-    }
+   LLVMBuildStore(builder, val, out32_ptr);
 }
 
 static LLVMValueRef
