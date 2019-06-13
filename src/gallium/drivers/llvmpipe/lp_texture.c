@@ -644,6 +644,12 @@ llvmpipe_is_resource_referenced( struct pipe_context *pipe,
                                  unsigned level)
 {
    struct llvmpipe_context *llvmpipe = llvmpipe_context( pipe );
+
+   /* TODO: where should this go?  glMapBufferRange needs to flush
+            if fragment shader is used with STORE (emit_store) */
+   if (presource->bind & PIPE_BIND_SHADER_BUFFER)
+      return LP_REFERENCED_FOR_WRITE;
+
    if (!(presource->bind & (PIPE_BIND_DEPTH_STENCIL |
                             PIPE_BIND_RENDER_TARGET |
                             PIPE_BIND_SAMPLER_VIEW)))
