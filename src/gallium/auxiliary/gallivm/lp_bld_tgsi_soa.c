@@ -3442,7 +3442,7 @@ lp_build_if(&if_ctx, gallivm, coord_oob);
       coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
       
       sprintf(buffer, "[%d/%d] GOOD", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
-      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
+//      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
 lp_build_else(&if_ctx);
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
@@ -3451,7 +3451,7 @@ lp_build_else(&if_ctx);
       emit_data->output[i] = ssbo_vec;
     
       sprintf(buffer, "[%d/%d] BAD ", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
-      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
+//      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
 lp_build_endif(&if_ctx);
 }
