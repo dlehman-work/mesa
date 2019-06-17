@@ -3396,6 +3396,13 @@ load_emit(
       return;
    }
 
+   /* TODO: use i32 instead of i8 for base type? */
+
+   /*
+   if (base && offset + coord < size)
+      buffer[bufidx][chan] = base[offset + coord]
+   */
+{
    /* TODO: check for NULL base, check bounds */
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
@@ -3408,7 +3415,6 @@ load_emit(
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
-{
 struct lp_build_context bldi8;
 LLVMValueRef coord_oob;
 
