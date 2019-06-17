@@ -3408,8 +3408,6 @@ load_emit(
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
-lp_build_print_value(gallivm, "ssbo base[in]", ssbo_base);
-lp_build_print_value(gallivm, "ssbo off[in]", ssbo_off);
 {
 struct lp_build_context bldi8;
 struct lp_build_if_state if_ctx;
@@ -3427,7 +3425,6 @@ coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
       LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
-lp_build_print_value(gallivm, "ssbo ptr[in]", ssbo_ptr);
       LLVMValueRef ssbo_vec;
       if (1)
       {
@@ -3563,8 +3560,6 @@ store_emit(
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
-lp_build_print_value(gallivm, "ssbo base[out]", ssbo_base);
-lp_build_print_value(gallivm, "ssbo off[out]", ssbo_off);
 
    LLVMValueRef addr_vec = lp_build_emit_fetch(bld_base, emit_data->inst, 0,
                                                emit_data->inst->Src[0].Register.SwizzleX);
@@ -3579,7 +3574,6 @@ lp_build_print_value(gallivm, "ssbo off[out]", ssbo_off);
    ssbo_off = LLVMBuildAdd(builder, ssbo_off, addr, "");
    LLVMValueRef out_ptr = LLVMBuildGEP(builder, ssbo_base, &ssbo_off, 1, "out");
    LLVMValueRef out32_ptr = LLVMBuildBitCast(builder, out_ptr, i32ptr, "out32");
-lp_build_print_value(gallivm, "out32", out32_ptr);
    LLVMBuildStore(builder, val, out32_ptr);
 }
 
