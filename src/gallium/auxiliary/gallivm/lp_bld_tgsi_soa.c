@@ -3421,14 +3421,27 @@ load_emit(
 
    /* TODO: include coord for all bits? */
    LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
+   ssbo_valid = LLVMBuildAnd(builder, ssbo_valid, ssbo_off_valid, "");
+ 
+if (0)
+{
+   LLVMValueRef ssbo_sel = LLVMBuildSelect(builder, ssbo_valid,
+                            lp_build_broadcast_scalar(&bld->bld_base.uint_bld, lp_build_const_int32(gallivm, 1)),
+                            lp_build_broadcast_scalar(&bld->bld_base.uint_bld, lp_build_const_int32(gallivm, 0)), "");
+    lp_build_print_value(gallivm, "ssbo", ssbo_sel);
+    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
+        emit_data->output[i] = ssbo_sel;
+    return;
+}
 
+/*
 struct lp_build_context bldi8;
 LLVMValueRef coord_oob;
 
 lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
 coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, ssbo_size);
 coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
-
+*/
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
