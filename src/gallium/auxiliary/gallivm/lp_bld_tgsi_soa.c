@@ -3413,8 +3413,15 @@ load_emit(
    coord = LLVMBuildExtractElement(builder, coord, zero, "");
 
    LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+   LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
+                                LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");
+
    LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
    LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+
+   /* TODO: include coord for all bits? */
+   LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
+
 struct lp_build_context bldi8;
 LLVMValueRef coord_oob;
 
