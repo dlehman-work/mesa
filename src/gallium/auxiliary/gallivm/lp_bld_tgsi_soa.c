@@ -3420,7 +3420,7 @@ lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
 coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, ssbo_size);
 coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
 
-lp_build_if(&if_ctx, gallivm, coord_oob);
+//lp_build_if(&if_ctx, gallivm, coord_oob);
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
    LLVMTypeRef fptr = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
@@ -3441,13 +3441,12 @@ lp_build_print_value(gallivm, "ssbo ptr[in]", ssbo_ptr);
          LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_f, "");
          ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.base, ssbo_val);
       }
-      ssbo_vec = bld->bld_base.uint_bld.one;
       emit_data->output[i] = ssbo_vec;
       coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
-lp_build_print_value(gallivm, "one", ssbo_vec); 
       sprintf(buffer, "[%d/%d] GOOD", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
 //      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
+/*
 lp_build_else(&if_ctx);
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
@@ -3458,6 +3457,7 @@ lp_build_else(&if_ctx);
 //      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
 lp_build_endif(&if_ctx);
+*/
 }
 return;
 

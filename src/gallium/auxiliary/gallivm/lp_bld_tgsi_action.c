@@ -49,7 +49,6 @@
 #include "lp_bld_gather.h"
 #include "lp_bld_logic.h"
 #include "lp_bld_pack.h"
-#include "lp_bld_printf.h"
 
 #include "tgsi/tgsi_exec.h"
 
@@ -707,12 +706,10 @@ u2f_emit(
    struct lp_build_tgsi_context * bld_base,
    struct lp_build_emit_data * emit_data)
 {
-   emit_data->output[emit_data->chan] = bld_base->base.one;
-//      LLVMBuildUIToFP(bld_base->base.gallivm->builder,
-//                      emit_data->args[0],
-//                      bld_base->base.vec_type, "");
-//lp_build_print_value(bld_base->base.gallivm, "u2f_emit", emit_data->args[0]);
-//lp_build_print_value(bld_base->base.gallivm, "u2f_emit", emit_data->output[emit_data->chan]);
+   emit_data->output[emit_data->chan] =
+        LLVMBuildUIToFP(bld_base->base.gallivm->builder,
+                      emit_data->args[0],
+                      bld_base->base.vec_type, "");
 }
 
 static void
