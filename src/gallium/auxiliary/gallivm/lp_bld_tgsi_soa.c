@@ -3429,7 +3429,7 @@ lp_build_if(&if_ctx, gallivm, coord_oob);
       LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
 lp_build_print_value(gallivm, "ssbo ptr[in]", ssbo_ptr);
       LLVMValueRef ssbo_vec;
-      if (0)
+      if (1)
       {
          LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
          LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
@@ -3441,9 +3441,10 @@ lp_build_print_value(gallivm, "ssbo ptr[in]", ssbo_ptr);
          LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_f, "");
          ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.base, ssbo_val);
       }
+      ssbo_vec = bld->bld_base.uint_bld.one;
       emit_data->output[i] = ssbo_vec;
       coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
-      
+lp_build_print_value(gallivm, "one", ssbo_vec); 
       sprintf(buffer, "[%d/%d] GOOD", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
 //      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
    }
