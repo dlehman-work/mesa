@@ -3452,7 +3452,7 @@ lp_build_else(&if_ctx);
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
    {
       LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, zero);
-      emit_data->output[i] = ssbo_vec;
+      //emit_data->output[i] = ssbo_vec;
     
       sprintf(buffer, "[%d/%d] BAD ", i, util_last_bit(emit_data->inst->Dst[0].Register.WriteMask));
 //      lp_build_print_value(gallivm, buffer, emit_data->output[i]);
