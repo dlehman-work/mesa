@@ -3401,10 +3401,32 @@ load_emit(
    /*
    if (base && offset + coord < size)
       buffer[bufidx][chan] = base[offset + coord]
+
+   ----------------------------------------------
+   temp = alloc vec
+   if (valid)
+      write to temp
+   else
+      write zero to temp
+   output = load from temp
    */
 {
-   /* TODO: check for NULL base, check bounds */
+   /* TODO: check for NULL base, check bounds, PIPE_MAX_SHADER_BUFFERS */
+
+   LLVMValueRef bufidxv = lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
+                                                emit_data->inst->Src[0].Register.Index);
+   LLVMValueRef valid = lp_build_cmp(&bld_base->uint_bld, PIPE_FUNC_LESS, bufidxv,
+                                     lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
+                                                            PIPE_MAX_SHADER_BUFFERS));
+   valid = lp_build_any_true_range(&bld_base->uint_bld, bld_base->uint_bld.type.length, valid);
+
+   struct lp_build_if_state if_ctx;
+   lp_build_if(&if_ctx, gallivm, valid);
+      lp_build_print_value(gallivm, "buffer idx valid", valid);
+   lp_build_endif(&if_ctx);
+
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
+
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
 
    LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
