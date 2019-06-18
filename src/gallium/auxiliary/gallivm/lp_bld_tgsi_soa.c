@@ -3410,7 +3410,7 @@ load_emit(
       write zero to temp
    output = load from temp
    */
-{
+
    /* TODO: check for NULL base, check bounds, PIPE_MAX_SHADER_BUFFERS */
 
    LLVMValueRef bufidxv = lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
@@ -3426,22 +3426,72 @@ load_emit(
 
    struct lp_build_if_state if_ctx;
    lp_build_if(&if_ctx, gallivm, valid);
-      lp_build_print_value(gallivm, "buffer idx valid", valid);
-//   lp_build_else(&if_ctx);
+   {
+      LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
+      LLVMValueRef bufidx = LLVMBuildExtractElement(builder, bufidxv, zero, "");
+      LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
+      
+      LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
+      LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
+      LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+      
+      LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
+                                    LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");   
+
+      LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
+                                 emit_data->inst->Src[1].Register.SwizzleX);
+      coord = LLVMBuildExtractElement(builder, coord, zero, "");
+      LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
+
+      struct lp_build_if_state if_valid;
+      lp_build_if(&if_valid, gallivm, ssbo_valid);
+      {
+         coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
+         for (i = 0; i < nchan; i++)
+         {
+            LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+            LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+
+            LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
+            LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
+            LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
+            LLVMValueRef ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
+
+            LLVMBuildStore(builder, ssbo_vec, ptr);
+            coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
+         }
+      }
+      lp_build_else(&if_valid);
+          for (i = 0; i < nchan; i++)
+          {
+             LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+             LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+             LLVMBuildStore(builder, bld_base->uint_bld.zero, ptr);
+          }
+      lp_build_endif(&if_valid);
+   }
+   lp_build_else(&if_ctx);
+      for (i = 0; i < nchan; i++)
+      {
+         LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+         LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+         LLVMBuildStore(builder, bld_base->uint_bld.zero, ptr);
+      }
    lp_build_endif(&if_ctx);
 
    for (i = 0; i < nchan; i++)
    {
-      LLVMValueRef indices[1];
-      indices[0] = lp_build_const_int32(gallivm, i);
-      LLVMValueRef ptr = LLVMBuildGEP(builder, temp, indices, ARRAY_SIZE(indices), "");
+      // TODO: lp_build_array_get(gallivm, temp, lp_build_const_int32(gallivm, i)); ??? 
       // TODO: cast to <8 x float> * ???
-      LLVMValueRef load = LLVMBuildLoad(builder, ptr, "");
-      emit_data->output[i] = load;
+      LLVMValueRef idx = lp_build_const_int32(gallivm, i);
+      LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
+      emit_data->output[i] = LLVMBuildLoad(builder, ptr, "");
    }
-      //lp_build_array_get(gallivm, temp, lp_build_const_int32(gallivm, i));
    return;
 
+#if 0
+if (0)
+{
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
 
    LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
@@ -3461,7 +3511,7 @@ load_emit(
    /* TODO: include coord for all bits? */
    LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
    ssbo_valid = LLVMBuildAnd(builder, ssbo_valid, ssbo_off_valid, "");
- 
+}
 if (0)
 {
    LLVMValueRef ssbo_sel = LLVMBuildSelect(builder, ssbo_valid,
@@ -3472,7 +3522,7 @@ if (0)
         emit_data->output[i] = ssbo_sel;
     return;
 }
-
+#endif
 /*
 struct lp_build_context bldi8;
 LLVMValueRef coord_oob;
@@ -3481,6 +3531,7 @@ lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
 coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, ssbo_size);
 coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
 */
+#if 0
    LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
    coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
@@ -3494,7 +3545,7 @@ coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
       coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
    }
 }
-
+#endif
    // store val -> Dst
    // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
 
