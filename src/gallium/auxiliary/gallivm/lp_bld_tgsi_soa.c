@@ -3420,11 +3420,13 @@ load_emit(
       LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
       LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
       LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
+if (0)
+{
 lp_build_print_value(gallivm, "nchanval", nchanval);
 lp_build_print_value(gallivm, "base    ", ssbo_base);
 lp_build_print_value(gallivm, "offset  ", ssbo_off);
 lp_build_print_value(gallivm, "size    ", ssbo_size);
-     
+}    
       /* TODO: also check coord <= size */
       LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
                                     LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");
@@ -3434,6 +3436,10 @@ lp_build_print_value(gallivm, "size    ", ssbo_size);
       LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
                                  emit_data->inst->Src[1].Register.SwizzleX);
       coord = LLVMBuildExtractElement(builder, coord, zero, ""); /* TODO: ensure unsigned so that -1 gets skipped */
+
+      LLVMValueRef coord_valid = LLVMBuildMul(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned) * nchan), "");
+      coord_valid = LLVMBuildICmp(builder, LLVMIntULT, coord_valid, ssbo_size, "");
+      ssbo_valid =  LLVMBuildAnd(builder, ssbo_valid, coord_valid, "");
 
       LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
 
@@ -3446,7 +3452,7 @@ lp_build_print_value(gallivm, "size    ", ssbo_size);
             LLVMValueRef idx = lp_build_const_int32(gallivm, i);
             LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
 
-lp_build_print_value(gallivm, "coord   ", coord);
+//lp_build_print_value(gallivm, "coord   ", coord);
             LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
             LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
             LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
