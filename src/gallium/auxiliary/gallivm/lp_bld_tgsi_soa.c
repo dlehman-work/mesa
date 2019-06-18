@@ -3397,20 +3397,6 @@ load_emit(
    }
 
    /* TODO: use i32 instead of i8 for base type? */
-
-   /*
-   if (base && offset + coord < size)
-      buffer[bufidx][chan] = base[offset + coord]
-
-   ----------------------------------------------
-   temp = alloc vec
-   if (valid)
-      write to temp
-   else
-      write zero to temp
-   output = load from temp
-   */
-
    /* TODO: check for NULL base, check bounds, PIPE_MAX_SHADER_BUFFERS */
 
    LLVMValueRef bufidxv = lp_build_const_int_vec(gallivm, bld_base->uint_bld.type,
@@ -3490,105 +3476,6 @@ load_emit(
       LLVMValueRef ptr = LLVMBuildGEP(builder, temp, &idx, 1, "");
       emit_data->output[i] = LLVMBuildLoad(builder, ptr, "");
    }
-   return;
-
-#if 0
-if (0)
-{
-   LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
-
-   LLVMValueRef ssbo = lp_build_array_get(gallivm, bld->ssbo_array, bufidx);
-
-   LLVMValueRef zero = lp_build_const_int32(gallivm, 0);
-   LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
-                            emit_data->inst->Src[1].Register.SwizzleX);
-   coord = LLVMBuildExtractElement(builder, coord, zero, "");
-
-   LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
-   LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
-                                LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");
-
-   LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
-   LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
-
-   /* TODO: include coord for all bits? */
-   LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
-   ssbo_valid = LLVMBuildAnd(builder, ssbo_valid, ssbo_off_valid, "");
-}
-if (0)
-{
-   LLVMValueRef ssbo_sel = LLVMBuildSelect(builder, ssbo_valid,
-                            lp_build_broadcast_scalar(&bld->bld_base.uint_bld, lp_build_const_int32(gallivm, 1)),
-                            lp_build_broadcast_scalar(&bld->bld_base.uint_bld, lp_build_const_int32(gallivm, 0)), "");
-    lp_build_print_value(gallivm, "ssbo", ssbo_sel);
-    for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
-        emit_data->output[i] = ssbo_sel;
-    return;
-}
-#endif
-/*
-struct lp_build_context bldi8;
-LLVMValueRef coord_oob;
-
-lp_build_context_init(&bldi8, gallivm, lp_type_uint(32));
-coord_oob = lp_build_compare(gallivm, lp_type_uint(32), PIPE_FUNC_LESS, coord, ssbo_size);
-coord_oob = lp_build_any_true_range(&bldi8, 1, coord_oob);
-*/
-#if 0
-   LLVMTypeRef i32ptr = LLVMPointerType(LLVMIntTypeInContext(gallivm->context, 32), 0); /* 4B granularity */
-   coord = LLVMBuildAdd(builder, coord, ssbo_off, "");
-   for (unsigned i = 0; i < util_last_bit(emit_data->inst->Dst[0].Register.WriteMask); i++)
-   {
-      LLVMValueRef ssbo_ptr = LLVMBuildGEP(builder, ssbo_base, &coord, 1, "");
-      LLVMValueRef ssbo_vec;
-      LLVMValueRef ssbo_i32 = LLVMBuildBitCast(builder, ssbo_ptr, i32ptr, "");
-      LLVMValueRef ssbo_val = LLVMBuildLoad(builder, ssbo_i32, "");
-      ssbo_vec = lp_build_broadcast_scalar(&bld->bld_base.uint_bld, ssbo_val);
-      emit_data->output[i] = ssbo_vec;
-      coord = LLVMBuildAdd(builder, coord, lp_build_const_int32(gallivm, sizeof(unsigned)), "");
-   }
-}
-#endif
-   // store val -> Dst
-   // LOAD TEMP[6], BUFFER[16], TEMP[6].xxxx
-
-   /* Syntax: LOAD dst, resource, address
-    * Example: LOAD TEMP[0], BUFFER[0], TEMP[1]
-    *
-    * using provided integer address, LOAD fetches data from the specified buffer or texturing
-    * without any filtering
-    *
-    * the address is specified as a vector of unsigned integers.  if the address is out of range
-    * the result is unspecified
-    *
-    * only the first mipmap level of a resource can be read from using this instruction
-    *
-    * for 1d or 2d texture arrays, the array index is provided as an unsigned integer in address.y or
-    * address.z, respectively.  address.yz are ignored for buffers and 1d textures.  address.z is ignored 
-    * for 1d texture arrays and 2d textures.  address.w is always ignored
-    *
-    * a swizzle suffix may be added to the resource argument which will cause the resource data to be 
-    * swizzled accordingly
-    */
-   /*
-    * from softpipe (is this correct for textures?)
-
-    get format_desc for R32_UINT
-    write all zeroes if unit exceeds max shader buffers
-    get the pipe_resource from the pipe_shader_buffer
-    write all zeroes on failure
-
-    get the dimentions
-    for each of quad pixel
-        fill zero if masked off
-        fill zero if coord exceeds buffer size
-        write zero to rgba and continue if (fill zero)
-
-        ptr = resource ptr + offset + coord
-        for 0 to 4
-            fetch rgba uint using format desc from ptr
-            ptr += 4 // sizeof(r32_uint)
-    */
 }
 
 static void
