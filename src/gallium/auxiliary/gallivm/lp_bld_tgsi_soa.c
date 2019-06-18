@@ -3420,10 +3420,27 @@ load_emit(
                                                             PIPE_MAX_SHADER_BUFFERS));
    valid = lp_build_any_true_range(&bld_base->uint_bld, bld_base->uint_bld.type.length, valid);
 
+   unsigned i, nchan = util_last_bit(emit_data->inst->Dst[0].Register.WriteMask);
+   LLVMValueRef nchanval = lp_build_const_int32(gallivm, nchan);
+   LLVMValueRef temp = lp_build_array_alloca(gallivm, bld_base->uint_bld.vec_type, nchanval, "");
+
    struct lp_build_if_state if_ctx;
    lp_build_if(&if_ctx, gallivm, valid);
       lp_build_print_value(gallivm, "buffer idx valid", valid);
+//   lp_build_else(&if_ctx);
    lp_build_endif(&if_ctx);
+
+   for (i = 0; i < nchan; i++)
+   {
+      LLVMValueRef indices[1];
+      indices[0] = lp_build_const_int32(gallivm, i);
+      LLVMValueRef ptr = LLVMBuildGEP(builder, temp, indices, ARRAY_SIZE(indices), "");
+      // TODO: cast to <8 x float> * ???
+      LLVMValueRef load = LLVMBuildLoad(builder, ptr, "");
+      emit_data->output[i] = load;
+   }
+      //lp_build_array_get(gallivm, temp, lp_build_const_int32(gallivm, i));
+   return;
 
    LLVMValueRef bufidx = lp_build_const_int32(gallivm, emit_data->inst->Src[0].Register.Index);
 
