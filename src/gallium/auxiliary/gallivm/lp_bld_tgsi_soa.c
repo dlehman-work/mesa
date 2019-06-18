@@ -3434,9 +3434,12 @@ load_emit(
       LLVMValueRef ssbo_base = LLVMBuildExtractValue(builder, ssbo, 0, "ssbo.base");
       LLVMValueRef ssbo_off = LLVMBuildExtractValue(builder, ssbo, 1, "ssbo.offset");
       LLVMValueRef ssbo_size = LLVMBuildExtractValue(builder, ssbo, 2, "ssbo.size");
-      
+     
+      /* TODO: also check coord <= size */
       LLVMValueRef ssbo_valid = LLVMBuildICmp(builder, LLVMIntNE, ssbo_base,
-                                    LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");   
+                                    LLVMConstPointerNull(LLVMTypeOf(ssbo_base)), "");
+      LLVMValueRef ssbo_off_valid = LLVMBuildICmp(builder, LLVMIntULT, ssbo_off, ssbo_size, "");
+      ssbo_valid = LLVMBuildAnd(builder, ssbo_valid, ssbo_off_valid, "");
 
       LLVMValueRef coord = lp_build_emit_fetch(bld_base, emit_data->inst, 1,
                                  emit_data->inst->Src[1].Register.SwizzleX);
