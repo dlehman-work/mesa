@@ -62,6 +62,7 @@ static const struct debug_named_value lp_bld_perf_flags[] = {
    { "nopt",   GALLIVM_PERF_NO_OPT, "disable optimization passes to speed up shader compilation" },
    { "no_filter_hacks", GALLIVM_PERF_NO_BRILINEAR | GALLIVM_PERF_NO_RHO_APPROX |
      GALLIVM_PERF_NO_QUAD_LOD, "disable filter optimization hacks" },
+   { "no_llvm_cache", GALLIVM_PERF_NO_LLVM_CACHE, "disable caching llvm compiled shaders" },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -75,6 +76,7 @@ static const struct debug_named_value lp_bld_debug_flags[] = {
    { "perf",   GALLIVM_DEBUG_PERF, NULL },
    { "gc",     GALLIVM_DEBUG_GC, NULL },
    { "dumpbc", GALLIVM_DEBUG_DUMP_BC, NULL },
+   { "cache",  GALLIVM_DEBUG_CACHE, NULL },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -204,6 +206,7 @@ gallivm_free_ir(struct gallivm_state *gallivm)
 #endif
 
    if (gallivm->engine) {
+      lp_free_object_cache(gallivm->engine);
       /* This will already destroy any associated module */
       LLVMDisposeExecutionEngine(gallivm->engine);
    } else if (gallivm->module) {
@@ -273,6 +276,8 @@ init_gallivm_engine(struct gallivm_state *gallivm)
          LLVMDisposeMessage(error);
          goto fail;
       }
+
+      lp_create_object_cache(gallivm->engine, (unsigned) optlevel);
    }
 
    if (0) {
@@ -692,6 +697,13 @@ gallivm_jit_function(struct gallivm_state *gallivm,
    assert(gallivm->compiled);
    assert(gallivm->engine);
 
+   if (gallivm->disable_cache)
+   {
+      lp_enable_object_cache(gallivm->engine, FALSE);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("   disabling cache for function: %s\n", LLVMGetValueName(func));
+   }
+
    if (gallivm_debug & GALLIVM_DEBUG_PERF)
       time_begin = os_time_get();
 
@@ -704,6 +716,12 @@ gallivm_jit_function(struct gallivm_state *gallivm,
       int time_msec = (int)(time_end - time_begin) / 1000;
       debug_printf("   jitting func %s took %d msec\n",
                    LLVMGetValueName(func), time_msec);
+   }
+
+   if (gallivm->disable_cache)
+   {
+      gallivm->disable_cache = FALSE;
+      lp_enable_object_cache(gallivm->engine, TRUE);
    }
 
    return jit_func;

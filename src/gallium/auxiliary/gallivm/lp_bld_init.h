@@ -52,6 +52,7 @@ struct gallivm_state
    LLVMMCJITMemoryManagerRef memorymgr;
    struct lp_generated_code *code;
    unsigned compiled;
+   unsigned disable_cache; /* object contains function pointer set at runtime */
 };
 
 
