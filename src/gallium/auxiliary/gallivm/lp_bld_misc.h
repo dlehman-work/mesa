@@ -76,6 +76,17 @@ lp_get_called_value(LLVMValueRef call);
 extern bool
 lp_is_function(LLVMValueRef v);
 
+extern void *
+lp_create_object_cache(LLVMExecutionEngineRef engine, unsigned OptLevel);
+
+extern void
+lp_free_object_cache(LLVMExecutionEngineRef engine, void *objcache);
+
+extern void
+lp_unique_module_name(char *buffer, const char *extension,
+                      const void *const_data, size_t const_size,
+                      const void *variant_data, size_t variant_size);
+
 /* LLVM 3.9 introduces this, provide our own for earlier */
 #if HAVE_LLVM < 0x309
 LLVMValueRef LLVMBuildAtomicCmpXchg(LLVMBuilderRef B, LLVMValueRef Ptr,
