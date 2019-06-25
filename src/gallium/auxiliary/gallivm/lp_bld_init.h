@@ -51,6 +51,7 @@ struct gallivm_state
    LLVMMCJITMemoryManagerRef memorymgr;
    struct lp_generated_code *code;
    unsigned compiled;
+   void *objcache;
 };
 
 
