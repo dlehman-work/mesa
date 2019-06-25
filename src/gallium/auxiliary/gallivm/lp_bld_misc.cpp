@@ -41,6 +41,11 @@
 
 
 #include <stddef.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <sstream>
 
 // Workaround http://llvm.org/PR23628
 #if HAVE_LLVM >= 0x0307
@@ -84,6 +89,11 @@
 #include <llvm/ExecutionEngine/JITEventListener.h>
 #endif
 
+#include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/ExecutionEngine/ObjectCache.h> /* TODO: HAVE_LLVM >= ???? */
+#include <llvm/Support/SHA1.h>
+#include <llvm/Support/Path.h>
+
 // Workaround http://llvm.org/PR23628
 #if HAVE_LLVM >= 0x0307
 #  pragma pop_macro("DEBUG")
@@ -113,6 +123,173 @@ public:
 
 static LLVMEnsureMultithreaded lLVMEnsureMultithreaded;
 
+}
+
+class lp_ObjectCache : public llvm::ObjectCache
+{
+public:
+   lp_ObjectCache(const char *cd) : cachedir(cd) {}
+   virtual void notifyObjectCompiled(const llvm::Module *, llvm::MemoryBufferRef);
+   virtual std::unique_ptr<llvm::MemoryBuffer> getObject(const llvm::Module *);
+
+private:
+   struct jit_module_s
+   {
+      llvm::ModuleHash llhash;
+      uint8_t          objhash[20];
+      uint64_t         size;
+   };
+
+   void get_filename(const llvm::Module *, std::string &, llvm::ModuleHash &);
+
+   llvm::SmallString<PATH_MAX> cachedir;
+   llvm::ModuleHash llhash;
+};
+
+void lp_ObjectCache::get_filename(const llvm::Module *module, std::string &filename, llvm::ModuleHash &hash)
+{
+   std::string bitcode;
+   std::ostringstream strm;
+   llvm::raw_string_ostream bitcode_str(bitcode);
+
+   llvm::WriteBitcodeToFile(*module, bitcode_str, false, nullptr, true, &hash);
+   strm.setf(std::ios::hex, std::ios::basefield);
+   for (auto w = hash.crbegin(); w != hash.crend(); w++)
+      strm<<*w;
+   filename = module->getModuleIdentifier() + "-" + strm.str().c_str();
+}
+
+void lp_ObjectCache::notifyObjectCompiled(const llvm::Module *module, llvm::MemoryBufferRef obj)
+{
+   jit_module_s jit_module;
+   llvm::StringRef objhash;
+   std::string filename;
+   std::error_code err;
+   llvm::SHA1 sha1;
+
+   sha1.update(llvm::ArrayRef<uint8_t>((const uint8_t *)obj.getBufferStart(), obj.getBufferSize()));
+   objhash = sha1.result();
+   jit_module.llhash = llhash;
+   memcpy(jit_module.objhash, objhash.data(), objhash.size());
+   jit_module.size = obj.getBufferSize();
+
+   std::string bitcode;
+   std::ostringstream strm;
+   llvm::raw_string_ostream bitcode_str(bitcode);
+
+   llvm::WriteBitcodeToFile(*module, bitcode_str);
+   strm.setf(std::ios::hex, std::ios::basefield);
+   for (auto w = llhash.crbegin(); w != llhash.crend(); w++)
+      strm<<*w;
+   filename = module->getModuleIdentifier() + "-" + strm.str().c_str();
+
+   llvm::SmallString<PATH_MAX> filePath = cachedir;
+   llvm::sys::path::append(filePath, filename);
+   {
+      llvm::raw_fd_ostream fileObj(filePath.c_str(), err, llvm::sys::fs::F_None);
+      fileObj << obj.getBuffer();
+   }
+
+   llvm::sys::path::replace_extension(filePath, ".info");
+   {
+      llvm::raw_fd_ostream fileObj(filePath.c_str(), err, llvm::sys::fs::F_None);
+      fileObj.write((const char *)&jit_module, sizeof(jit_module));
+   }
+}
+
+std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module *module)
+{
+   std::unique_ptr<llvm::MemoryBuffer> pBuf = nullptr;
+   jit_module_s jit_module;
+   llvm::StringRef objhash;
+   std::string filename;
+   std::error_code rc;
+   llvm::SHA1 sha1;
+   uint64_t size;
+   ssize_t nread;
+   int fd;
+
+   get_filename(module, filename, llhash);
+   llvm::SmallString<PATH_MAX> filePath = cachedir;
+   llvm::sys::path::append(filePath, filename);
+   llvm::SmallString<PATH_MAX> infoPath(filePath);
+   llvm::sys::path::replace_extension(infoPath, ".info");
+
+   fd = -1;
+   rc = llvm::sys::fs::openFileForRead(infoPath, fd);
+   if (rc || fd == -1)
+      return nullptr;
+   nread = read(fd, &jit_module, sizeof(jit_module));
+   llvm::sys::fs::closeFile(fd);
+   if (nread != sizeof(jit_module))
+      return nullptr;
+
+   if (jit_module.llhash != llhash)
+   {
+      printf("invalid bitcode hash\n");
+      return nullptr;
+   }
+
+   llvm::ErrorOr< std::unique_ptr<llvm::MemoryBuffer> > err = llvm::MemoryBuffer::getFileAsStream(filePath);
+   if (err.getError())
+   {
+      printf("failed to read %s (%u)\n", filePath.c_str(), err.getError().value());
+      return nullptr;
+   }
+
+   size = 0;
+   rc = llvm::sys::fs::file_size(filePath, size);
+   if (rc || (size != jit_module.size))
+   {
+      printf("invalid size %lu vs %lu\n", size, jit_module.size);
+      return nullptr;
+   }
+
+   pBuf = std::move(*err);
+   sha1.update(llvm::ArrayRef<uint8_t>((const uint8_t *)pBuf->getBufferStart(), pBuf->getBufferSize()));
+   objhash = sha1.result();
+   if (memcmp(objhash.data(), jit_module.objhash, sizeof(jit_module.objhash)))
+   {
+      printf("invalid sha1\n");
+      printf("found:    ");
+      for (size_t i = 0; i < sizeof(jit_module.objhash)/sizeof(jit_module.objhash[0]); i++)
+         printf("%02x", ((uint8_t *)objhash.data())[i]);
+      printf("\n");
+      printf("expected: ");
+      for (size_t i = 0; i < sizeof(jit_module.objhash)/sizeof(jit_module.objhash[0]); i++)
+         printf("%02x", jit_module.objhash[i]);
+      printf("\n");
+      return nullptr;
+   }
+
+   return pBuf;
+}
+
+static void enable_object_cache(llvm::ExecutionEngine *jit, unsigned OptLevel)
+{
+   static int times;
+   lp_ObjectCache *cache;
+   const char *cachedir;
+   struct stat sb;
+
+   cachedir = os_get_option("LP_CACHE_DIR");
+   if (!cachedir) {
+      debug_printf("%s: %d: LP_CACHE_DIR not set\n", __FUNCTION__, __LINE__);
+      return;
+   }
+
+   if (stat(cachedir, &sb)) {
+      debug_printf("%s: %d: invalid cache dir %s\n", __FUNCTION__, __LINE__, cachedir);
+      return;
+   }
+
+   if (!S_ISDIR(sb.st_mode)) {
+      debug_printf("%s: %d: not dir %s\n", __FUNCTION__, __LINE__, cachedir);
+      return;
+   }
+
+   cache = new lp_ObjectCache(cachedir); /* TODO: free? */
+   jit->setObjectCache(cache);
 }
 
 static once_flag init_native_targets_once_flag = ONCE_FLAG_INIT;
@@ -745,7 +922,9 @@ lp_build_create_jit_compiler_for_module(LLVMExecutionEngineRef *OutJIT,
    JITEventListener *JEL = JITEventListener::createIntelJITEventListener();
    JIT->RegisterJITEventListener(JEL);
 #endif
+
    if (JIT) {
+      enable_object_cache(JIT, OptLevel);
       *OutJIT = wrap(JIT);
       return 0;
    }
