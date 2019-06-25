@@ -141,6 +141,9 @@ lp_build_const_int_pointer(struct gallivm_state *gallivm, const void *ptr)
    LLVMTypeRef int_type;
    LLVMValueRef v;
 
+   /* don't cache if embedding a raw pointer into object */
+   gallivm->disable_cache = TRUE;
+
    /* int type large enough to hold a pointer */
    int_type = LLVMIntTypeInContext(gallivm->context, 8 * sizeof(void *));
    v = LLVMConstInt(int_type, (uintptr_t) ptr, 0);
