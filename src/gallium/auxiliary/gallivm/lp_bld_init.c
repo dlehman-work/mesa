@@ -59,6 +59,7 @@ static const struct debug_named_value lp_bld_perf_flags[] = {
    { "nopt",   GALLIVM_PERF_NO_OPT, "disable optimization passes to speed up shader compilation" },
    { "no_filter_hacks", GALLIVM_PERF_NO_BRILINEAR | GALLIVM_PERF_NO_RHO_APPROX |
      GALLIVM_PERF_NO_QUAD_LOD, "disable filter optimization hacks" },
+   { "no_llvm_cache", GALLIVM_PERF_NO_LLVM_CACHE, "disable caching llvm compiled shaders" },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -72,6 +73,7 @@ static const struct debug_named_value lp_bld_debug_flags[] = {
    { "perf",   GALLIVM_DEBUG_PERF, NULL },
    { "gc",     GALLIVM_DEBUG_GC, NULL },
    { "dumpbc", GALLIVM_DEBUG_DUMP_BC, NULL },
+   { "cache",  GALLIVM_DEBUG_CACHE, NULL },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -198,6 +200,8 @@ gallivm_free_ir(struct gallivm_state *gallivm)
 #endif
 
    if (gallivm->engine) {
+      lp_free_object_cache(gallivm->engine, gallivm->objcache);
+      mtx_destroy(&gallivm->objcache_cs);
       /* This will already destroy any associated module */
       LLVMDisposeExecutionEngine(gallivm->engine);
    } else if (gallivm->module) {
@@ -267,6 +271,9 @@ init_gallivm_engine(struct gallivm_state *gallivm)
          LLVMDisposeMessage(error);
          goto fail;
       }
+
+      gallivm->objcache = lp_create_object_cache(gallivm->engine, (unsigned) optlevel);
+      mtx_init(&gallivm->objcache_cs, mtx_plain);
    }
 
    if (0) {
@@ -686,6 +693,14 @@ gallivm_jit_function(struct gallivm_state *gallivm,
    assert(gallivm->compiled);
    assert(gallivm->engine);
 
+   if (gallivm->objcache && gallivm->disable_cache)
+   {
+      mtx_lock(&gallivm->objcache_cs);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("   not caching %s\n", LLVMGetValueName(func));
+      lp_swap_object_cache(gallivm->engine, NULL);
+   }
+
    if (gallivm_debug & GALLIVM_DEBUG_PERF)
       time_begin = os_time_get();
 
@@ -698,6 +713,13 @@ gallivm_jit_function(struct gallivm_state *gallivm,
       int time_msec = (int)(time_end - time_begin) / 1000;
       debug_printf("   jitting func %s took %d msec\n",
                    LLVMGetValueName(func), time_msec);
+   }
+
+   if (gallivm->objcache && gallivm->disable_cache)
+   {
+       lp_swap_object_cache(gallivm->engine, gallivm->objcache);
+       gallivm->disable_cache = FALSE;
+       mtx_unlock(&gallivm->objcache_cs);
    }
 
    return jit_func;

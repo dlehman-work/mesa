@@ -30,6 +30,7 @@
 #define LP_BLD_INIT_H
 
 
+#include "os/os_thread.h"
 #include "pipe/p_compiler.h"
 #include "util/u_pointer.h" // for func_pointer
 #include "lp_bld.h"
@@ -52,6 +53,9 @@ struct gallivm_state
    LLVMMCJITMemoryManagerRef memorymgr;
    struct lp_generated_code *code;
    unsigned compiled;
+   unsigned disable_cache; /* object contains function pointer set at runtime */
+   void *objcache;
+   mtx_t objcache_cs;
 };
 
 

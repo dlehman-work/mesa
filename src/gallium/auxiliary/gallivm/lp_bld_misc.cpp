@@ -75,6 +75,16 @@
 #include <llvm/ExecutionEngine/JITEventListener.h>
 #endif
 
+#if defined(ENABLE_SHADER_CACHE) && LLVM_VERSION_MAJOR >= 8
+#define ENABLE_LLVM_CACHE 1
+#include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/ExecutionEngine/ObjectCache.h>
+#include <llvm/Support/SHA1.h>
+#include <llvm/Support/Path.h>
+#else
+#define ENABLE_LLVM_CACHE 0
+#endif
+
 #if LLVM_VERSION_MAJOR < 7
 // Workaround http://llvm.org/PR23628
 #pragma pop_macro("DEBUG")
@@ -83,11 +93,15 @@
 #include "c11/threads.h"
 #include "os/os_thread.h"
 #include "pipe/p_config.h"
+#include "util/disk_cache.h"
+#include "util/debug.h"
 #include "util/u_debug.h"
 #include "util/u_cpu_detect.h"
+#include "util/u_atomic.h"
 
 #include "lp_bld_misc.h"
 #include "lp_bld_debug.h"
+#include "lp_bld_type.h"
 
 namespace {
 
@@ -103,6 +117,256 @@ public:
 
 static LLVMEnsureMultithreaded lLVMEnsureMultithreaded;
 
+}
+
+#define LLVM_CACHE_TAG  "LPC_"
+#if ENABLE_LLVM_CACHE
+class lp_ObjectCache : public llvm::ObjectCache
+{
+public:
+   lp_ObjectCache(struct disk_cache *dc) : disk_cache(dc), ref(1) {}
+   ~lp_ObjectCache(void) { disk_cache_destroy(disk_cache); }
+   virtual void notifyObjectCompiled(const llvm::Module *, llvm::MemoryBufferRef);
+   virtual std::unique_ptr<llvm::MemoryBuffer> getObject(const llvm::Module *);
+   int addref(void) { return p_atomic_inc_return(&ref); }
+   int release(void);
+
+private:
+   struct jit_module_s
+   {
+      cache_key modhash;
+      cache_key objhash;
+      uint64_t objsize;
+   };
+
+   struct disk_cache *disk_cache;
+   int ref;
+};
+
+void lp_ObjectCache::notifyObjectCompiled(const llvm::Module *module, llvm::MemoryBufferRef obj)
+{
+   jit_module_s jit_module;
+   const std::string &modname = module->getModuleIdentifier();
+
+   if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+      debug_printf("   caching %s\n", modname.c_str());
+
+   disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), jit_module.modhash);
+   disk_cache_compute_key(disk_cache, obj.getBufferStart(), obj.getBufferSize(), jit_module.objhash);
+   jit_module.objsize = obj.getBufferSize();
+
+   disk_cache_put(disk_cache, jit_module.modhash, &jit_module, sizeof(jit_module), NULL);
+   disk_cache_put(disk_cache, jit_module.objhash, obj.getBufferStart(), obj.getBufferSize(), NULL);
+}
+
+std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module *module)
+{
+   void *obj;
+   size_t size;
+   cache_key key;
+   char expected[41], found[41];
+   jit_module_s *jit_module;
+   std::unique_ptr<llvm::MemoryBuffer> pBuf = nullptr;
+   const std::string &modname = module->getModuleIdentifier();
+
+   if (modname.find(LLVM_CACHE_TAG) == std::string::npos)
+      return nullptr;
+
+   disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), key);
+   size = 0;
+   jit_module = (jit_module_s *)disk_cache_get(disk_cache, key, &size);
+   if (!jit_module)
+      return nullptr;
+
+   obj = NULL;
+   if (memcmp(key, jit_module->modhash, sizeof(key))) {
+      disk_cache_remove(disk_cache, key);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
+         _mesa_sha1_format(expected, key);
+         _mesa_sha1_format(found, jit_module->modhash);
+         debug_printf("invalid module hash: expected %s, found %s\n", expected, found);
+      }
+      goto done;
+   }
+
+   size = 0;
+   obj = disk_cache_get(disk_cache, jit_module->objhash, &size);
+   if (!obj) {
+      disk_cache_remove(disk_cache, key);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
+         _mesa_sha1_format(expected, jit_module->objhash);
+         debug_printf("missing obj %s\n", expected);
+      }
+      goto done;
+   }
+
+   if (size != jit_module->objsize) {
+      disk_cache_remove(disk_cache, key);
+      disk_cache_remove(disk_cache, jit_module->objhash);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("invalid object size: expected %zu, found %zu\n", jit_module->objsize, size);
+      goto done;
+   }
+
+   disk_cache_compute_key(disk_cache, obj, size, key);
+   if (memcmp(key, jit_module->objhash, sizeof(key))) {
+      disk_cache_remove(disk_cache, key);
+      disk_cache_remove(disk_cache, jit_module->objhash);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
+         _mesa_sha1_format(expected, key);
+         _mesa_sha1_format(found, jit_module->objhash);
+         debug_printf("invalid object hash: expected %s, found %s\n", expected, found);
+      }
+      goto done;
+   }
+
+   if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+      debug_printf("   using cached %s\n", modname.c_str());
+   pBuf = std::move(llvm::MemoryBuffer::getMemBufferCopy(llvm::StringRef((const char *)obj, size)));
+
+done:
+   free(jit_module);
+   free(obj);
+   return pBuf;
+}
+
+int lp_ObjectCache::release(void)
+{
+    int ret;
+    if (!(ret = p_atomic_dec_return(&ref)))
+        delete this;
+    return ret;
+}
+
+static std::once_flag objcache_flag; /* TODO: once for all versions of object cache? */
+static lp_ObjectCache *lp_cache;
+
+static void *
+create_object_cache(LLVMExecutionEngineRef ref, unsigned OptLevel)
+{
+   llvm::ExecutionEngine *engine;
+   llvm::StringRef cpu, features;
+   llvm::TargetMachine *machine;
+   struct disk_cache *disk_cache;
+   lp_ObjectCache *cache;
+   char buffer[256];
+
+   if (!ref)
+      return NULL;
+
+   if (gallivm_perf & GALLIVM_PERF_NO_LLVM_CACHE)
+      return NULL;
+
+   engine = llvm::unwrap(ref);
+   machine = engine->getTargetMachine();
+   cpu = machine->getTargetCPU();
+   features = machine->getTargetFeatureString();
+
+   snprintf(buffer, sizeof(buffer), "LLVM " MESA_LLVM_VERSION_STRING ", %u bits, (CPU: %s) (Opt -O%u)",
+      lp_native_vector_width, cpu.data(), OptLevel );
+
+   disk_cache = disk_cache_create(buffer, features.data(), OptLevel);
+   if (!disk_cache) {
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("failed to create disk cache\n");
+      return NULL;
+   }
+
+   cache = new lp_ObjectCache(disk_cache);
+   if (cache)
+      engine->setObjectCache(cache);
+   else {
+      disk_cache_destroy(disk_cache);
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("failed to create object cache\n");
+   }
+
+   if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+        debug_printf("created llvm object cache: %s (%s)\n", buffer, features.data());
+
+   return cache;
+}
+#endif
+
+extern "C" void *
+lp_create_object_cache(LLVMExecutionEngineRef ref, unsigned OptLevel)
+{
+#if ENABLE_LLVM_CACHE
+    std::call_once(objcache_flag, [ref, OptLevel](){
+        lp_cache = (lp_ObjectCache*)create_object_cache(ref, OptLevel);
+    });
+    return lp_cache;
+#else
+    return NULL;
+#endif
+}
+
+extern "C" void
+lp_free_object_cache(LLVMExecutionEngineRef ref, void *objcache)
+{
+#if ENABLE_LLVM_CACHE
+   if (ref)
+      llvm::unwrap(ref)->setObjectCache(NULL);
+return; // TODO: randomly causes crash
+   if (objcache)
+      ((lp_ObjectCache *)objcache)->release();
+#endif
+}
+
+extern "C" void
+lp_swap_object_cache(LLVMExecutionEngineRef ref, void *objcache)
+{
+#if ENABLE_LLVM_CACHE
+   if (ref) /* TODO: can we use same objcache in multiple engines? */
+      llvm::unwrap(ref)->setObjectCache((llvm::ObjectCache*)objcache); /* TODO: refcount? what about old objcache? */
+#endif
+}
+
+extern "C" void
+lp_unique_module_name(char *buffer, const char *extension,
+                      const void *const_data, size_t const_size,
+                      const void *variant_data, size_t variant_size)
+{
+    cache_key sha1;
+    struct mesa_sha1 sha1_ctx;
+
+    strcpy(buffer, LLVM_CACHE_TAG);
+    _mesa_sha1_init(&sha1_ctx);
+    _mesa_sha1_update(&sha1_ctx, const_data, const_size);
+    if (variant_data)
+        _mesa_sha1_update(&sha1_ctx, variant_data, variant_size);
+    _mesa_sha1_final(&sha1_ctx, sha1);
+    _mesa_sha1_format(buffer + strlen(LLVM_CACHE_TAG), sha1);
+    strcat(buffer, extension);
+}
+
+extern "C" LLVMValueRef
+lp_resolve_function(LLVMModuleRef module, const char *name,
+                    LLVMTypeRef ret_type, LLVMTypeRef *arg_types, unsigned num_args,
+                    void *address)
+{
+   LLVMValueRef function;
+   LLVMTypeRef function_type;
+
+printf("%s: name %s\n", __FUNCTION__, name);
+   //if (!lp_cache)
+   //  return NULL; /* compiled out or disabled at runtime */
+
+   function = LLVMGetNamedFunction(module, name);
+   if (function)
+      return function;
+
+   function_type = LLVMFunctionType(ret_type, arg_types, num_args, 0);
+   function = LLVMAddFunction(module, name, function_type);
+   if (!function)
+      return NULL;
+
+   LLVMSetFunctionCallConv(function, LLVMCCallConv);
+   LLVMSetLinkage(function, LLVMExternalLinkage);
+   if (!LLVMSearchForAddressOfSymbol(name))
+      LLVMAddSymbol(name, address);
+
+   return function;
 }
 
 static once_flag init_native_targets_once_flag = ONCE_FLAG_INIT;

@@ -54,6 +54,7 @@
 #include "lp_bld_intr.h"
 #include "lp_bld_logic.h"
 #include "lp_bld_bitarit.h"
+#include "lp_bld_misc.h"
 
 
 /**
@@ -876,10 +877,12 @@ lp_build_fetch_rgba_aos(struct gallivm_state *gallivm,
       LLVMTypeRef pf32t = LLVMPointerType(f32t, 0);
       LLVMTypeRef pi8t = LLVMPointerType(LLVMInt8TypeInContext(gallivm->context), 0);
       LLVMTypeRef i32t = LLVMInt32TypeInContext(gallivm->context);
+      LLVMModuleRef module;
       LLVMValueRef function;
       LLVMValueRef tmp_ptr;
       LLVMValueRef tmps[LP_MAX_VECTOR_LENGTH/4];
       LLVMValueRef res;
+      char function_name[64];
       unsigned k;
 
       if (gallivm_debug & GALLIVM_DEBUG_PERF) {
@@ -890,7 +893,11 @@ lp_build_fetch_rgba_aos(struct gallivm_state *gallivm,
       /*
        * Declare and bind format_desc->fetch_rgba_float().
        */
+      sprintf(function_name, "util_format_%s_fetch_rgba_float", format_desc->short_name);
+      module = LLVMGetGlobalParent(LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder)));
+      function = LLVMGetNamedFunction(module, function_name);
 
+      //if (!function) 
       {
          /*
           * Function to call looks like:
