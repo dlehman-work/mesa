@@ -690,7 +690,8 @@ BuilderSWR::CompileGS(struct swr_context *ctx, swr_jit_gs_key &key)
                      NULL, // thread data
                      sampler,
                      &gs->info.base,
-                     &gs_iface.base);
+                     &gs_iface.base,
+                     NULL, NULL); // ssbos
 
    lp_build_mask_end(&mask);
 
@@ -841,7 +842,8 @@ BuilderSWR::CompileVS(struct swr_context *ctx, swr_jit_vs_key &key)
                      NULL, // thread data
                      sampler, // sampler
                      &swr_vs->info.base,
-                     NULL); // geometry shader face
+                     NULL, // geometry shader face
+                     NULL, NULL); // ssbos
 
    sampler->destroy(sampler);
 
@@ -1331,7 +1333,8 @@ BuilderSWR::CompileFS(struct swr_context *ctx, swr_jit_fs_key &key)
                      NULL, // thread data
                      sampler, // sampler
                      &swr_fs->info.base,
-                     NULL); // geometry shader face
+                     NULL, // geometry shader face
+                     NULL, NULL); //ssbos
 
    sampler->destroy(sampler);
 
