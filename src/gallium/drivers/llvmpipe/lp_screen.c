@@ -26,6 +26,7 @@
  **************************************************************************/
 
 
+#include "util/disk_cache.h"
 #include "util/u_memory.h"
 #include "util/u_math.h"
 #include "util/u_cpu_detect.h"
@@ -663,6 +664,8 @@ llvmpipe_destroy_screen( struct pipe_screen *_screen )
 
    mtx_destroy(&screen->rast_mutex);
    mtx_destroy(&screen->cs_mutex);
+   disk_cache_destroy(screen->disk_cache);
+
    FREE(screen);
 }
 
@@ -713,6 +716,21 @@ llvmpipe_get_timestamp(struct pipe_screen *_screen)
    return os_time_get_nano();
 }
 
+static struct disk_cache *
+llvmpipe_get_disk_shader_cache(struct pipe_screen *screen)
+{
+   return llvmpipe_screen(screen)->disk_cache;
+}
+
+static void
+lp_init_disk_cache(struct llvmpipe_screen *screen)
+{
+#ifdef ENABLE_SHADER_CACHE
+   screen->disk_cache = disk_cache_create(llvmpipe_get_vendor(&screen->base),
+                                          llvmpipe_get_name(&screen->base), 0);
+#endif
+}
+
 /**
  * Create a new pipe_screen object
  * Note: we're not presently subclassing pipe_screen (no llvmpipe_screen).
@@ -758,6 +776,7 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->base.fence_finish = llvmpipe_fence_finish;
 
    screen->base.get_timestamp = llvmpipe_get_timestamp;
+   screen->base.get_disk_shader_cache = llvmpipe_get_disk_shader_cache;
 
    llvmpipe_init_screen_resource_funcs(&screen->base);
 
@@ -784,6 +803,7 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
       return NULL;
    }
    (void) mtx_init(&screen->cs_mutex, mtx_plain);
+   lp_init_disk_cache(screen);
 
    return &screen->base;
 }
