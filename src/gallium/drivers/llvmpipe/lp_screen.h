@@ -62,6 +62,7 @@ struct llvmpipe_screen
    mtx_t cs_mutex;
 
    bool use_tgsi;
+   struct disk_cache *disk_cache;
 };
 
 
