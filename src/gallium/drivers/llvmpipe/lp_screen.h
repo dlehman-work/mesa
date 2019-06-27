@@ -57,6 +57,8 @@ struct llvmpipe_screen
 
    struct lp_rasterizer *rast;
    mtx_t rast_mutex;
+
+   struct disk_cache *disk_cache;
 };
 
 
