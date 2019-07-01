@@ -7247,7 +7247,8 @@ ast_process_struct_or_iface_block_members(exec_list *instructions,
        * The GLSL ES 1.00 and 3.00 specs have similar langauge. So, we allow
        * embedded structures in 1.10 only.
        */
-      if (state->language_version != 110 &&
+      if (var_mode != ir_var_shader_storage &&
+          state->language_version != 110 &&
           decl_list->type->specifier->structure != NULL)
          _mesa_glsl_error(&loc, state,
                           "embedded structure declarations are not allowed");
