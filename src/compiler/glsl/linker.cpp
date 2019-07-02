@@ -1003,7 +1003,8 @@ cross_validate_globals(struct gl_context *ctx, struct gl_shader_program *prog,
           */
          if (var->data.explicit_binding) {
             if (existing->data.explicit_binding &&
-                var->data.binding != existing->data.binding) {
+                var->data.binding != existing->data.binding &&
+                var->data.used && existing->data.used) {
                linker_error(prog, "explicit bindings for %s "
                             "`%s' have differing values\n",
                             mode_string(var), var->name);
