@@ -102,6 +102,7 @@
 #include "c11/threads.h"
 #include "os/os_thread.h"
 #include "pipe/p_config.h"
+#include "util/disk_cache.h"
 #include "util/debug.h"
 #include "util/u_debug.h"
 #include "util/u_cpu_detect.h"
@@ -129,170 +130,89 @@ static LLVMEnsureMultithreaded lLVMEnsureMultithreaded;
 class lp_ObjectCache : public llvm::ObjectCache
 {
 public:
-   lp_ObjectCache(const char *cd) : cachedir(cd) {}
+   lp_ObjectCache(struct disk_cache *dc) : disk_cache(dc) {}
+   ~lp_ObjectCache(void) { disk_cache_destroy(disk_cache); }
    virtual void notifyObjectCompiled(const llvm::Module *, llvm::MemoryBufferRef);
    virtual std::unique_ptr<llvm::MemoryBuffer> getObject(const llvm::Module *);
 
 private:
    struct jit_module_s
    {
-      llvm::ModuleHash llhash;
-      uint8_t          objhash[20];
-      uint64_t         size;
+      uint8_t  modhash[20];
+      uint8_t  objhash[20];
+      uint64_t objsize;
    };
 
-   void get_filename(const llvm::Module *, std::string &, llvm::ModuleHash &);
-
-   llvm::SmallString<PATH_MAX> cachedir;
-   llvm::ModuleHash llhash;
+   struct disk_cache *disk_cache;
 };
-
-void lp_ObjectCache::get_filename(const llvm::Module *module, std::string &filename, llvm::ModuleHash &hash)
-{
-   std::string bitcode;
-   std::ostringstream strm;
-   llvm::raw_string_ostream bitcode_str(bitcode);
-
-   llvm::WriteBitcodeToFile(*module, bitcode_str, false, nullptr, true, &hash);
-   strm.setf(std::ios::hex, std::ios::basefield);
-   for (auto w = hash.crbegin(); w != hash.crend(); w++)
-      strm<<*w;
-   filename = module->getModuleIdentifier() + "-" + strm.str().c_str();
-}
 
 void lp_ObjectCache::notifyObjectCompiled(const llvm::Module *module, llvm::MemoryBufferRef obj)
 {
+   struct mesa_sha1 ctx;
    jit_module_s jit_module;
-   llvm::StringRef objhash;
-   std::string filename;
-   std::error_code err;
-   llvm::SHA1 sha1;
+   const std::string &modname = module->getModuleIdentifier();
 
-   sha1.update(llvm::ArrayRef<uint8_t>((const uint8_t *)obj.getBufferStart(), obj.getBufferSize()));
-   objhash = sha1.result();
-   jit_module.llhash = llhash;
-   memcpy(jit_module.objhash, objhash.data(), objhash.size());
-   jit_module.size = obj.getBufferSize();
+   _mesa_sha1_init(&ctx);
+   _mesa_sha1_update(&ctx, modname.c_str(), modname.length());
+   _mesa_sha1_final(&ctx, jit_module.modhash);
 
-   std::string bitcode;
-   std::ostringstream strm;
-   llvm::raw_string_ostream bitcode_str(bitcode);
+   _mesa_sha1_init(&ctx);
+   _mesa_sha1_update(&ctx, obj.getBufferStart(), obj.getBufferSize());
+   _mesa_sha1_final(&ctx, jit_module.objhash);
+   jit_module.objsize = obj.getBufferSize();
 
-   llvm::WriteBitcodeToFile(*module, bitcode_str);
-   strm.setf(std::ios::hex, std::ios::basefield);
-   for (auto w = llhash.crbegin(); w != llhash.crend(); w++)
-      strm<<*w;
-   filename = module->getModuleIdentifier() + "-" + strm.str().c_str();
-
-   llvm::SmallString<PATH_MAX> filePath = cachedir;
-   llvm::sys::path::append(filePath, filename);
-   {
-      llvm::raw_fd_ostream fileObj(filePath.c_str(), err, llvm::sys::fs::F_None);
-      fileObj << obj.getBuffer();
-   }
-
-   llvm::sys::path::replace_extension(filePath, ".info");
-   {
-      llvm::raw_fd_ostream fileObj(filePath.c_str(), err, llvm::sys::fs::F_None);
-      fileObj.write((const char *)&jit_module, sizeof(jit_module));
-   }
+   disk_cache_put(disk_cache, jit_module.modhash, &jit_module, sizeof(jit_module), NULL);
+   disk_cache_put(disk_cache, jit_module.objhash, obj.getBufferStart(), obj.getBufferSize(), NULL);
 }
 
 std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module *module)
 {
-   std::unique_ptr<llvm::MemoryBuffer> pBuf = nullptr;
-   jit_module_s jit_module;
-   llvm::StringRef objhash;
-   std::string filename;
-   std::error_code rc;
-   llvm::SHA1 sha1;
-   uint64_t size;
-   ssize_t nread;
-   int fd;
+   void *obj;
+   size_t size;
+   uint8_t modhash[20];
+   struct mesa_sha1 ctx;
+   jit_module_s *jit_module;
+   const std::string &modname = module->getModuleIdentifier();
 
-   get_filename(module, filename, llhash);
-   llvm::SmallString<PATH_MAX> filePath = cachedir;
-   llvm::sys::path::append(filePath, filename);
-   llvm::SmallString<PATH_MAX> infoPath(filePath);
-   llvm::sys::path::replace_extension(infoPath, ".info");
-
-   fd = -1;
-   rc = llvm::sys::fs::openFileForRead(infoPath, fd);
-   if (rc || fd == -1)
-      return nullptr;
-   nread = read(fd, &jit_module, sizeof(jit_module));
-   llvm::sys::fs::closeFile(fd);
-   if (nread != sizeof(jit_module))
-      return nullptr;
-
-   if (jit_module.llhash != llhash)
-   {
-      printf("invalid bitcode hash\n");
-      return nullptr;
-   }
-
-   llvm::ErrorOr< std::unique_ptr<llvm::MemoryBuffer> > err = llvm::MemoryBuffer::getFileAsStream(filePath);
-   if (err.getError())
-   {
-      printf("failed to read %s (%u)\n", filePath.c_str(), err.getError().value());
-      return nullptr;
-   }
+   _mesa_sha1_init(&ctx);
+   _mesa_sha1_update(&ctx, modname.c_str(), modname.length());
+   _mesa_sha1_final(&ctx, modhash);
 
    size = 0;
-   rc = llvm::sys::fs::file_size(filePath, size);
-   if (rc || (size != jit_module.size))
+   jit_module = (jit_module_s *)disk_cache_get(disk_cache, modhash, &size);
+   if (!jit_module)
+      return nullptr;
+
+   size = 0;
+   obj = disk_cache_get(disk_cache, jit_module->objhash, &size);
+   if (!obj)
    {
-      printf("invalid size %lu vs %lu\n", size, jit_module.size);
+      free(jit_module);
       return nullptr;
    }
 
+   std::unique_ptr<llvm::MemoryBuffer> pBuf = nullptr;
+   llvm::StringRef ref((const char *)obj, size);
+   llvm::ErrorOr< std::unique_ptr<llvm::MemoryBuffer> > err = llvm::MemoryBuffer::getMemBufferCopy(ref);
    pBuf = std::move(*err);
-   sha1.update(llvm::ArrayRef<uint8_t>((const uint8_t *)pBuf->getBufferStart(), pBuf->getBufferSize()));
-   objhash = sha1.result();
-   if (memcmp(objhash.data(), jit_module.objhash, sizeof(jit_module.objhash)))
-   {
-      printf("invalid sha1\n");
-      printf("found:    ");
-      for (size_t i = 0; i < sizeof(jit_module.objhash)/sizeof(jit_module.objhash[0]); i++)
-         printf("%02x", ((uint8_t *)objhash.data())[i]);
-      printf("\n");
-      printf("expected: ");
-      for (size_t i = 0; i < sizeof(jit_module.objhash)/sizeof(jit_module.objhash[0]); i++)
-         printf("%02x", jit_module.objhash[i]);
-      printf("\n");
-      return nullptr;
-   }
-
+   free(jit_module);
+   free(obj);
    return pBuf;
 }
 
 static void enable_object_cache(llvm::ExecutionEngine *jit, unsigned OptLevel)
 {
+   struct disk_cache *disk_cache;
    lp_ObjectCache *cache;
-   const char *cachedir;
-   struct stat sb;
    bool disable;
 
    disable = env_var_as_boolean("LP_DISABLE_LLVM_CACHE", false);
    if (disable) return;
 
-   cachedir = os_get_option("LP_CACHE_DIR");
-   if (!cachedir) {
-      debug_printf("%s: %d: LP_CACHE_DIR not set\n", __FUNCTION__, __LINE__);
-      return;
-   }
+   disk_cache = disk_cache_create("gpu_name", "timestamp", 0); /* TODO */
+   if (!disk_cache) return;
 
-   if (stat(cachedir, &sb)) {
-      debug_printf("%s: %d: invalid cache dir %s\n", __FUNCTION__, __LINE__, cachedir);
-      return;
-   }
-
-   if (!S_ISDIR(sb.st_mode)) {
-      debug_printf("%s: %d: not dir %s\n", __FUNCTION__, __LINE__, cachedir);
-      return;
-   }
-
-   cache = new lp_ObjectCache(cachedir); /* TODO: free? */
+   cache = new lp_ObjectCache(disk_cache); /* TODO: free? */
    jit->setObjectCache(cache);
 }
 
