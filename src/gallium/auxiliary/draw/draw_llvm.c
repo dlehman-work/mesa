@@ -52,11 +52,13 @@
 
 #include "tgsi/tgsi_exec.h"
 #include "tgsi/tgsi_dump.h"
+#include "tgsi/tgsi_parse.h"
 
 #include "util/u_math.h"
 #include "util/u_pointer.h"
 #include "util/u_string.h"
 #include "util/simple_list.h"
+#include "util/mesa-sha1.h"
 
 
 #define DEBUG_STORE 0
@@ -579,6 +581,25 @@ draw_llvm_destroy(struct draw_llvm *llvm)
 }
 
 
+static void
+generate_variant_module_name(char *buffer,
+                             const struct llvm_vertex_shader *shader,
+                             const struct draw_llvm_variant_key *key)
+{
+    unsigned ntokens;
+    uint8_t sha1[20];
+    struct mesa_sha1 sha1_ctx;
+
+    ntokens = tgsi_num_tokens(shader->base.state.tokens);
+
+    _mesa_sha1_init(&sha1_ctx);
+    _mesa_sha1_update(&sha1_ctx, shader->base.state.tokens, ntokens * sizeof(struct tgsi_token));
+    _mesa_sha1_update(&sha1_ctx, key, shader->variant_key_size);
+    _mesa_sha1_final(&sha1_ctx, sha1);
+    _mesa_sha1_format(buffer, sha1);
+}
+
+
 /**
  * Create LLVM-generated code for a vertex shader.
  */
@@ -602,8 +623,8 @@ draw_llvm_create_variant(struct draw_llvm *llvm,
    variant->llvm = llvm;
    variant->shader = shader;
 
-   util_snprintf(module_name, sizeof(module_name), "draw_llvm_vs_variant%u",
-                 variant->shader->variants_cached);
+   generate_variant_module_name(module_name, shader, key);
+   strcat(module_name, "-vs");
 
    variant->gallivm = gallivm_create(module_name, llvm->context);
 
