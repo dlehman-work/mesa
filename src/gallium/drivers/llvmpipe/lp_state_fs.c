@@ -68,6 +68,7 @@
 #include "util/simple_list.h"
 #include "util/u_dual_blend.h"
 #include "util/os_time.h"
+#include "util/mesa-sha1.h"
 #include "pipe/p_shader_tokens.h"
 #include "draw/draw_context.h"
 #include "tgsi/tgsi_dump.h"
@@ -2808,6 +2809,24 @@ lp_debug_fs_variant(const struct lp_fragment_shader_variant *variant)
 }
 
 
+static void
+generate_variant_module_name(char *buffer,
+                             const struct lp_fragment_shader *shader,
+                             const struct lp_fragment_shader_variant_key *key)
+{
+    unsigned ntokens;
+    uint8_t sha1[20];
+    struct mesa_sha1 sha1_ctx;
+
+    ntokens = tgsi_num_tokens(shader->base.tokens);
+
+    _mesa_sha1_init(&sha1_ctx);
+    _mesa_sha1_update(&sha1_ctx, shader->base.tokens, ntokens * sizeof(struct tgsi_token));
+    _mesa_sha1_update(&sha1_ctx, key, shader->variant_key_size);
+    _mesa_sha1_final(&sha1_ctx, sha1);
+    _mesa_sha1_format(buffer, sha1);
+}
+
 /**
  * Generate a new fragment shader variant from the shader code and
  * other state indicated by the key.
@@ -2826,8 +2845,8 @@ generate_variant(struct llvmpipe_context *lp,
    if (!variant)
       return NULL;
 
-   util_snprintf(module_name, sizeof(module_name), "fs%u_variant%u",
-                 shader->no, shader->variants_created);
+   generate_variant_module_name(module_name, shader, key);
+   strcat(module_name, "-fs");
 
    variant->gallivm = gallivm_create(module_name, lp->context);
    if (!variant->gallivm) {
