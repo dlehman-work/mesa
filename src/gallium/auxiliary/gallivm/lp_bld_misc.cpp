@@ -102,6 +102,7 @@
 #include "c11/threads.h"
 #include "os/os_thread.h"
 #include "pipe/p_config.h"
+#include "util/debug.h"
 #include "util/u_debug.h"
 #include "util/u_cpu_detect.h"
 
@@ -267,10 +268,13 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
 
 static void enable_object_cache(llvm::ExecutionEngine *jit, unsigned OptLevel)
 {
-   static int times;
    lp_ObjectCache *cache;
    const char *cachedir;
    struct stat sb;
+   bool disable;
+
+   disable = env_var_as_boolean("LP_DISABLE_LLVM_CACHE", false);
+   if (disable) return;
 
    cachedir = os_get_option("LP_CACHE_DIR");
    if (!cachedir) {
