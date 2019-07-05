@@ -88,6 +88,7 @@
 #include "gallivm/lp_bld_pack.h"
 #include "gallivm/lp_bld_format.h"
 #include "gallivm/lp_bld_quad.h"
+#include "gallivm/lp_bld_misc.h"
 
 #include "lp_bld_alpha.h"
 #include "lp_bld_blend.h"
@@ -2503,8 +2504,9 @@ generate_fragment(struct llvmpipe_context *lp,
 
    blend_vec_type = lp_build_vec_type(gallivm, blend_type);
 
-   snprintf(func_name, sizeof(func_name), "fs%u_variant%u_%s",
-            shader->no, variant->no, partial_mask ? "partial" : "whole");
+   lp_unique_module_name(func_name,
+                         partial_mask ? ".fs-partial" : ".fs-whole",
+                         key, shader->variant_key_size, NULL, 0);
 
    arg_types[0] = variant->jit_context_ptr_type;       /* context */
    arg_types[1] = int32_type;                          /* x */
@@ -2842,8 +2844,9 @@ generate_variant(struct llvmpipe_context *lp,
    if (!variant)
       return NULL;
 
-   snprintf(module_name, sizeof(module_name), "fs%u_variant%u",
-            shader->no, shader->variants_created);
+   lp_unique_module_name(module_name, ".fs",
+                         shader->base.tokens, tgsi_num_tokens(shader->base.tokens) * sizeof(struct tgsi_token),
+                         key, shader->variant_key_size);
 
    variant->gallivm = gallivm_create(module_name, lp->context);
    if (!variant->gallivm) {

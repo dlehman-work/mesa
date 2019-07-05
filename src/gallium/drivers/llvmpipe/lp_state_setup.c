@@ -39,6 +39,7 @@
 #include "gallivm/lp_bld_intr.h"
 #include "gallivm/lp_bld_flow.h"
 #include "gallivm/lp_bld_type.h"
+#include "gallivm/lp_bld_misc.h"
 
 #include "lp_perf.h"
 #include "lp_debug.h"
@@ -727,9 +728,7 @@ generate_setup_variant(struct lp_setup_variant_key *key,
 
    variant->no = setup_no++;
 
-   snprintf(func_name, sizeof(func_name), "setup_variant_%u",
-            variant->no);
-
+   lp_unique_module_name(func_name, ".setup", key, key->size, NULL, 0);
    variant->gallivm = gallivm = gallivm_create(func_name, lp->context);
    if (!variant->gallivm) {
       goto fail;
