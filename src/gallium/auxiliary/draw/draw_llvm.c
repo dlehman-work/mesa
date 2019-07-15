@@ -2675,8 +2675,9 @@ draw_gs_llvm_generate(struct draw_llvm *llvm,
    memset(&system_values, 0, sizeof(system_values));
    memset(&outputs, 0, sizeof(outputs));
 
-   snprintf(func_name, sizeof(func_name), "draw_llvm_gs_variant%u",
-            variant->shader->variants_cached);
+   lp_unique_module_name(func_name, ".gs", variant->shader->base.state.tokens,
+                         tgsi_num_tokens(variant->shader->base.state.tokens) * sizeof(struct tgsi_token),
+                         &variant->key, variant->shader->variant_key_size);
 
    assert(variant->vertex_header_ptr_type);
 
@@ -2829,8 +2830,9 @@ draw_gs_llvm_create_variant(struct draw_llvm *llvm,
    variant->llvm = llvm;
    variant->shader = shader;
 
-   snprintf(module_name, sizeof(module_name), "draw_llvm_gs_variant%u",
-            variant->shader->variants_cached);
+   lp_unique_module_name(module_name, ".gs", shader->base.state.tokens,
+                         tgsi_num_tokens(shader->base.state.tokens) * sizeof(struct tgsi_token),
+                         key, shader->variant_key_size);
 
    variant->gallivm = gallivm_create(module_name, llvm->context);
 
