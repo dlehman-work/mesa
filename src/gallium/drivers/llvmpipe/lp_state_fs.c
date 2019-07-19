@@ -2423,7 +2423,7 @@ generate_fragment(struct llvmpipe_context *lp,
                   unsigned partial_mask)
 {
    struct gallivm_state *gallivm = variant->gallivm;
-   const struct lp_fragment_shader_variant_key *key = &variant->key;
+   struct lp_fragment_shader_variant_key *key = &variant->key;
    struct lp_shader_input inputs[PIPE_MAX_SHADER_INPUTS];
    char func_name[64];
    struct lp_type fs_type;
@@ -2594,7 +2594,7 @@ generate_fragment(struct llvmpipe_context *lp,
    }
 
    /* code generated texture sampling */
-   sampler = lp_llvm_sampler_soa_create(key->state);
+   sampler = lp_llvm_sampler_soa_create(key->samplers);
 
    num_fs = 16 / fs_type.length; /* number of loops per 4x4 stamp */
    /* for 1d resources only run "upper half" of stamp */
@@ -2723,7 +2723,7 @@ generate_fragment(struct llvmpipe_context *lp,
 
 
 static void
-dump_fs_variant_key(const struct lp_fragment_shader_variant_key *key)
+dump_fs_variant_key(struct lp_fragment_shader_variant_key *key)
 {
    unsigned i;
 
@@ -2778,7 +2778,7 @@ dump_fs_variant_key(const struct lp_fragment_shader_variant_key *key)
       debug_printf("blend.alpha_to_coverage is enabled\n");
    }
    for (i = 0; i < key->nr_samplers; ++i) {
-      const struct lp_static_sampler_state *sampler = &key->state[i].sampler_state;
+      const struct lp_static_sampler_state *sampler = &key->samplers[i].sampler_state;
       debug_printf("sampler[%u] = \n", i);
       debug_printf("  .wrap = %s %s %s\n",
                    util_str_tex_wrap(sampler->wrap_s, TRUE),
@@ -2799,7 +2799,7 @@ dump_fs_variant_key(const struct lp_fragment_shader_variant_key *key)
       debug_printf("  .apply_max_lod = %u\n", sampler->apply_max_lod);
    }
    for (i = 0; i < key->nr_sampler_views; ++i) {
-      const struct lp_static_texture_state *texture = &key->state[i].texture_state;
+      const struct lp_static_texture_state *texture = &key->samplers[i].texture_state;
       debug_printf("texture[%u] = \n", i);
       debug_printf("  .format = %s\n",
                    util_format_name(texture->format));
@@ -2816,7 +2816,7 @@ dump_fs_variant_key(const struct lp_fragment_shader_variant_key *key)
 
 
 void
-lp_debug_fs_variant(const struct lp_fragment_shader_variant *variant)
+lp_debug_fs_variant(struct lp_fragment_shader_variant *variant)
 {
    debug_printf("llvmpipe: Fragment shader #%u variant #%u:\n", 
                 variant->shader->no, variant->no);
@@ -2841,10 +2841,11 @@ generate_variant(struct llvmpipe_context *lp,
    boolean fullcolormask;
    char module_name[64];
 
-   variant = CALLOC_STRUCT(lp_fragment_shader_variant);
+   variant = MALLOC(sizeof *variant + shader->variant_key_size - sizeof variant->key);
    if (!variant)
       return NULL;
 
+   memset(variant, 0, sizeof(*variant));
    util_snprintf(module_name, sizeof(module_name), "fs%u_variant%u",
                  shader->no, shader->variants_created);
 
@@ -2959,8 +2960,7 @@ llvmpipe_create_fs_state(struct pipe_context *pipe,
    nr_samplers = shader->info.base.file_max[TGSI_FILE_SAMPLER] + 1;
    nr_sampler_views = shader->info.base.file_max[TGSI_FILE_SAMPLER_VIEW] + 1;
 
-   shader->variant_key_size = Offset(struct lp_fragment_shader_variant_key,
-                                     state[MAX2(nr_samplers, nr_sampler_views)]);
+   shader->variant_key_size = lp_fs_variant_key_size(MAX2(nr_samplers, nr_sampler_views));
 
    for (i = 0; i < shader->info.base.num_inputs; i++) {
       shader->inputs[i].usage_mask = shader->info.base.input_usage_mask[i];
@@ -3222,7 +3222,7 @@ make_variant_key(struct llvmpipe_context *lp,
 {
    unsigned i;
 
-   memset(key, 0, shader->variant_key_size);
+   memset(key, 0, offsetof(struct lp_fragment_shader_variant_key, samplers[0]));
 
    if (lp->framebuffer.zsbuf) {
       enum pipe_format zsbuf_format = lp->framebuffer.zsbuf->format;
@@ -3368,9 +3368,15 @@ make_variant_key(struct llvmpipe_context *lp,
     */
    key->nr_samplers = shader->info.base.file_max[TGSI_FILE_SAMPLER] + 1;
 
+   struct lp_sampler_static_state *fs_sampler;
+
+   fs_sampler = key->samplers;
+
+   memset(fs_sampler, 0, MAX2(key->nr_samplers, key->nr_sampler_views) * sizeof *fs_sampler);
+
    for(i = 0; i < key->nr_samplers; ++i) {
       if(shader->info.base.file_mask[TGSI_FILE_SAMPLER] & (1 << i)) {
-         lp_sampler_static_sampler_state(&key->state[i].sampler_state,
+         lp_sampler_static_sampler_state(&fs_sampler[i].sampler_state,
                                          lp->samplers[PIPE_SHADER_FRAGMENT][i]);
       }
    }
@@ -3389,7 +3395,7 @@ make_variant_key(struct llvmpipe_context *lp,
           * used views may be included in the shader key.
           */
          if(shader->info.base.file_mask[TGSI_FILE_SAMPLER_VIEW] & (1u << (i & 31))) {
-            lp_sampler_static_texture_state(&key->state[i].texture_state,
+            lp_sampler_static_texture_state(&fs_sampler[i].texture_state,
                                             lp->sampler_views[PIPE_SHADER_FRAGMENT][i]);
          }
       }
@@ -3398,7 +3404,7 @@ make_variant_key(struct llvmpipe_context *lp,
       key->nr_sampler_views = key->nr_samplers;
       for(i = 0; i < key->nr_sampler_views; ++i) {
          if(shader->info.base.file_mask[TGSI_FILE_SAMPLER] & (1 << i)) {
-            lp_sampler_static_texture_state(&key->state[i].texture_state,
+            lp_sampler_static_texture_state(&fs_sampler[i].texture_state,
                                             lp->sampler_views[PIPE_SHADER_FRAGMENT][i]);
          }
       }

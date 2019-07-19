@@ -81,9 +81,19 @@ struct lp_fragment_shader_variant_key
    enum pipe_format zsbuf_format;
    enum pipe_format cbuf_format[PIPE_MAX_COLOR_BUFS];
 
-   struct lp_sampler_static_state state[PIPE_MAX_SHADER_SAMPLER_VIEWS];
+   struct lp_sampler_static_state samplers[1];
 };
 
+#define LP_FS_MAX_VARIANT_KEY_SIZE                                      \
+   (sizeof(struct lp_fragment_shader_variant_key) +                     \
+    PIPE_MAX_SHADER_SAMPLER_VIEWS * sizeof(struct lp_sampler_static_state))
+
+static inline size_t
+lp_fs_variant_key_size(unsigned nr_samplers)
+{
+   return (sizeof(struct lp_fragment_shader_variant_key) +
+           nr_samplers * sizeof(struct lp_sampler_static_state));
+}
 
 /** doubly-linked list item */
 struct lp_fs_variant_list_item
@@ -95,7 +105,6 @@ struct lp_fs_variant_list_item
 
 struct lp_fragment_shader_variant
 {
-   struct lp_fragment_shader_variant_key key;
 
    boolean opaque;
 
@@ -117,6 +126,9 @@ struct lp_fragment_shader_variant
 
    /* For debugging/profiling purposes */
    unsigned no;
+
+   /* key is variable-sized, must be last */
+   struct lp_fragment_shader_variant_key key;
 };
 
 
@@ -143,7 +155,7 @@ struct lp_fragment_shader
 
 
 void
-lp_debug_fs_variant(const struct lp_fragment_shader_variant *variant);
+lp_debug_fs_variant(struct lp_fragment_shader_variant *variant);
 
 void
 llvmpipe_remove_shader_variant(struct llvmpipe_context *lp,
