@@ -555,7 +555,7 @@ lp_build_add(struct lp_build_context *bld,
         return bld->one;
 
       if (!type.floating && !type.fixed) {
-         if (HAVE_LLVM >= 0x0900) {
+         if (HAVE_LLVM >= 0x0800) {
             char intrin[32];
             intrinsic = type.sign ? "llvm.sadd.sat" : "llvm.uadd.sat";
             lp_format_intrinsic(intrin, sizeof intrin, intrinsic, bld->vec_type);
@@ -883,7 +883,7 @@ lp_build_sub(struct lp_build_context *bld,
         return bld->zero;
 
       if (!type.floating && !type.fixed) {
-         if (HAVE_LLVM >= 0x0900) {
+         if (HAVE_LLVM >= 0x0800) {
             char intrin[32];
             intrinsic = type.sign ? "llvm.ssub.sat" : "llvm.usub.sat";
             lp_format_intrinsic(intrin, sizeof intrin, intrinsic, bld->vec_type);
