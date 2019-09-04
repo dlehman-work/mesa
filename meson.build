@@ -1252,6 +1252,10 @@ else
   _llvm_version = '>= 3.3.0'
 endif
 
+if _llvm_version >= '8.0.0'
+  llvm_modules += ['coroutines']
+endif
+
 _shared_llvm = get_option('shared-llvm')
 
 _llvm = get_option('llvm')
