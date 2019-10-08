@@ -340,35 +340,6 @@ lp_unique_module_name(char *buffer, const char *extension,
     strcat(buffer, extension);
 }
 
-extern "C" LLVMValueRef
-lp_resolve_function(LLVMModuleRef module, const char *name,
-                    LLVMTypeRef ret_type, LLVMTypeRef *arg_types, unsigned num_args,
-                    void *address)
-{
-   LLVMValueRef function;
-   LLVMTypeRef function_type;
-
-printf("%s: name %s\n", __FUNCTION__, name);
-   //if (!lp_cache)
-   //  return NULL; /* compiled out or disabled at runtime */
-
-   function = LLVMGetNamedFunction(module, name);
-   if (function)
-      return function;
-
-   function_type = LLVMFunctionType(ret_type, arg_types, num_args, 0);
-   function = LLVMAddFunction(module, name, function_type);
-   if (!function)
-      return NULL;
-
-   LLVMSetFunctionCallConv(function, LLVMCCallConv);
-   LLVMSetLinkage(function, LLVMExternalLinkage);
-   if (!LLVMSearchForAddressOfSymbol(name))
-      LLVMAddSymbol(name, address);
-
-   return function;
-}
-
 static once_flag init_native_targets_once_flag = ONCE_FLAG_INIT;
 
 static void init_native_targets()
