@@ -597,27 +597,27 @@ gallivm_compile_module(struct gallivm_state *gallivm)
 
    if (!lp_is_object_cacheable(gallivm->module_name)) { /* TODO: only if neeed */
 #if GALLIVM_HAVE_CORO
-   LLVMRunPassManager(gallivm->cgpassmgr, gallivm->module);
+      LLVMRunPassManager(gallivm->cgpassmgr, gallivm->module);
 #endif
-   /* Run optimization passes */
-   LLVMInitializeFunctionPassManager(gallivm->passmgr);
-   func = LLVMGetFirstFunction(gallivm->module);
-   while (func) {
-      if (0) {
-         debug_printf("optimizing func %s...\n", LLVMGetValueName(func));
-      }
+      /* Run optimization passes */
+      LLVMInitializeFunctionPassManager(gallivm->passmgr);
+      func = LLVMGetFirstFunction(gallivm->module);
+      while (func) {
+         if (0) {
+            debug_printf("optimizing func %s...\n", LLVMGetValueName(func));
+         }
 
-   /* Disable frame pointer omission on debug/profile builds */
-   /* XXX: And workaround http://llvm.org/PR21435 */
+      /* Disable frame pointer omission on debug/profile builds */
+      /* XXX: And workaround http://llvm.org/PR21435 */
 #if defined(DEBUG) || defined(PROFILE) || defined(PIPE_ARCH_X86) || defined(PIPE_ARCH_X86_64)
-      LLVMAddTargetDependentFunctionAttr(func, "no-frame-pointer-elim", "true");
-      LLVMAddTargetDependentFunctionAttr(func, "no-frame-pointer-elim-non-leaf", "true");
+         LLVMAddTargetDependentFunctionAttr(func, "no-frame-pointer-elim", "true");
+         LLVMAddTargetDependentFunctionAttr(func, "no-frame-pointer-elim-non-leaf", "true");
 #endif
 
-      LLVMRunFunctionPassManager(gallivm->passmgr, func);
-      func = LLVMGetNextFunction(func);
-   }
-   LLVMFinalizeFunctionPassManager(gallivm->passmgr);
+         LLVMRunFunctionPassManager(gallivm->passmgr, func);
+         func = LLVMGetNextFunction(func);
+      }
+      LLVMFinalizeFunctionPassManager(gallivm->passmgr);
    }
 
    if (gallivm_debug & GALLIVM_DEBUG_PERF) {
