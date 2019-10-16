@@ -1662,11 +1662,14 @@ draw_llvm_generate(struct draw_llvm *llvm, struct draw_llvm_variant *variant)
    const unsigned cv = draw->vs.clipvertex_output;
    boolean have_clipdist = FALSE;
    struct lp_bld_tgsi_system_values system_values;
+   struct llvm_vertex_shader *shader =
+      llvm_vertex_shader(llvm->draw->vs.vertex_shader);
 
    memset(&system_values, 0, sizeof(system_values));
 
-   snprintf(func_name, sizeof(func_name), "draw_llvm_vs_variant%u",
-            variant->shader->variants_cached);
+   lp_unique_module_name(func_name, ".vs", shader->base.state.tokens,
+                         tgsi_num_tokens(shader->base.state.tokens) * sizeof(struct tgsi_token),
+                         key, shader->variant_key_size);
 
    i = 0;
    arg_types[i++] = get_context_ptr_type(variant);       /* context */
