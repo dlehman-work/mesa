@@ -85,6 +85,9 @@ lp_free_object_cache(LLVMExecutionEngineRef engine);
 extern void
 lp_enable_object_cache(LLVMExecutionEngineRef engine, bool enabled);
 
+extern bool
+lp_is_object_cacheable(const char *name);
+
 extern void
 lp_unique_module_name(char *buffer, const char *extension,
                       const void *const_data, size_t const_size,

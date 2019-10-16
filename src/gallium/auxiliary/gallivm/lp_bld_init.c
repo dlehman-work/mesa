@@ -595,6 +595,7 @@ gallivm_compile_module(struct gallivm_state *gallivm)
    if (gallivm_debug & GALLIVM_DEBUG_PERF)
       time_begin = os_time_get();
 
+   if (!lp_is_object_cacheable(gallivm->module_name)) { /* TODO: only if neeed */
 #if GALLIVM_HAVE_CORO
    LLVMRunPassManager(gallivm->cgpassmgr, gallivm->module);
 #endif
@@ -617,6 +618,7 @@ gallivm_compile_module(struct gallivm_state *gallivm)
       func = LLVMGetNextFunction(func);
    }
    LLVMFinalizeFunctionPassManager(gallivm->passmgr);
+   }
 
    if (gallivm_debug & GALLIVM_DEBUG_PERF) {
       int64_t time_end = os_time_get();

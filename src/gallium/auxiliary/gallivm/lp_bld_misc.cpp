@@ -316,6 +316,15 @@ lp_enable_object_cache(LLVMExecutionEngineRef engine, bool enabled)
 #endif
 }
 
+extern "C" bool
+lp_is_object_cacheable(const char *name)
+{
+    if (!lp_cache) /* TODO: do we need to try init in case this is first call? */
+        return FALSE; /* TODO: FALSE vs false?? */
+
+    return (strstr(name, LLVM_CACHE_TAG) == name);
+}
+
 extern "C" void
 lp_unique_module_name(char *buffer, const char *extension,
                       const void *const_data, size_t const_size,
