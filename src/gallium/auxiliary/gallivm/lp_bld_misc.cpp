@@ -327,17 +327,9 @@ lp_is_object_cached(const char *name)
    /* TODO: more efficient way?  disk_cache_get allocates memory */
    if (!lp_cache)
       return FALSE;
-    
+
    if (!strstr(name, LLVM_CACHE_TAG))
       return FALSE;
-
-/* TODO:
-   if (modname.find(LLVM_CACHE_TAG) == std::string::npos) {
-      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
-         debug_printf("not caching: %s\n", modname.c_str());
-      return nullptr;
-   }
-*/
 
    disk_cache_compute_key(lp_cache->disk_cache, name, strlen(name), key);
    size = 0;
