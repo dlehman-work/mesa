@@ -159,10 +159,10 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
 {
    void *obj;
    size_t size;
-   cache_key key;
+   cache_key modkey, objkey;
    jit_module_s *jit_module;
-   char found[sizeof(key)*2+1];
-   char expected[sizeof(key)*2+1];
+   char found[sizeof(modkey)*2+1];
+   char expected[sizeof(modkey)*2+1];
    std::unique_ptr<llvm::MemoryBuffer> pBuf = nullptr;
    const std::string &modname = module->getModuleIdentifier();
 
@@ -172,17 +172,17 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
       return nullptr;
    }
 
-   disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), key);
+   disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), modkey);
    size = 0;
-   jit_module = (jit_module_s *)disk_cache_get(disk_cache, key, &size);
+   jit_module = (jit_module_s *)disk_cache_get(disk_cache, modkey, &size);
    if (!jit_module || !size)
       return nullptr;
 
    obj = NULL;
-   if (memcmp(key, jit_module->modhash, sizeof(key))) {
-      disk_cache_remove(disk_cache, key);
+   if (memcmp(modkey, jit_module->modhash, sizeof(modkey))) {
+      disk_cache_remove(disk_cache, modkey);
       if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
-         _mesa_sha1_format(expected, key);
+         _mesa_sha1_format(expected, modkey);
          _mesa_sha1_format(found, jit_module->modhash);
          debug_printf("invalid module hash: %s: expected %s, found %s\n",  modname.c_str(), expected, found);
       }
@@ -192,7 +192,7 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
    size = 0;
    obj = disk_cache_get(disk_cache, jit_module->objhash, &size);
    if (!obj || !size) {
-      disk_cache_remove(disk_cache, key);
+      disk_cache_remove(disk_cache, modkey);
       if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
          _mesa_sha1_format(expected, jit_module->objhash);
          debug_printf("missing obj: %s: %s\n",  modname.c_str(), expected);
@@ -201,7 +201,7 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
    }
 
    if (size != jit_module->objsize) {
-      disk_cache_remove(disk_cache, key);
+      disk_cache_remove(disk_cache, modkey);
       disk_cache_remove(disk_cache, jit_module->objhash);
       if (gallivm_debug & GALLIVM_DEBUG_CACHE)
          debug_printf("invalid object size: %s: expected %zu, found %zu\n",
@@ -209,12 +209,12 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
       goto done;
    }
 
-   disk_cache_compute_key(disk_cache, obj, size, key);
-   if (memcmp(key, jit_module->objhash, sizeof(key))) {
-      disk_cache_remove(disk_cache, key);
+   disk_cache_compute_key(disk_cache, obj, size, objkey);
+   if (memcmp(objkey, jit_module->objhash, sizeof(objkey))) {
+      disk_cache_remove(disk_cache, modkey);
       disk_cache_remove(disk_cache, jit_module->objhash);
       if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
-         _mesa_sha1_format(expected, key);
+         _mesa_sha1_format(expected, objkey);
          _mesa_sha1_format(found, jit_module->objhash);
          debug_printf("invalid object hash: %s: expected %s, found %s\n", modname.c_str(), expected, found);
       }
@@ -224,6 +224,7 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
    if (gallivm_debug & GALLIVM_DEBUG_CACHE)
       debug_printf("   using cached: %s\n", modname.c_str());
    pBuf = std::move(llvm::MemoryBuffer::getMemBufferCopy(llvm::StringRef((const char *)obj, size)));
+   disk_cache_put_key(disk_cache, modkey);
 
 done:
    free(jit_module);
@@ -332,13 +333,19 @@ lp_is_object_cached(const char *name)
       return FALSE;
 
    disk_cache_compute_key(lp_cache->disk_cache, name, strlen(name), key);
+   if (disk_cache_has_key(lp_cache->disk_cache, key))
+      return TRUE;
+
    size = 0;
    jit_module = disk_cache_get(lp_cache->disk_cache, key, &size);
    if (!jit_module || !size)
       return FALSE;
 
-    free(jit_module);
-    return !!jit_module;
+   if (!!jit_module)
+      disk_cache_put_key(lp_cache->disk_cache, key);
+
+   free(jit_module);
+   return !!jit_module;
 }
 
 extern "C" void
