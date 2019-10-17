@@ -135,6 +135,7 @@ private:
       uint64_t objsize;
    };
 
+public: /* TODO */
    struct disk_cache *disk_cache;
 };
 
@@ -149,6 +150,7 @@ void lp_ObjectCache::notifyObjectCompiled(const llvm::Module *module, llvm::Memo
    disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), jit_module.modhash);
    disk_cache_compute_key(disk_cache, obj.getBufferStart(), obj.getBufferSize(), jit_module.objhash);
    jit_module.objsize = obj.getBufferSize();
+printf("%s: %50s %10zu\n", __FUNCTION__, modname.c_str(), jit_module.objsize);
 
    disk_cache_put(disk_cache, jit_module.modhash, &jit_module, sizeof(jit_module), NULL);
    disk_cache_put(disk_cache, jit_module.objhash, obj.getBufferStart(), obj.getBufferSize(), NULL);
@@ -323,6 +325,35 @@ lp_is_object_cacheable(const char *name)
         return FALSE; /* TODO: FALSE vs false?? */
 
     return (strstr(name, LLVM_CACHE_TAG) == name);
+}
+
+extern "C" bool
+lp_is_object_cached(const char *name)
+{
+   size_t size;
+   cache_key key;
+   void *jit_module;
+
+   /* TODO: more efficient way?  disk_cache_get allocates memory */
+   if (!lp_cache)
+      return FALSE;
+
+/* TODO:
+   if (modname.find(LLVM_CACHE_TAG) == std::string::npos) {
+      if (gallivm_debug & GALLIVM_DEBUG_CACHE)
+         debug_printf("not caching: %s\n", modname.c_str());
+      return nullptr;
+   }
+*/
+
+   disk_cache_compute_key(lp_cache->disk_cache, name, strlen(name), key);
+   size = 0;
+   jit_module = disk_cache_get(lp_cache->disk_cache, key, &size);
+   if (!jit_module || !size)
+      return FALSE;
+
+    free(jit_module);
+    return !!jit_module;
 }
 
 extern "C" void
