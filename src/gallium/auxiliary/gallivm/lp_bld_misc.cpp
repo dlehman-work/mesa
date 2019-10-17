@@ -127,6 +127,8 @@ public:
    virtual void notifyObjectCompiled(const llvm::Module *, llvm::MemoryBufferRef);
    virtual std::unique_ptr<llvm::MemoryBuffer> getObject(const llvm::Module *);
 
+   bool is_cached(const char *);
+
 private:
    struct jit_module_s
    {
@@ -135,7 +137,6 @@ private:
       uint64_t objsize;
    };
 
-public: /* TODO */
    struct disk_cache *disk_cache;
 };
 
@@ -175,7 +176,7 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
    disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), modkey);
    size = 0;
    jit_module = (jit_module_s *)disk_cache_get(disk_cache, modkey, &size);
-   if (!jit_module || !size)
+   if (!jit_module)
       return nullptr;
 
    obj = NULL;
@@ -191,7 +192,7 @@ std::unique_ptr<llvm::MemoryBuffer> lp_ObjectCache::getObject(const llvm::Module
 
    size = 0;
    obj = disk_cache_get(disk_cache, jit_module->objhash, &size);
-   if (!obj || !size) {
+   if (!obj) {
       disk_cache_remove(disk_cache, modkey);
       if (gallivm_debug & GALLIVM_DEBUG_CACHE) {
          _mesa_sha1_format(expected, jit_module->objhash);
@@ -230,6 +231,29 @@ done:
    free(jit_module);
    free(obj);
    return pBuf;
+}
+
+bool lp_ObjectCache::is_cached(const char *modname)
+{
+   size_t size;
+   cache_key key;
+   void *jit_module;
+
+   if (!strstr(modname, LLVM_CACHE_TAG))
+      return FALSE;
+
+   disk_cache_compute_key(disk_cache, modname, strlen(modname), key);
+   if (disk_cache_has_key(disk_cache, key))
+      return TRUE;
+
+   size = 0;
+   jit_module = disk_cache_get(disk_cache, key, &size);
+   if (!jit_module)
+      return FALSE;
+
+   disk_cache_put_key(disk_cache, key);
+   free(jit_module);
+   return TRUE;
 }
 
 static std::once_flag objcache_flag;
@@ -321,29 +345,11 @@ lp_enable_object_cache(LLVMExecutionEngineRef engine, bool enabled)
 extern "C" bool
 lp_is_object_cached(const char *name)
 {
-   size_t size;
-   cache_key key;
-   void *jit_module;
-
-   /* TODO: more efficient way?  disk_cache_get allocates memory */
-   if (!lp_cache)
-      return FALSE;
-
-   if (!strstr(name, LLVM_CACHE_TAG))
-      return FALSE;
-
-   disk_cache_compute_key(lp_cache->disk_cache, name, strlen(name), key);
-   if (disk_cache_has_key(lp_cache->disk_cache, key))
-      return TRUE;
-
-   size = 0;
-   jit_module = disk_cache_get(lp_cache->disk_cache, key, &size);
-   if (!jit_module) /* TODO size tests? */
-      return FALSE;
-
-   disk_cache_put_key(lp_cache->disk_cache, key);
-   free(jit_module);
-   return TRUE;
+#if ENABLE_LLVM_CACHE
+   return lp_cache && lp_cache->is_cached(name) ? TRUE : FALSE;
+#else
+   return FALSE;
+#endif
 }
 
 extern "C" void
