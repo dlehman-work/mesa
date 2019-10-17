@@ -338,14 +338,12 @@ lp_is_object_cached(const char *name)
 
    size = 0;
    jit_module = disk_cache_get(lp_cache->disk_cache, key, &size);
-   if (!jit_module || !size)
+   if (!jit_module) /* TODO size tests? */
       return FALSE;
 
-   if (!!jit_module)
-      disk_cache_put_key(lp_cache->disk_cache, key);
-
+   disk_cache_put_key(lp_cache->disk_cache, key);
    free(jit_module);
-   return !!jit_module;
+   return TRUE;
 }
 
 extern "C" void
