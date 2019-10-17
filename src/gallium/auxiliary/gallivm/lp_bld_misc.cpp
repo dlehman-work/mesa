@@ -150,7 +150,6 @@ void lp_ObjectCache::notifyObjectCompiled(const llvm::Module *module, llvm::Memo
    disk_cache_compute_key(disk_cache, modname.c_str(), modname.length(), jit_module.modhash);
    disk_cache_compute_key(disk_cache, obj.getBufferStart(), obj.getBufferSize(), jit_module.objhash);
    jit_module.objsize = obj.getBufferSize();
-printf("%s: %50s %10zu\n", __FUNCTION__, modname.c_str(), jit_module.objsize);
 
    disk_cache_put(disk_cache, jit_module.modhash, &jit_module, sizeof(jit_module), NULL);
    disk_cache_put(disk_cache, jit_module.objhash, obj.getBufferStart(), obj.getBufferSize(), NULL);
@@ -319,15 +318,6 @@ lp_enable_object_cache(LLVMExecutionEngineRef engine, bool enabled)
 }
 
 extern "C" bool
-lp_is_object_cacheable(const char *name)
-{
-    if (!lp_cache) /* TODO: do we need to try init in case this is first call? */
-        return FALSE; /* TODO: FALSE vs false?? */
-
-    return (strstr(name, LLVM_CACHE_TAG) == name);
-}
-
-extern "C" bool
 lp_is_object_cached(const char *name)
 {
    size_t size;
@@ -336,6 +326,9 @@ lp_is_object_cached(const char *name)
 
    /* TODO: more efficient way?  disk_cache_get allocates memory */
    if (!lp_cache)
+      return FALSE;
+    
+   if (!strstr(name, LLVM_CACHE_TAG))
       return FALSE;
 
 /* TODO:

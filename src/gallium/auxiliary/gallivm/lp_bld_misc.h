@@ -86,9 +86,6 @@ extern void
 lp_enable_object_cache(LLVMExecutionEngineRef engine, bool enabled);
 
 extern bool
-lp_is_object_cacheable(const char *name);
-
-extern bool
 lp_is_object_cached(const char *name);
 
 extern void
