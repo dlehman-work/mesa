@@ -41,6 +41,10 @@ os_file_create_unique(const char *filename, int filemode)
 /* copied from <linux/kcmp.h> */
 #define KCMP_FILE 0
 
+#if defined(__x86_64__) && !defined(SYS_kcmp)
+#define SYS_kcmp 312
+#endif
+
 static ssize_t
 readN(int fd, char *buf, size_t len)
 {
