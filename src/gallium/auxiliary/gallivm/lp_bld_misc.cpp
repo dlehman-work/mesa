@@ -118,7 +118,6 @@ static void init_native_targets()
    llvm::InitializeNativeTargetAsmPrinter();
 
    llvm::InitializeNativeTargetDisassembler();
-#if DEBUG
    {
       char *env_llc_options = getenv("GALLIVM_LLC_OPTIONS");
       if (env_llc_options) {
@@ -137,7 +136,6 @@ static void init_native_targets()
          LLVMParseCommandLineOptions(n + 1, options, NULL);
       }
    }
-#endif
 }
 
 extern "C" void
