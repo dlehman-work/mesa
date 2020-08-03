@@ -197,12 +197,6 @@ _libxmlconfig = static_library(
   dependencies : [idep_mesautil, dep_expat, dep_m],
   c_args : [
     c_msvc_compat_args,
-    '-DSYSCONFDIR="@0@"'.format(
-      join_paths(get_option('prefix'), get_option('sysconfdir'))
-    ),
-    '-DDATADIR="@0@"'.format(
-      join_paths(get_option('prefix'), get_option('datadir'))
-    ),
   ],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
