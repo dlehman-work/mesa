@@ -207,7 +207,7 @@ static void do_triangle( struct draw_context *draw,
     unsigned prim_flags,                        \
     struct vertex_header *vertices,             \
     unsigned stride,                            \
-    const ushort *elts,                         \
+    const unsigned *elts,                       \
     unsigned count,                             \
     unsigned max_index
 

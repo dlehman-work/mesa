@@ -586,7 +586,7 @@ llvm_pipeline_generic(struct draw_pt_middle_end *middle,
    boolean clipped = 0;
    unsigned start_or_maxelt, vid_base;
    const unsigned *elts;
-   ushort *tes_elts_out = NULL;
+   unsigned *tes_elts_out = NULL;
 
    memset(&gs_vert_info, 0, sizeof(struct draw_vertex_info) * TGSI_MAX_VERTEX_STREAMS);
    assert(fetch_info->count > 0);
@@ -790,7 +790,7 @@ static void
 llvm_middle_end_run(struct draw_pt_middle_end *middle,
                     const unsigned *fetch_elts,
                     unsigned fetch_count,
-                    const ushort *draw_elts,
+                    const unsigned *draw_elts,
                     unsigned draw_count,
                     unsigned prim_flags)
 {
@@ -848,7 +848,7 @@ static boolean
 llvm_middle_end_linear_run_elts(struct draw_pt_middle_end *middle,
                                 unsigned start,
                                 unsigned count,
-                                const ushort *draw_elts,
+                                const unsigned *draw_elts,
                                 unsigned draw_count,
                                 unsigned prim_flags)
 {

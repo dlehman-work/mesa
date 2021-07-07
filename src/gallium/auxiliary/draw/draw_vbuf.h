@@ -100,11 +100,11 @@ struct vbuf_render {
    void (*set_primitive)( struct vbuf_render *, enum pipe_prim_type prim );
 
    /**
-    * Draw indexed primitives.  Note that indices are ushort.  The driver
-    * must complete this call, if necessary splitting the index list itself.
+    * Draw indexed primitives.  The driver must complete this call,
+    * if necessary splitting the index list itself.
     */
    void (*draw_elements)( struct vbuf_render *,
-                          const ushort *indices,
+                          const unsigned *indices,
                           uint nr_indices );
 
    /* Draw non-indexed primitives.

@@ -69,7 +69,7 @@ struct vbuf_stage {
    unsigned nr_vertices;
 
    /** Indices */
-   ushort *indices;
+   unsigned *indices;
    unsigned max_indices;
    unsigned nr_indices;
 
@@ -427,7 +427,7 @@ draw_vbuf_stage(struct draw_context *draw, struct vbuf_render *render)
    vbuf->render = render;
    vbuf->max_indices = MIN2(render->max_indices, UNDEFINED_VERTEX_ID-1);
 
-   vbuf->indices = (ushort *) align_malloc(vbuf->max_indices *
+   vbuf->indices = (unsigned*) align_malloc(vbuf->max_indices *
                     sizeof(vbuf->indices[0]),
                     16);
    if (!vbuf->indices)

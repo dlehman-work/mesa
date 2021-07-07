@@ -133,7 +133,7 @@ static inline const_float4_ptr get_vert( const void *vertex_buffer,
  * draw elements / indexed primitives
  */
 static void
-lp_setup_draw_elements(struct vbuf_render *vbr, const ushort *indices, uint nr)
+lp_setup_draw_elements(struct vbuf_render *vbr, const unsigned *indices, uint nr)
 {
    struct lp_setup_context *setup = lp_setup_context(vbr);
    const unsigned stride = setup->vertex_info->size * sizeof(float);

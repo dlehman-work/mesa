@@ -42,7 +42,7 @@ CONCAT(vsplit_primitive_, ELT_TYPE)(struct vsplit_frontend *vsplit,
    const unsigned max_index = draw->pt.user.max_index;
    const int elt_bias = draw->pt.user.eltBias;
    unsigned fetch_start, fetch_count;
-   const ushort *draw_elts = NULL;
+   const unsigned *draw_elts = NULL;
    unsigned i;
    const unsigned start = istart;
    const unsigned end = istart + icount;
@@ -64,7 +64,7 @@ CONCAT(vsplit_primitive_, ELT_TYPE)(struct vsplit_frontend *vsplit,
             debug_printf("warning: index out of range\n");
          }
       }
-      draw_elts = (const ushort *) (ib + istart);
+      draw_elts = (const unsigned *) (ib + istart);
    }
    else {
       /* have to go through vsplit->draw_elts */
@@ -100,7 +100,7 @@ CONCAT(vsplit_primitive_, ELT_TYPE)(struct vsplit_frontend *vsplit,
             if (idx < min_index || idx > max_index) {
                debug_printf("warning: index out of range\n");
             }
-            vsplit->draw_elts[i] = (ushort) idx;
+            vsplit->draw_elts[i] = (unsigned) idx;
          }
       }
       else {
@@ -110,7 +110,7 @@ CONCAT(vsplit_primitive_, ELT_TYPE)(struct vsplit_frontend *vsplit,
             if (idx < min_index || idx > max_index) {
                debug_printf("warning: index out of range\n");
             }
-            vsplit->draw_elts[i] = (ushort) (idx - min_index);
+            vsplit->draw_elts[i] = (unsigned) (idx - min_index);
          }
       }
 

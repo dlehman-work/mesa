@@ -190,7 +190,7 @@ fetch_emit_bind_parameters(struct draw_pt_middle_end *middle)
 static void fetch_emit_run( struct draw_pt_middle_end *middle,
                             const unsigned *fetch_elts,
                             unsigned fetch_count,
-                            const ushort *draw_elts,
+                            const unsigned *draw_elts,
                             unsigned draw_count,
                             unsigned prim_flags )
 {
@@ -309,7 +309,7 @@ fail:
 static boolean fetch_emit_run_linear_elts( struct draw_pt_middle_end *middle,
                                         unsigned start,
                                         unsigned count,
-                                        const ushort *draw_elts,
+                                        const unsigned *draw_elts,
                                         unsigned draw_count,
                                         unsigned prim_flags )
 {

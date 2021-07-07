@@ -139,7 +139,7 @@ draw_pt_emit(struct pt_emit *emit,
    const float (*vertex_data)[4] = (const float (*)[4])vert_info->verts->data;
    unsigned vertex_count = vert_info->count;
    unsigned stride = vert_info->stride;
-   const ushort *elts = prim_info->elts;
+   const unsigned *elts = prim_info->elts;
    struct draw_context *draw = emit->draw;
    struct translate *translate = emit->translate;
    struct vbuf_render *render = draw->render;

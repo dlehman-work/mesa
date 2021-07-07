@@ -561,7 +561,7 @@ static void gs_tri_adj(struct draw_geometry_shader *shader,
 
 
 #define FUNC         gs_run_elts
-#define LOCAL_VARS   const ushort *elts = input_prims->elts;
+#define LOCAL_VARS   const unsigned *elts = input_prims->elts;
 #define GET_ELT(idx) (elts[idx])
 #include "draw_gs_tmp.h"
 

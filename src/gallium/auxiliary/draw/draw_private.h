@@ -427,7 +427,7 @@ struct draw_prim_info {
    boolean linear;
    unsigned start;
 
-   const ushort *elts;
+   const unsigned *elts;
    unsigned count;
 
    unsigned prim;

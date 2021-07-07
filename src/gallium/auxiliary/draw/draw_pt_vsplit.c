@@ -49,13 +49,13 @@ struct vsplit_frontend {
 
    /* buffers for splitting */
    unsigned fetch_elts[SEGMENT_SIZE];
-   ushort draw_elts[SEGMENT_SIZE];
-   ushort identity_draw_elts[SEGMENT_SIZE];
+   unsigned draw_elts[SEGMENT_SIZE];
+   unsigned identity_draw_elts[SEGMENT_SIZE];
 
    struct {
       /* map a fetch element to a draw element */
       unsigned fetches[MAP_SIZE];
-      ushort draws[MAP_SIZE];
+      unsigned draws[MAP_SIZE];
       boolean has_max_fetch;
 
       ushort num_fetch_elts;

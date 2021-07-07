@@ -157,7 +157,7 @@ static inline cptrf4 get_vert( const void *vertex_buffer,
  * draw elements / indexed primitives
  */
 static void
-sp_vbuf_draw_elements(struct vbuf_render *vbr, const ushort *indices, uint nr)
+sp_vbuf_draw_elements(struct vbuf_render *vbr, const unsigned *indices, uint nr)
 {
    struct softpipe_vbuf_render *cvbr = softpipe_vbuf_render(vbr);
    struct softpipe_context *softpipe = cvbr->softpipe;
